@@ -49,7 +49,7 @@ established a linter. This one does, before any source file exists, so every
 later task lands already clean rather than accumulating a cleanup commit.
 
 **Files:**
-- Create: `eslint.config.js`
+- Create: `eslint.config.mjs`
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 - Modify: `package.json`
@@ -71,13 +71,17 @@ and the rules that matter here are the same on both sides.
 
 - [ ] **Step 2: Write the flat config**
 
-`eslint.config.js` — one shared base, with the browser globals and React hooks
+`eslint.config.mjs` — one shared base, with the browser globals and React hooks
 rules scoped to the frontend and Node globals scoped to the backend.
 
 - [ ] **Step 3: Write the Prettier config**
 
 `.prettierrc.json`: single quotes, trailing commas, 80 columns — matching the
 formatting every code block in this plan is already written in.
+
+`.prettierignore` excludes `*.md`. The specs and plans are prose wrapped by hand
+at 80 columns, and Prettier reflows markdown paragraphs — letting it near them
+would rewrite every document the first time one line changed.
 
 - [ ] **Step 4: Add the scripts**
 
