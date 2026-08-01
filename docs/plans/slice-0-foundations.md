@@ -773,7 +773,6 @@ npm install -w @financy/frontend -D typescript vite @vitejs/plugin-react \
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
@@ -781,19 +780,23 @@ npm install -w @financy/frontend -D typescript vite @vitejs/plugin-react \
 }
 ```
 
+No `baseUrl`. TypeScript 6 raises `TS5101` on it — it is deprecated and removed
+in 7 — and `paths` has resolved relative to the tsconfig's own directory since
+TypeScript 5, so it was doing nothing here anyway.
+
 - [ ] **Step 3: Configure Vite and Vitest**
 
 `apps/frontend/vite.config.ts`:
 
 ```ts
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
   test: {
     globals: true,
@@ -803,6 +806,11 @@ export default defineConfig({
   },
 });
 ```
+
+`defineConfig` comes from `vitest/config`, not `vite` — the one exported by
+`vite` does not type the `test` key. `import.meta.dirname` rather than
+`__dirname`, which Vite 8's native config loader warns about and will stop
+supporting.
 
 `apps/frontend/src/test/setup.ts`:
 
