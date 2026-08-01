@@ -124,8 +124,9 @@ Built and reviewed against the Style Guide before any page uses them.
 | `Select` | same shell as `Input`, with a checkmark on the selected option |
 | `Button` | primary (filled brand) and secondary (outlined); sizes `md` and `sm`; default, hover and disabled |
 | `IconButton` | neutral and danger; default, hover and disabled |
-| `Link` | default, underlined on hover |
-| `Tag` | pill, in any of the seven color families |
+| `TextLink` | default, underlined on hover — named to avoid colliding with React Router's `Link`, which it wraps |
+| `Tag` | pill, in any of the seven color families, plus a neutral fallback for an uncategorized transaction |
+| `CategoryBadge` | rounded icon tile in a category's color, with a neutral fallback |
 | `TypeIndicator` | "Entrada" with an up arrow in success green; "Saída" with a down arrow in danger red |
 | `Pagination` | numbered buttons with default, hover, active and disabled states, plus previous and next |
 | `Dialog` | centered card with title, subtitle, close button and scrim |
