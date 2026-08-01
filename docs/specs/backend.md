@@ -1,7 +1,7 @@
 # Backend Spec
 
 Status: approved, not implemented
-Last updated: 2026-08-01
+Last updated: 2026-08-01 (amended after the frontend design review)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does
@@ -12,15 +12,27 @@ and how it is built. Where it conflicts with the root README, this document wins
 ### In scope
 
 - A user can sign up and sign in.
+- A user can view and update their own profile.
 - A user can see and manage only the transactions and categories they created.
-- Create, edit, delete and list transactions.
+- Create, edit, delete and list transactions, with search and filtering.
 - Create, edit, delete and list categories.
+- Aggregate figures for the dashboard and the categories screen.
 
 ### Out of scope
 
 `Account` and `Budget` are not part of this system. Neither is investment
 tracking, bank integration, multi-currency or shared access. The domain is two
 owned entities — transactions and categories — plus the users that own them.
+
+Password recovery is deferred to phase 2. See section 11.
+
+### Amendments from the frontend design
+
+The frontend design (`frontend.md`) required capabilities this spec did not
+originally include. They are now part of it: `User.name` and profile updates,
+`Category.description` and `Category.icon`, a constrained `CategoryColor`, per
+category aggregates, dashboard summary figures, and description search. Each is
+marked in place below.
 
 ## 2. Stack
 
@@ -46,15 +58,22 @@ Chosen to fill in the rest:
 
 ### SQLite constraint
 
-**Prisma does not support `enum` on SQLite.** `Transaction.type` is therefore
-stored as `String`. The enum exists where it can be enforced:
+**Prisma does not support `enum` on SQLite.** `Transaction.type`,
+`Category.color` and `Category.icon` are therefore stored as `String`. Each enum
+exists where it can be enforced:
 
-- in the GraphQL schema, as `enum TransactionType { INCOME EXPENSE }`
-- in TypeScript, as a union type
+- in the GraphQL schema, as `TransactionType`, `CategoryColor` and `CategoryIcon`
+- in TypeScript, as union types
 - in the service layer, validated by zod before any write
 
-A future move to Postgres converts the column to a native enum without changing
-the public API.
+A future move to Postgres converts these columns to native enums without
+changing the public API.
+
+**Prisma's `mode: "insensitive"` is also unsupported on SQLite.** Description
+search therefore relies on SQLite's `LIKE`, which is already case-insensitive for
+ASCII. This is adequate for the search box in the design, with one known limit
+worth writing down: it does not fold accents, so "cafe" will not match "café".
+Moving to Postgres replaces this with an explicit case-insensitive filter.
 
 ## 3. Architecture
 
@@ -103,9 +122,11 @@ apps/backend/
 ```prisma
 model User {
   id           String        @id @default(uuid())
+  name         String
   email        String        @unique
   passwordHash String
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   categories   Category[]
   transactions Transaction[]
 }
@@ -113,7 +134,9 @@ model User {
 model Category {
   id           String        @id @default(uuid())
   name         String
-  color        String?
+  description  String?
+  icon         String        // CategoryIcon token
+  color        String        // CategoryColor token
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -165,6 +188,16 @@ the owner, so two users can each have a "Groceries" without colliding.
 **Deleting a user cascades** to their categories and transactions. A deleted
 account leaves no orphaned financial records.
 
+**`icon` and `color` are closed sets of tokens, not free values.** The database
+stores `GREEN` or `UTENSILS`, never `#16A34A` or an SVG path. The mapping from
+token to hex and to a Lucide icon component lives in the frontend theme, so
+restyling the palette never requires a data migration. Free-form hex would also
+allow colors that fail contrast against the tag background.
+
+**`icon` is required, `color` is required, `description` is optional.** This
+matches the category dialog, where the icon and color pickers both have a
+default selection and the description field is explicitly labelled optional.
+
 ## 5. GraphQL API
 
 ```graphql
@@ -175,8 +208,38 @@ enum TransactionType {
   EXPENSE
 }
 
+enum CategoryColor {
+  GREEN
+  BLUE
+  PURPLE
+  PINK
+  RED
+  ORANGE
+  YELLOW
+}
+
+enum CategoryIcon {
+  BRIEFCASE
+  BUS
+  HEART_PULSE
+  PIGGY_BANK
+  SHOPPING_CART
+  TICKET
+  GIFT
+  UTENSILS
+  BIKE
+  HOME
+  HAND_COINS
+  BOOK_OPEN
+  STORE
+  WALLET
+  CREDIT_CARD
+  RECEIPT
+}
+
 type User {
   id: ID!
+  name: String!
   email: String!
   createdAt: DateTime!
 }
@@ -184,9 +247,25 @@ type User {
 type Category {
   id: ID!
   name: String!
-  color: String
+  description: String
+  icon: CategoryIcon!
+  color: CategoryColor!
+  transactionCount: Int!   # transactions in this category
+  totalAmount: Int!        # sum of their amounts, in cents
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+type Summary {
+  totalBalance: Int!   # all-time income minus expense, in cents
+  monthIncome: Int!    # income within the requested month
+  monthExpense: Int!   # expense within the requested month
+}
+
+type CategoryStats {
+  totalCategories: Int!
+  totalTransactions: Int!   # includes uncategorized transactions
+  mostUsed: Category        # null when the user has no transactions
 }
 
 type Transaction {
@@ -210,11 +289,24 @@ type TransactionPage {
   totalCount: Int!
 }
 
-input SignUpInput  { email: String!, password: String! }
-input SignInInput   { email: String!, password: String! }
+input SignUpInput { name: String!, email: String!, password: String! }
+input SignInInput { email: String!, password: String! }
 
-input CreateCategoryInput { name: String!, color: String }
-input UpdateCategoryInput { name: String,  color: String }
+input UpdateProfileInput { name: String! }
+
+input CreateCategoryInput {
+  name: String!
+  description: String
+  icon: CategoryIcon!
+  color: CategoryColor!
+}
+
+input UpdateCategoryInput {
+  name: String
+  description: String
+  icon: CategoryIcon
+  color: CategoryColor
+}
 
 input CreateTransactionInput {
   description: String!
@@ -233,6 +325,7 @@ input UpdateTransactionInput {
 }
 
 input TransactionFilter {
+  search: String        # case-insensitive substring of description
   type: TransactionType
   categoryId: ID
   dateFrom: DateTime
@@ -241,10 +334,12 @@ input TransactionFilter {
 
 type Query {
   me: User!
+  summary(month: Int!, year: Int!): Summary!
   categories: [Category!]!
+  categoryStats: CategoryStats!
   transactions(
     filter: TransactionFilter
-    limit: Int = 50
+    limit: Int = 10
     offset: Int = 0
   ): TransactionPage!
 }
@@ -252,6 +347,7 @@ type Query {
 type Mutation {
   signUp(input: SignUpInput!): AuthPayload!
   signIn(input: SignInInput!): AuthPayload!
+  updateProfile(input: UpdateProfileInput!): User!
 
   createCategory(input: CreateCategoryInput!): Category!
   updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
@@ -272,10 +368,42 @@ without bound. Pagination is offset-based rather than cursor-based: the frontend
 needs "page 3" and date-range filtering, not infinite scroll. Default ordering is
 `date DESC`, then `createdAt DESC` as a tiebreaker so ordering is stable.
 
+The default `limit` is 10, matching the transactions table in the design
+("1 a 10 | 27 resultados"). It is clamped to a maximum of 100 regardless of what
+the client sends.
+
 `Transaction.category` resolves through a DataLoader batched per request, so
 listing transactions does not produce one category query per row.
+`Category.transactionCount` and `Category.totalAmount` do the same, resolving
+through a single grouped aggregate per request rather than one query per
+category.
 
-`limit` is clamped to a maximum of 100 regardless of what the client sends.
+`email` is deliberately absent from `UpdateProfileInput`. The profile screen
+renders the email field disabled with the helper "O e-mail não pode ser
+alterado", and email is the login identifier — changing it is an account
+recovery concern, not a profile edit.
+
+### Aggregate semantics
+
+These are stated precisely because the dashboard is wrong in a way nobody
+notices if they drift:
+
+- `totalBalance` is all-time, not month-scoped: the sum of every `INCOME` minus
+  the sum of every `EXPENSE`, across the user's whole history.
+- `monthIncome` and `monthExpense` cover the requested calendar month only,
+  from the first instant of day 1 to the last instant of the final day.
+- `month` is 1–12. Out-of-range values are `BAD_USER_INPUT`.
+- `Category.totalAmount` is the unsigned sum of that category's transactions.
+  Since a category may hold both income and expense, it is a volume figure, not
+  a net one — the design labels it as a plain amount next to an item count.
+- `CategoryStats.totalTransactions` counts all of the user's transactions,
+  including uncategorized ones, so it will not always equal the sum of every
+  `transactionCount`.
+- `mostUsed` is the category with the highest `transactionCount`, ties broken by
+  name ascending so the result is stable between requests. It is null when the
+  user has no transactions at all.
+
+Every aggregate is scoped to the calling user, like every other read.
 
 ## 6. Authentication and ownership
 
@@ -331,14 +459,19 @@ message with no stack trace.
 
 Enforced by zod at the entry point of each service:
 
+- `name` (user) — non-empty after trimming, maximum 100 characters
 - `email` — valid format, normalized to lowercase
 - `password` — minimum 8 characters
-- `description` — non-empty after trimming, maximum 200 characters
+- `description` (transaction) — non-empty after trimming, max 200 characters
 - `amount` — integer, non-zero (sign is not used; `type` carries the direction)
 - `type` — `INCOME` or `EXPENSE`
 - `date` — a valid date
 - `name` (category) — non-empty after trimming, maximum 50 characters
-- `color` — optional; if present, a hex color such as `#RRGGBB`
+- `description` (category) — optional; maximum 200 characters
+- `icon` — one of the `CategoryIcon` tokens
+- `color` — one of the `CategoryColor` tokens
+- `search` — maximum 100 characters
+- `month` — integer 1–12; `year` — integer 1970–2100
 - pagination — `limit` between 1 and 100, `offset` at least 0
 
 ## 8. Configuration
@@ -378,8 +511,38 @@ Coverage expectations:
   transactions or categories, and cannot attach a transaction to B's category —
   one test per operation. This is the rule that breaks silently if it breaks.
 - Deleting a category leaves its transactions in place with a null category.
-- Pagination and each filter in `TransactionFilter`.
+- Pagination and each filter in `TransactionFilter`, including search.
+- Aggregates: `summary` for a month with no transactions returns zeros;
+  `totalBalance` spans months; `categoryStats.mostUsed` is null for a new user
+  and breaks ties by name; `totalTransactions` still counts uncategorized rows.
+- `updateProfile` changes the name and cannot change the email.
 
-## 10. Open items
+## 10. Seed
+
+`prisma/seed.ts` creates one test user with a set of categories and roughly
+thirty transactions spread across two months. The frontend needs realistic data
+to build the dashboard, pagination and filters against, and a fixed seed makes
+screenshots reproducible.
+
+The seed user's credentials live in the seed file, not in `.env`, and the file
+makes clear it is for development only.
+
+## 11. Phase 2
+
+Deliberately deferred. Not implemented in the first version.
+
+**Password recovery.** The login screen in the Figma file has a "Recuperar
+senha" link. Implementing it requires a `PasswordResetToken` model,
+`requestPasswordReset` and `resetPassword` mutations, an email delivery
+dependency with its own environment variables, and two frontend pages that the
+design does not include. When it is built, three rules are not optional: the
+reset token is stored hashed rather than in plaintext, it is single-use and
+short-lived, and `requestPasswordReset` returns the same response whether or not
+the email exists — otherwise it becomes a way to discover who has an account.
+
+Until then, the frontend does not render the link. See `frontend.md`, section on
+deviations from the design.
+
+## 12. Open items
 
 None. Every decision needed to write the implementation plan is recorded above.

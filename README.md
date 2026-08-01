@@ -17,9 +17,12 @@ that share a single domain model.
 
 - Let a user sign up and sign in, and see only their own data.
 - Record income and expenses with amount, date, description and category.
-- Organize transactions into user-defined categories, so spending can be grouped
-  in whatever way makes sense to the person using it.
-- Filter transactions by category, type and date range.
+- Organize transactions into user-defined categories, each with its own icon and
+  color, so spending can be grouped in whatever way makes sense to the person
+  using it.
+- Search and filter transactions by description, category, type and period.
+- Show where the money went: balance, income and expenses for the month, and
+  totals per category.
 
 ## Non-goals
 
@@ -76,7 +79,8 @@ something genuinely worth sharing, such as domain types.
 
 - **Backend** — TypeScript, GraphQL (Apollo Server), Prisma, SQLite, JWT auth.
   See [`docs/specs/backend.md`](docs/specs/backend.md).
-- **Frontend** — TBD, to be defined in `docs/specs/frontend.md`.
+- **Frontend** — TypeScript, React, Vite, GraphQL, TanStack Query, Tailwind CSS.
+  See [`docs/specs/frontend.md`](docs/specs/frontend.md).
 
 The specs are the source of truth for stack, features and constraints. This
 README stays a high-level overview.
@@ -86,5 +90,7 @@ README stays a high-level overview.
 Design phase. Specs are written before code.
 
 - [x] Backend spec
-- [ ] Frontend spec
+- [x] Frontend spec
 - [ ] Implementation
+
+Password recovery is deferred to phase 2 and is documented in both specs.
