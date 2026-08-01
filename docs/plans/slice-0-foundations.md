@@ -803,9 +803,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    env: {
+      VITE_BACKEND_URL: 'http://localhost:4000/graphql',
+    },
   },
 });
 ```
+
+The `env` block mirrors the backend's, for the same reason. Task 5 adds
+`src/lib/env.ts`, which parses `import.meta.env` at module load; Vite fills that
+from `apps/frontend/.env`, which is gitignored. Without this the suite passes on
+the machine that wrote `.env` and fails on every fresh clone.
 
 `defineConfig` comes from `vitest/config`, not `vite` — the one exported by
 `vite` does not type the `test` key. `import.meta.dirname` rather than
