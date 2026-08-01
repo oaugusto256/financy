@@ -24,6 +24,14 @@ permanent choice.
 | `@apollo/server` | `^4` | Apollo Server 5 removed the `./express4` export; the integration moved to `@as-integrations/express4`/`express5`. |
 | `express`, `@types/express` | `^4` | Required by `@apollo/server/express4`. |
 
+Pinning Apollo to 4 carries one known cost. `npm audit` reports a moderate
+advisory against `uuid` (`GHSA-w5hq-g745-h8pq`, a missing buffer bounds check in
+`v3`/`v5`/`v6` when an explicit `buf` is passed) reached through
+`@apollo/server@4`, and the only offered remedy is the upgrade to 5. The
+vulnerable path is not reachable from Apollo's use of the library, which calls
+`v4` without a buffer, so this is not a slice 0 blocker — but it is the concrete
+reason the Apollo pin should be revisited rather than left indefinitely.
+
 `zod` is **not** pinned — it installs at 4.x. Note that zod 4 silently ignores
 the v3 `required_error` option, so error messages are set with `.min(1, '…')` or
 the v4 `error` option instead.
@@ -158,7 +166,7 @@ every later task lands clean instead of ending in a cleanup commit."
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
     "test": "vitest run",
@@ -167,6 +175,13 @@ every later task lands clean instead of ending in a cleanup commit."
   }
 }
 ```
+
+`tsx` does not read `.env` on its own, and `src/shared/env.ts` parses
+`process.env` at import — so without the flag the dev server dies before it
+binds a port. `--env-file-if-exists` rather than `--env-file` so that a missing
+file falls through to `parseEnv`'s named-variable message instead of a Node
+file-not-found error. Only `dev` needs it; in production the values come from
+the environment rather than from a file.
 
 Then install:
 
@@ -576,6 +591,12 @@ The third test is the one worth having. CORS configured as `*` passes the second
 test just as happily, and a permissive default is easy to introduce by accident
 while debugging.
 
+It also dictates how `cors` is configured. Handed a bare string, `cors` echoes
+that string on every response regardless of the request's `Origin`, so the third
+test fails against a server that is in fact secure. Handed an array, it compares
+the request against the list and omits the header entirely when there is no
+match. Both are safe in a browser; only the second is observable from a test.
+
 - [ ] **Step 3: Run the test to verify it fails**
 
 Run: `npm test -w @financy/backend`
@@ -622,7 +643,7 @@ export async function createApp(): Promise<{
 
   app.use(
     '/graphql',
-    cors({ origin: env.CORS_ORIGIN, credentials: true }),
+    cors({ origin: [env.CORS_ORIGIN], credentials: true }),
     express.json(),
     expressMiddleware(apollo),
   );
