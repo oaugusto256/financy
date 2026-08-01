@@ -1313,6 +1313,11 @@ Tailwind scans source text for complete class names, so a template literal like
 Run: `npm test -w @financy/frontend`
 Expected: PASS — 4 token tests.
 
+All sixteen names, plus the fifteen used by the primitives in tasks 7 to 11,
+were confirmed to exist as exports of the installed `lucide-react`. That the
+names resolve is not the same as their being the icons the design shows, which
+is what step 8 is for.
+
 - [ ] **Step 8: Hand off the icon names for verification**
 
 The sixteen icon tokens were read from a screenshot of the category dialog, and
