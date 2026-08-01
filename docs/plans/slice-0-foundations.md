@@ -2159,7 +2159,13 @@ fire a mutation twice."
 
 **Interfaces:**
 - Consumes: `cn`, `CATEGORY_COLORS`, `CATEGORY_ICONS`, `CategoryColor`, `CategoryIcon`.
-- Produces: `Card`, `StatCard` (`icon`, `label`, `value`), `Tag` (`color?: CategoryColor | 'NEUTRAL'`), `TypeIndicator` (`type: 'INCOME' | 'EXPENSE'`), `CategoryBadge` (`icon?`, `color?`), `Avatar` (`name: string`, `size?: 'sm' | 'lg'`), `initialsFromName(name: string): string`, `Dialog` (`open`, `onClose`, `title`, `subtitle?`, `children`).
+- Produces: `Card`, `StatCard` (`icon`, `label`, `value`), `Tag` (`color?: CategoryColor | 'NEUTRAL'`), `TypeIndicator` (`type: 'INCOME' | 'EXPENSE'`), `CategoryBadge` (`icon?`, `color?`), `Avatar` (`name: string`, `size?: 'sm' | 'lg'`), `Dialog` (`open`, `onClose`, `title`, `subtitle?`, `children`). Also `initialsFromName(name: string): string` from `src/lib/initials.ts`.
+
+`initialsFromName` lives in `src/lib/initials.ts` rather than beside `Avatar`.
+A component file that also exports a plain function breaks React Fast Refresh,
+which `eslint-plugin-react-refresh` flags — and a pure string function belongs
+in `lib/` regardless of who happens to call it. Its four tests move with it to
+`src/lib/initials.test.ts`.
 
 - [ ] **Step 1: Install the dialog primitive**
 
