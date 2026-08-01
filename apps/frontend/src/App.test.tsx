@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
 
-it('renders the application name', () => {
+it('renders the dashboard route at the root path', () => {
   render(<App />);
-  expect(screen.getByText('Financy')).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Dashboard' }),
+  ).toBeInTheDocument();
 });
