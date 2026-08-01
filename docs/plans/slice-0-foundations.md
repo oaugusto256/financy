@@ -6,11 +6,27 @@
 
 **Architecture:** An npm-workspaces monorepo. The backend is Apollo Server 4 behind Express, with Prisma over SQLite and zod-validated environment variables. The frontend is Vite + React + Tailwind, with the design tokens from the Figma Style Guide expressed as Tailwind theme values and the component primitives built and tested before any page uses them.
 
-**Tech Stack:** TypeScript, Apollo Server 4, Express 4, Prisma, SQLite, zod, Vite, React 19, React Router, Tailwind CSS v4, lucide-react, Vitest, Testing Library.
+**Tech Stack:** TypeScript, Apollo Server 4, Express 4, Prisma 6, SQLite, zod 4, Vite, React 19, React Router, Tailwind CSS v4, lucide-react, Vitest, Testing Library, ESLint 9, Prettier.
 
 ## Global Constraints
 
 - Node 20 or newer. npm workspaces; no pnpm or yarn.
+
+### Pinned majors
+
+Three dependencies are pinned rather than taken at `latest`, because the current
+major breaks what this plan describes. Each pin is a decision to revisit, not a
+permanent choice.
+
+| Package | Pin | Why |
+|---|---|---|
+| `prisma`, `@prisma/client` | `^6` | Prisma 7 rejects `url` inside `datasource db` (`P1012`) and drops the `prisma-client-js` generator. It requires a `prisma.config.ts` and a driver adapter passed to `PrismaClient`. Migrating is a slice of its own. |
+| `@apollo/server` | `^4` | Apollo Server 5 removed the `./express4` export; the integration moved to `@as-integrations/express4`/`express5`. |
+| `express`, `@types/express` | `^4` | Required by `@apollo/server/express4`. |
+
+`zod` is **not** pinned — it installs at 4.x. Note that zod 4 silently ignores
+the v3 `required_error` option, so error messages are set with `.min(1, '…')` or
+the v4 `error` option instead.
 - TypeScript everywhere, `strict: true`. No `any` introduced.
 - Tailwind CSS v4, configured CSS-first with `@theme`. If the installed major is 3.x, the same tokens go in `tailwind.config.ts` instead.
 - All colors come from `frontend.md` section 3 verbatim. No color literal appears outside the theme definition.
@@ -19,6 +35,76 @@
 - Interface language is Brazilian Portuguese. Code, comments and commits are in English.
 - Every environment variable added must appear in the matching `.env.example` in the same commit.
 - Conventional Commits. One commit per task.
+- Figma comparison is performed by the repository owner, not by the agent
+  executing this plan. Where a step says to check against the Style Guide, the
+  agent produces an explicit checklist and the owner confirms or corrects it
+  before the pull request is opened.
+
+---
+
+### Task 0: Lint and format toolchain
+
+`roadmap.md`'s definition of done requires that lint passes, and no task
+established a linter. This one does, before any source file exists, so every
+later task lands already clean rather than accumulating a cleanup commit.
+
+**Files:**
+- Create: `eslint.config.js`
+- Create: `.prettierrc.json`
+- Create: `.prettierignore`
+- Modify: `package.json`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `npm run lint` and `npm run format:check` at the workspace root.
+
+- [ ] **Step 1: Install the toolchain at the root**
+
+```bash
+npm install -D -w . eslint @eslint/js typescript-eslint prettier \
+  eslint-config-prettier eslint-plugin-react-hooks eslint-plugin-react-refresh \
+  globals
+```
+
+The config lives at the root rather than one per workspace. Two configs drift,
+and the rules that matter here are the same on both sides.
+
+- [ ] **Step 2: Write the flat config**
+
+`eslint.config.js` — one shared base, with the browser globals and React hooks
+rules scoped to the frontend and Node globals scoped to the backend.
+
+- [ ] **Step 3: Write the Prettier config**
+
+`.prettierrc.json`: single quotes, trailing commas, 80 columns — matching the
+formatting every code block in this plan is already written in.
+
+- [ ] **Step 4: Add the scripts**
+
+In the root `package.json`:
+
+```json
+"lint": "eslint .",
+"lint:fix": "eslint . --fix",
+"format": "prettier --write .",
+"format:check": "prettier --check ."
+```
+
+- [ ] **Step 5: Verify**
+
+Run: `npm run lint` and `npm run format:check`
+Expected: both pass on an empty tree.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add package.json eslint.config.js .prettierrc.json .prettierignore
+git commit -m "chore: add the lint and format toolchain
+
+The definition of done requires that lint passes and nothing
+established a linter. Adding it before the first source file means
+every later task lands clean instead of ending in a cleanup commit."
+```
 
 ---
 
@@ -70,7 +156,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -108,6 +194,10 @@ npm install -w @financy/backend -D typescript tsx vitest @types/node
   "include": ["src/**/*.ts", "tests/**/*.ts"]
 }
 ```
+
+`rootDir` is `.` rather than `src` so that `tests/` is type-checked too. That
+puts the compiled entry point at `dist/src/server.js`, which is why the `start`
+script above points there.
 
 `apps/backend/vitest.config.ts`:
 
@@ -287,9 +377,13 @@ turns that into a startup failure with a readable message."
 - [ ] **Step 1: Install Prisma**
 
 ```bash
-npm install -w @financy/backend @prisma/client
-npm install -w @financy/backend -D prisma
+npm install -w @financy/backend @prisma/client@6
+npm install -w @financy/backend -D prisma@6
 ```
+
+Pinned to 6. Prisma 7 fails this schema with `P1012` — it no longer accepts
+`url` inside `datasource db`, and wants a `prisma.config.ts` plus a driver
+adapter handed to the `PrismaClient` constructor instead.
 
 - [ ] **Step 2: Write the Prisma schema**
 
@@ -394,12 +488,13 @@ that needs it."
 - [ ] **Step 1: Install the server dependencies**
 
 ```bash
-npm install -w @financy/backend @apollo/server express@4 cors graphql
+npm install -w @financy/backend @apollo/server@4 express@4 cors graphql
 npm install -w @financy/backend -D @types/express@4 @types/cors supertest @types/supertest
 ```
 
-Express 4, not 5: `@apollo/server/express4` is the integration Apollo ships and
-documents, and there is no reason to take on an adapter here.
+Apollo Server 4, not 5: version 5 removed the `./express4` subpath export and
+moved the integration out to `@as-integrations/express4`. Express 4 follows from
+that, since `@apollo/server/express4` is what the pinned major ships.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -818,9 +913,7 @@ Expected: FAIL — cannot resolve `./env`.
 import { z } from 'zod';
 
 const envSchema = z.object({
-  VITE_BACKEND_URL: z
-    .string({ required_error: 'VITE_BACKEND_URL is required' })
-    .url('VITE_BACKEND_URL must be a valid URL'),
+  VITE_BACKEND_URL: z.url('VITE_BACKEND_URL must be a valid URL'),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
@@ -840,6 +933,10 @@ export function parseEnv(raw: Record<string, unknown>): AppEnv {
 
 export const env = parseEnv(import.meta.env);
 ```
+
+zod 4 replaced the v3 `z.string({ required_error }).url()` form. `required_error`
+is not an error under v4 — it is silently ignored, so a message written that way
+never reaches the user. `z.url()` is the v4 spelling.
 
 `apps/frontend/src/vite-env.d.ts`:
 
@@ -1158,11 +1255,13 @@ Tailwind scans source text for complete class names, so a template literal like
 Run: `npm test -w @financy/frontend`
 Expected: PASS — 4 token tests.
 
-- [ ] **Step 8: Verify the icon names against Figma**
+- [ ] **Step 8: Hand off the icon names for verification**
 
-The sixteen icon tokens were read from a screenshot of the category dialog. Open
-the Figma Style Guide tab and confirm each Lucide name. Correct any mismatch in
-`CATEGORY_ICONS` and in `backend.md`'s `CategoryIcon` enum, keeping the two
+The sixteen icon tokens were read from a screenshot of the category dialog, and
+the agent executing this plan has no Figma access. Record the sixteen
+token-to-Lucide-name pairs in the slice's handoff checklist for the repository
+owner to confirm against the Figma Style Guide. Any correction applies to both
+`CATEGORY_ICONS` and `backend.md`'s `CategoryIcon` enum, which must stay
 identical.
 
 - [ ] **Step 9: Commit**
@@ -2861,15 +2960,17 @@ and add this route above the catch-all:
       <Route path="/style-guide" element={<StyleGuide />} />
 ```
 
-- [ ] **Step 3: Compare against Figma**
+- [ ] **Step 3: Hand off the Figma comparison**
 
 Run: `npm run dev:frontend`, then open `http://localhost:5173/style-guide`.
 
-Open the Figma Style Guide tab beside it and check each group: button fills,
-borders and disabled opacity; input border, radius and the error state coloring
-the label; tag padding and radius; the pagination active state; the icon badge
-background. Correct the components where they differ. Record any deliberate
-difference in `frontend.md`, section 12.
+The comparison itself is the repository owner's, since the agent has no Figma
+access. Produce a checklist naming each group to check side by side with the
+Figma Style Guide tab: button fills, borders and disabled opacity; input border,
+radius and the error state coloring the label; tag padding and radius; the
+pagination active state; the icon badge background. The owner reports the
+differences, the agent corrects the components, and any deliberate difference is
+recorded in `frontend.md`, section 12.
 
 - [ ] **Step 4: Verify both applications run together**
 
@@ -2947,10 +3048,14 @@ Before opening the pull request, confirm every line of the definition of done in
 
 - [ ] `npm test` passes in both workspaces.
 - [ ] `npm run typecheck` passes in both workspaces.
+- [ ] `npm run lint` and `npm run format:check` pass at the root.
 - [ ] `npm run dev:backend` and `npm run dev:frontend` both start.
 - [ ] `/style-guide` renders every primitive and was compared against Figma.
 - [ ] The browser can reach the API without a CORS error.
 - [ ] `apps/backend/.env` and `apps/frontend/.env` are untracked; both
       `.env.example` files are committed and list every variable in use.
-- [ ] The sixteen Lucide icon names were confirmed against Figma, and
-      `backend.md`'s `CategoryIcon` enum matches `category-tokens.ts` exactly.
+- [ ] The sixteen Lucide icon names were confirmed against Figma by the
+      repository owner, and `backend.md`'s `CategoryIcon` enum matches
+      `category-tokens.ts` exactly.
+- [ ] The `/style-guide` Figma comparison checklist was handed to the owner and
+      the reported differences were corrected.
