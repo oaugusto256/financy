@@ -2873,6 +2873,7 @@ color alone conveys nothing to a screen reader."
 
 **Files:**
 - Create: `apps/frontend/src/pages/StyleGuide.tsx`
+- Test: `apps/frontend/src/pages/StyleGuide.test.tsx`
 - Modify: `apps/frontend/src/routes.tsx`
 - Modify: `README.md`
 
@@ -3015,6 +3016,14 @@ export function StyleGuide() {
 }
 ```
 
+- [ ] **Step 1b: Cover the page with a render test**
+
+`apps/frontend/src/pages/StyleGuide.test.tsx` asserts that every section heading
+is present, that all seven colors and sixteen icon badges render, and that the
+dialog opens. It says nothing about appearance — that is what step 3 is for.
+What it prevents is the page silently becoming a blank screen between the later
+slices that depend on it, which a once-off manual look would not catch.
+
 - [ ] **Step 2: Register the route**
 
 In `apps/frontend/src/routes.tsx`, add the import:
@@ -3060,6 +3069,21 @@ await fetch('http://localhost:4000/graphql', {
 Expected: `{data: {health: 'ok'}}`. A CORS failure here means `CORS_ORIGIN` does
 not match the Vite origin — this is exactly the check that catches it before
 slice 1 builds on top of it.
+
+Note that this fails for a boring reason if port 5173 is already taken: Vite
+falls back to 5174 without complaint, and 5174 is not what `CORS_ORIGIN` names.
+Check what Vite actually printed before treating a rejection as a bug. The same
+distinction can be drawn from the terminal, which does not care what port Vite
+got:
+
+```bash
+curl -s -i -X POST http://localhost:4000/graphql \
+  -H 'Content-Type: application/json' -H 'Origin: http://localhost:5173' \
+  -d '{"query":"{ health }"}' | grep -i access-control-allow-origin
+```
+
+The configured origin must come back with the header; any other origin must come
+back without one.
 
 - [ ] **Step 5: Run the whole suite and the type checks**
 
