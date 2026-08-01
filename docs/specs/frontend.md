@@ -401,6 +401,13 @@ shows a category tag on some rows and a type tag ("Receita") on one. This spec
 uses the category tag consistently, since the type is already conveyed by the
 colored arrow and the sign on the amount.
 
+**`Select` has no checkmark on the selected option.** Section 3 describes one,
+which a native `<select>` cannot draw — the browser owns the dropdown. The
+alternative is a custom listbox, which means rebuilding keyboard navigation,
+typeahead, screen reader semantics and the mobile picker, all to add a tick to a
+list that already shows its selection in the closed control. The native element
+is kept; the checkmark is not.
+
 **Responsive behavior** is defined here, not in the design, which is
 desktop-only. See section 4.
 
