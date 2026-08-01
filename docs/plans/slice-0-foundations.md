@@ -449,7 +449,9 @@ afterAll(async () => {
 
 it('connects to the database', async () => {
   const result = await prisma.$queryRaw`SELECT 1 as value`;
-  expect(result).toEqual([{ value: 1 }]);
+  // BigInt, not number: $queryRaw hands back SQLite integers untouched rather
+  // than narrowing them to JavaScript's safe range.
+  expect(result).toEqual([{ value: 1n }]);
 });
 ```
 
@@ -477,7 +479,7 @@ client per request would open connections faster than it closes them.
 - [ ] **Step 7: Run the test to verify it passes**
 
 Run: `npm test -w @financy/backend`
-Expected: PASS — the raw query returns `[{ value: 1 }]`.
+Expected: PASS — the raw query returns `[{ value: 1n }]`.
 
 - [ ] **Step 8: Commit**
 
