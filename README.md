@@ -15,49 +15,46 @@ that share a single domain model.
 
 ## Goals
 
+- Let a user sign up and sign in, and see only their own data.
 - Record income and expenses with amount, date, description and category.
 - Organize transactions into user-defined categories, so spending can be grouped
   in whatever way makes sense to the person using it.
-- Group transactions under accounts (checking, savings, credit card, cash).
-- Set budgets per category and per period, and see how actual spending compares.
-- Provide a clear summary of a period: total in, total out, balance, and a
-  breakdown by category.
+- Filter transactions by category, type and date range.
 
 ## Non-goals
 
 These are deliberately out of scope. Some may become goals later; none of them
 shape the current design.
 
+- **Accounts.** Transactions are not grouped under checking, savings or credit
+  card accounts.
+- **Budgets.** No per-category spending limits or planned-versus-actual tracking.
 - **Investment portfolio tracking.** No holdings, quotes, average price or
   returns. Financy tracks cash flow, not assets under management.
 - **Bank integration.** No Open Finance, no scraping, no automatic import from
-  financial institutions in the initial version.
+  financial institutions.
 - **Multi-currency.** A single currency per user.
-- **Shared or multi-user accounts.** Each user sees only their own data.
+- **Shared access.** Each user sees only their own data.
 - **Tax reporting.** No fiscal calculations or statement generation.
 
 ## Domain model
 
-A first sketch, to be refined and made precise by the backend spec.
+Three entities. See [`docs/specs/backend.md`](docs/specs/backend.md) for the
+precise schema.
 
 ```
 User
- └── Account            e.g. "Checking", "Credit card"
-      └── Transaction   type: INCOME | EXPENSE
-           ├── amount, date, description
-           └── Category e.g. "Groceries", "Salary"
-
-Budget                  a limit for one Category over one period
+ └── Transaction   type: INCOME | EXPENSE
+      ├── amount, date, description
+      └── Category (optional)   e.g. "Groceries", "Salary"
 ```
 
-- **Account** — where money sits or moves through. Every transaction belongs to
-  exactly one account.
+- **User** — owns everything. All data is scoped to its owner.
 - **Transaction** — a single movement of money, either `INCOME` or `EXPENSE`.
   The central entity of the system.
 - **Category** — a user-defined label for grouping transactions. Categories are
-  what make the history readable.
-- **Budget** — an expected limit for a category over a period, used to compare
-  planned versus actual spending.
+  what make the history readable. A transaction may have none, and deleting a
+  category leaves its transactions in place, uncategorized.
 
 ## Repository structure
 
@@ -77,15 +74,17 @@ something genuinely worth sharing, such as domain types.
 
 ## Stack
 
-**TBD.** Neither stack has been chosen yet.
+- **Backend** — TypeScript, GraphQL (Apollo Server), Prisma, SQLite, JWT auth.
+  See [`docs/specs/backend.md`](docs/specs/backend.md).
+- **Frontend** — TBD, to be defined in `docs/specs/frontend.md`.
 
-- **Backend** — to be defined in `docs/specs/backend.md`.
-- **Frontend** — to be defined in `docs/specs/frontend.md`.
-
-Once those specs exist, they are the source of truth for stack, features and
-constraints. This README stays a high-level overview.
+The specs are the source of truth for stack, features and constraints. This
+README stays a high-level overview.
 
 ## Status
 
-Early design phase. Specs are written before code: the backend spec first, then
-the frontend spec, then implementation.
+Design phase. Specs are written before code.
+
+- [x] Backend spec
+- [ ] Frontend spec
+- [ ] Implementation
