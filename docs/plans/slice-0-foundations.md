@@ -213,11 +213,26 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     fileParallelism: false,
+    env: {
+      DATABASE_URL: 'file:./test.db',
+      JWT_SECRET: 'test-secret',
+      PORT: '4000',
+      CORS_ORIGIN: 'http://localhost:5173',
+      NODE_ENV: 'test',
+    },
   },
 });
 ```
 
 `fileParallelism` is off because later slices share one SQLite test database; parallel files would reset it under each other.
+
+The `env` block is required, not optional. `src/shared/env.ts` parses
+`process.env` at module load, and Vitest does not read `apps/backend/.env` into
+`process.env` — so without it, importing anything that reaches `env.ts` throws
+before a single test runs. Declaring the values here rather than pointing Vitest
+at `.env` also keeps the suite green on a fresh clone, where `.env` is
+gitignored and absent. `DATABASE_URL` points at `test.db`, not `dev.db`, so the
+integration tests of later slices never reset the development database.
 
 - [ ] **Step 4: Write the failing test**
 
