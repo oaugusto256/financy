@@ -13,6 +13,13 @@ Where this document records a value, it was read from that design. Where the two
 disagree, the Figma file wins for visual detail and this document wins for
 behavior.
 
+**Figma file:** _(not yet recorded — paste the share URL here)_
+
+Every slice's definition of done requires comparing the built screen against its
+Figma frame. Without the URL in the repository, whoever picks up a slice has to
+go and ask for it, and an agent executing a plan cannot reach it at all. That is
+why slice 0 handed both of its Figma checks back to the repository owner.
+
 ## 1. Scope
 
 Six pages and two dialogs.
