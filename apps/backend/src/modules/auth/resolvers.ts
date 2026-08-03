@@ -1,22 +1,16 @@
-import type { GraphQLContext } from '../../context.js';
+import type { Resolvers } from '../../graphql/generated/resolvers.js';
 import { requireUser } from '../../shared/auth-guard.js';
 import { getUser, signIn, signUp, updateProfile } from './service.js';
 
-export const authResolvers = {
+export const authResolvers: Resolvers = {
   Query: {
-    me: (_parent: unknown, _args: unknown, context: GraphQLContext) =>
-      getUser(requireUser(context)),
+    me: (_parent, _args, context) => getUser(requireUser(context)),
   },
 
   Mutation: {
-    signUp: (_parent: unknown, { input }: { input: unknown }) => signUp(input),
-
-    signIn: (_parent: unknown, { input }: { input: unknown }) => signIn(input),
-
-    updateProfile: (
-      _parent: unknown,
-      { input }: { input: unknown },
-      context: GraphQLContext,
-    ) => updateProfile(requireUser(context), input),
+    signUp: (_parent, { input }) => signUp(input),
+    signIn: (_parent, { input }) => signIn(input),
+    updateProfile: (_parent, { input }, context) =>
+      updateProfile(requireUser(context), input),
   },
 };

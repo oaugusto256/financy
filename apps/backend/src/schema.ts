@@ -21,10 +21,10 @@ export const resolvers = {
 
   Query: {
     health: () => 'ok',
-    ...authResolvers.Query,
+    ...(authResolvers.Query ?? {}),
   },
 
   Mutation: {
-    ...authResolvers.Mutation,
+    ...(authResolvers.Mutation ?? {}),
   },
 };
