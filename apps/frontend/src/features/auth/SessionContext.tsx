@@ -8,6 +8,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { clearToken, readToken, writeToken } from '@/lib/token-storage';
 import { setAuthToken } from '@/lib/graphql-client';
+import { onUnauthenticated } from '@/lib/unauthenticated';
 import { useMeQuery } from '@/graphql/generated/graphql';
 import { SessionContext, type Session, type SessionUser } from './useSession';
 
@@ -43,9 +44,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   }, [queryClient]);
 
-  // A stored token the server rejects is not a session. Dropping it here is
-  // what turns a reload after seven days into the login screen rather than a
-  // shell whose every panel fails.
+  // Every UNAUTHENTICATED response, from any operation in any slice. This is
+  // what turns a tab left open past the seventh day into the login screen
+  // rather than a shell whose every panel fails.
+  useEffect(
+    () =>
+      onUnauthenticated(() => {
+        // The guard stops a redundant signOut — and the cache clear it
+        // carries — from running when there was no session to begin with.
+        if (readToken()) signOut();
+      }),
+    [signOut],
+  );
+
+  // Kept for the one case the notifier does not cover: NOT_FOUND, returned
+  // when a valid token names a user who has been deleted. That is also a dead
+  // session.
   useEffect(() => {
     if (!meQuery.isError || !token) return;
 
