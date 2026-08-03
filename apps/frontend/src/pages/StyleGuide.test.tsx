@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { StyleGuide } from './StyleGuide';
+import { ToastProvider } from '@/components/ui/Toast';
 import {
   CATEGORY_COLOR_VALUES,
   CATEGORY_ICON_VALUES,
@@ -9,9 +10,11 @@ import {
 
 function renderStyleGuide() {
   return render(
-    <MemoryRouter>
-      <StyleGuide />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <StyleGuide />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 

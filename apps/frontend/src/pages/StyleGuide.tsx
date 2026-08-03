@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
 import { Pagination } from '@/components/ui/Pagination';
+import { useToast } from '@/components/ui/useToast';
 import { PageShell } from '@/components/layout/PageShell';
 import { cn } from '@/lib/cn';
 import {
@@ -36,6 +37,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function StyleGuide() {
+  const { showToast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -227,6 +229,18 @@ export function StyleGuide() {
             <Button className="w-full">Salvar</Button>
           </div>
         </Dialog>
+      </Section>
+
+      <Section title="Toast">
+        <Button onClick={() => showToast('Categoria criada com sucesso')}>
+          Sucesso
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => showToast('Não foi possível salvar', 'error')}
+        >
+          Erro
+        </Button>
       </Section>
     </PageShell>
   );

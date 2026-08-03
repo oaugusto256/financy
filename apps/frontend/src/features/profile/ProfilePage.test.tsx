@@ -113,7 +113,7 @@ describe('ProfilePage', () => {
     ).toBeDisabled();
 
     release();
-    await screen.findByRole('status');
+    expect(await screen.findByText('Alterações salvas')).toBeInTheDocument();
   });
 
   it('renders a skeleton while me is loading', () => {

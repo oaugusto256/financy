@@ -416,13 +416,6 @@ typeahead, screen reader semantics and the mobile picker, all to add a tick to a
 list that already shows its selection in the closed control. The native element
 is kept; the checkmark is not.
 
-**Mutation feedback on the profile screen is inline, not a toast.** Section 10
-specifies toasts. Slice 1's other two mutations give their feedback by
-navigating, leaving one operation to justify a toast system. The profile form
-renders a `role="status"` message instead. Slice 2, which adds three mutations
-and two destructive confirmations, builds the toast component and this entry is
-removed then.
-
 **Responsive behavior** is defined here, not in the design, which is
 desktop-only. See section 4.
 
