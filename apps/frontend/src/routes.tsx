@@ -4,8 +4,8 @@ import { RequireAnonymous } from '@/components/layout/RequireAnonymous';
 import { RequireAuth } from '@/components/layout/RequireAuth';
 import { PageShell } from '@/components/layout/PageShell';
 import { StyleGuide } from '@/pages/StyleGuide';
-import { AuthLayout } from '@/features/auth/AuthLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { SignUpPage } from '@/features/auth/SignUpPage';
 import { useSession } from '@/features/auth/useSession';
 
 // Placeholders that slices 2 through 5 replace, each named for the page it
@@ -17,18 +17,6 @@ function Placeholder({ title }: { title: string }) {
         Esta página chega em uma fatia futura.
       </p>
     </PageShell>
-  );
-}
-
-// The sign up screen arrives in the next task. This stands in for it so the
-// module graph stays loadable meanwhile — it deliberately does not render that
-// screen's heading, so routes.test.tsx fails on the assertion that is
-// genuinely unmet rather than on a missing import.
-function AuthPlaceholder() {
-  return (
-    <AuthLayout>
-      <p className="text-sm text-gray-500">Em construção</p>
-    </AuthLayout>
   );
 }
 
@@ -70,7 +58,7 @@ export function AppRoutes() {
       </Route>
 
       <Route element={<RequireAnonymous />}>
-        <Route path="/signup" element={<AuthPlaceholder />} />
+        <Route path="/signup" element={<SignUpPage />} />
       </Route>
 
       <Route path="/style-guide" element={<StyleGuide />} />

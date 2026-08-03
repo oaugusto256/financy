@@ -112,7 +112,12 @@ describe('LoginPage', () => {
     await fillAndSubmit();
 
     expect(await screen.findByRole('button', { name: 'Entrar' })).toBeDisabled();
+
+    // Released and then awaited to completion. Left in flight, the mutation
+    // resolves after this test ends and writes its token after the global
+    // afterEach has cleared storage — a session leaking into the next test.
     release();
+    await screen.findByRole('heading', { name: 'Dashboard' });
   });
 
   it('does not render a password recovery link', () => {
