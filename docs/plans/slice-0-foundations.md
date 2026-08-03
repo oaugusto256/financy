@@ -6,11 +6,35 @@
 
 **Architecture:** An npm-workspaces monorepo. The backend is Apollo Server 4 behind Express, with Prisma over SQLite and zod-validated environment variables. The frontend is Vite + React + Tailwind, with the design tokens from the Figma Style Guide expressed as Tailwind theme values and the component primitives built and tested before any page uses them.
 
-**Tech Stack:** TypeScript, Apollo Server 4, Express 4, Prisma, SQLite, zod, Vite, React 19, React Router, Tailwind CSS v4, lucide-react, Vitest, Testing Library.
+**Tech Stack:** TypeScript, Apollo Server 4, Express 4, Prisma 6, SQLite, zod 4, Vite, React 19, React Router, Tailwind CSS v4, lucide-react, Vitest, Testing Library, ESLint 9, Prettier.
 
 ## Global Constraints
 
 - Node 20 or newer. npm workspaces; no pnpm or yarn.
+
+### Pinned majors
+
+Three dependencies are pinned rather than taken at `latest`, because the current
+major breaks what this plan describes. Each pin is a decision to revisit, not a
+permanent choice.
+
+| Package | Pin | Why |
+|---|---|---|
+| `prisma`, `@prisma/client` | `^6` | Prisma 7 rejects `url` inside `datasource db` (`P1012`) and drops the `prisma-client-js` generator. It requires a `prisma.config.ts` and a driver adapter passed to `PrismaClient`. Migrating is a slice of its own. |
+| `@apollo/server` | `^4` | Apollo Server 5 removed the `./express4` export; the integration moved to `@as-integrations/express4`/`express5`. |
+| `express`, `@types/express` | `^4` | Required by `@apollo/server/express4`. |
+
+Pinning Apollo to 4 carries one known cost. `npm audit` reports a moderate
+advisory against `uuid` (`GHSA-w5hq-g745-h8pq`, a missing buffer bounds check in
+`v3`/`v5`/`v6` when an explicit `buf` is passed) reached through
+`@apollo/server@4`, and the only offered remedy is the upgrade to 5. The
+vulnerable path is not reachable from Apollo's use of the library, which calls
+`v4` without a buffer, so this is not a slice 0 blocker — but it is the concrete
+reason the Apollo pin should be revisited rather than left indefinitely.
+
+`zod` is **not** pinned — it installs at 4.x. Note that zod 4 silently ignores
+the v3 `required_error` option, so error messages are set with `.min(1, '…')` or
+the v4 `error` option instead.
 - TypeScript everywhere, `strict: true`. No `any` introduced.
 - Tailwind CSS v4, configured CSS-first with `@theme`. If the installed major is 3.x, the same tokens go in `tailwind.config.ts` instead.
 - All colors come from `frontend.md` section 3 verbatim. No color literal appears outside the theme definition.
@@ -19,6 +43,80 @@
 - Interface language is Brazilian Portuguese. Code, comments and commits are in English.
 - Every environment variable added must appear in the matching `.env.example` in the same commit.
 - Conventional Commits. One commit per task.
+- Figma comparison is performed by the repository owner, not by the agent
+  executing this plan. Where a step says to check against the Style Guide, the
+  agent produces an explicit checklist and the owner confirms or corrects it
+  before the pull request is opened.
+
+---
+
+### Task 0: Lint and format toolchain
+
+`roadmap.md`'s definition of done requires that lint passes, and no task
+established a linter. This one does, before any source file exists, so every
+later task lands already clean rather than accumulating a cleanup commit.
+
+**Files:**
+- Create: `eslint.config.mjs`
+- Create: `.prettierrc.json`
+- Create: `.prettierignore`
+- Modify: `package.json`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `npm run lint` and `npm run format:check` at the workspace root.
+
+- [ ] **Step 1: Install the toolchain at the root**
+
+```bash
+npm install -D -w . eslint @eslint/js typescript-eslint prettier \
+  eslint-config-prettier eslint-plugin-react-hooks eslint-plugin-react-refresh \
+  globals
+```
+
+The config lives at the root rather than one per workspace. Two configs drift,
+and the rules that matter here are the same on both sides.
+
+- [ ] **Step 2: Write the flat config**
+
+`eslint.config.mjs` — one shared base, with the browser globals and React hooks
+rules scoped to the frontend and Node globals scoped to the backend.
+
+- [ ] **Step 3: Write the Prettier config**
+
+`.prettierrc.json`: single quotes, trailing commas, 80 columns — matching the
+formatting every code block in this plan is already written in.
+
+`.prettierignore` excludes `*.md`. The specs and plans are prose wrapped by hand
+at 80 columns, and Prettier reflows markdown paragraphs — letting it near them
+would rewrite every document the first time one line changed.
+
+- [ ] **Step 4: Add the scripts**
+
+In the root `package.json`:
+
+```json
+"lint": "eslint .",
+"lint:fix": "eslint . --fix",
+"format": "prettier --write .",
+"format:check": "prettier --check ."
+```
+
+- [ ] **Step 5: Verify**
+
+Run: `npm run lint` and `npm run format:check`
+Expected: both pass on an empty tree.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add package.json eslint.config.js .prettierrc.json .prettierignore
+git commit -m "chore: add the lint and format toolchain
+
+The definition of done requires that lint passes and nothing
+established a linter. Adding it before the first source file means
+every later task lands clean instead of ending in a cleanup commit."
+```
 
 ---
 
@@ -68,15 +166,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   }
 }
 ```
+
+`tsx` does not read `.env` on its own, and `src/shared/env.ts` parses
+`process.env` at import — so without the flag the dev server dies before it
+binds a port. `--env-file-if-exists` rather than `--env-file` so that a missing
+file falls through to `parseEnv`'s named-variable message instead of a Node
+file-not-found error. Only `dev` needs it; in production the values come from
+the environment rather than from a file.
 
 Then install:
 
@@ -109,6 +214,10 @@ npm install -w @financy/backend -D typescript tsx vitest @types/node
 }
 ```
 
+`rootDir` is `.` rather than `src` so that `tests/` is type-checked too. That
+puts the compiled entry point at `dist/src/server.js`, which is why the `start`
+script above points there.
+
 `apps/backend/vitest.config.ts`:
 
 ```ts
@@ -119,11 +228,26 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     fileParallelism: false,
+    env: {
+      DATABASE_URL: 'file:./test.db',
+      JWT_SECRET: 'test-secret',
+      PORT: '4000',
+      CORS_ORIGIN: 'http://localhost:5173',
+      NODE_ENV: 'test',
+    },
   },
 });
 ```
 
 `fileParallelism` is off because later slices share one SQLite test database; parallel files would reset it under each other.
+
+The `env` block is required, not optional. `src/shared/env.ts` parses
+`process.env` at module load, and Vitest does not read `apps/backend/.env` into
+`process.env` — so without it, importing anything that reaches `env.ts` throws
+before a single test runs. Declaring the values here rather than pointing Vitest
+at `.env` also keeps the suite green on a fresh clone, where `.env` is
+gitignored and absent. `DATABASE_URL` points at `test.db`, not `dev.db`, so the
+integration tests of later slices never reset the development database.
 
 - [ ] **Step 4: Write the failing test**
 
@@ -287,9 +411,13 @@ turns that into a startup failure with a readable message."
 - [ ] **Step 1: Install Prisma**
 
 ```bash
-npm install -w @financy/backend @prisma/client
-npm install -w @financy/backend -D prisma
+npm install -w @financy/backend @prisma/client@6
+npm install -w @financy/backend -D prisma@6
 ```
+
+Pinned to 6. Prisma 7 fails this schema with `P1012` — it no longer accepts
+`url` inside `datasource db`, and wants a `prisma.config.ts` plus a driver
+adapter handed to the `PrismaClient` constructor instead.
 
 - [ ] **Step 2: Write the Prisma schema**
 
@@ -336,7 +464,9 @@ afterAll(async () => {
 
 it('connects to the database', async () => {
   const result = await prisma.$queryRaw`SELECT 1 as value`;
-  expect(result).toEqual([{ value: 1 }]);
+  // BigInt, not number: $queryRaw hands back SQLite integers untouched rather
+  // than narrowing them to JavaScript's safe range.
+  expect(result).toEqual([{ value: 1n }]);
 });
 ```
 
@@ -364,7 +494,7 @@ client per request would open connections faster than it closes them.
 - [ ] **Step 7: Run the test to verify it passes**
 
 Run: `npm test -w @financy/backend`
-Expected: PASS — the raw query returns `[{ value: 1 }]`.
+Expected: PASS — the raw query returns `[{ value: 1n }]`.
 
 - [ ] **Step 8: Commit**
 
@@ -394,12 +524,13 @@ that needs it."
 - [ ] **Step 1: Install the server dependencies**
 
 ```bash
-npm install -w @financy/backend @apollo/server express@4 cors graphql
+npm install -w @financy/backend @apollo/server@4 express@4 cors graphql
 npm install -w @financy/backend -D @types/express@4 @types/cors supertest @types/supertest
 ```
 
-Express 4, not 5: `@apollo/server/express4` is the integration Apollo ships and
-documents, and there is no reason to take on an adapter here.
+Apollo Server 4, not 5: version 5 removed the `./express4` subpath export and
+moved the integration out to `@as-integrations/express4`. Express 4 follows from
+that, since `@apollo/server/express4` is what the pinned major ships.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -460,6 +591,12 @@ The third test is the one worth having. CORS configured as `*` passes the second
 test just as happily, and a permissive default is easy to introduce by accident
 while debugging.
 
+It also dictates how `cors` is configured. Handed a bare string, `cors` echoes
+that string on every response regardless of the request's `Origin`, so the third
+test fails against a server that is in fact secure. Handed an array, it compares
+the request against the list and omits the header entirely when there is no
+match. Both are safe in a browser; only the second is observable from a test.
+
 - [ ] **Step 3: Run the test to verify it fails**
 
 Run: `npm test -w @financy/backend`
@@ -506,7 +643,7 @@ export async function createApp(): Promise<{
 
   app.use(
     '/graphql',
-    cors({ origin: env.CORS_ORIGIN, credentials: true }),
+    cors({ origin: [env.CORS_ORIGIN], credentials: true }),
     express.json(),
     expressMiddleware(apollo),
   );
@@ -636,7 +773,6 @@ npm install -w @financy/frontend -D typescript vite @vitejs/plugin-react \
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
@@ -644,28 +780,45 @@ npm install -w @financy/frontend -D typescript vite @vitejs/plugin-react \
 }
 ```
 
+No `baseUrl`. TypeScript 6 raises `TS5101` on it — it is deprecated and removed
+in 7 — and `paths` has resolved relative to the tsconfig's own directory since
+TypeScript 5, so it was doing nothing here anyway.
+
 - [ ] **Step 3: Configure Vite and Vitest**
 
 `apps/frontend/vite.config.ts`:
 
 ```ts
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    env: {
+      VITE_BACKEND_URL: 'http://localhost:4000/graphql',
+    },
   },
 });
 ```
+
+The `env` block mirrors the backend's, for the same reason. Task 5 adds
+`src/lib/env.ts`, which parses `import.meta.env` at module load; Vite fills that
+from `apps/frontend/.env`, which is gitignored. Without this the suite passes on
+the machine that wrote `.env` and fails on every fresh clone.
+
+`defineConfig` comes from `vitest/config`, not `vite` — the one exported by
+`vite` does not type the `test` key. `import.meta.dirname` rather than
+`__dirname`, which Vite 8's native config loader warns about and will stop
+supporting.
 
 `apps/frontend/src/test/setup.ts`:
 
@@ -818,9 +971,7 @@ Expected: FAIL — cannot resolve `./env`.
 import { z } from 'zod';
 
 const envSchema = z.object({
-  VITE_BACKEND_URL: z
-    .string({ required_error: 'VITE_BACKEND_URL is required' })
-    .url('VITE_BACKEND_URL must be a valid URL'),
+  VITE_BACKEND_URL: z.url('VITE_BACKEND_URL must be a valid URL'),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
@@ -840,6 +991,10 @@ export function parseEnv(raw: Record<string, unknown>): AppEnv {
 
 export const env = parseEnv(import.meta.env);
 ```
+
+zod 4 replaced the v3 `z.string({ required_error }).url()` form. `required_error`
+is not an error under v4 — it is silently ignored, so a message written that way
+never reaches the user. `z.url()` is the v4 spelling.
 
 `apps/frontend/src/vite-env.d.ts`:
 
@@ -1158,11 +1313,18 @@ Tailwind scans source text for complete class names, so a template literal like
 Run: `npm test -w @financy/frontend`
 Expected: PASS — 4 token tests.
 
-- [ ] **Step 8: Verify the icon names against Figma**
+All sixteen names, plus the fifteen used by the primitives in tasks 7 to 11,
+were confirmed to exist as exports of the installed `lucide-react`. That the
+names resolve is not the same as their being the icons the design shows, which
+is what step 8 is for.
 
-The sixteen icon tokens were read from a screenshot of the category dialog. Open
-the Figma Style Guide tab and confirm each Lucide name. Correct any mismatch in
-`CATEGORY_ICONS` and in `backend.md`'s `CategoryIcon` enum, keeping the two
+- [ ] **Step 8: Hand off the icon names for verification**
+
+The sixteen icon tokens were read from a screenshot of the category dialog, and
+the agent executing this plan has no Figma access. Record the sixteen
+token-to-Lucide-name pairs in the slice's handoff checklist for the repository
+owner to confirm against the Figma Style Guide. Any correction applies to both
+`CATEGORY_ICONS` and `backend.md`'s `CategoryIcon` enum, which must stay
 identical.
 
 - [ ] **Step 9: Commit**
@@ -1997,7 +2159,13 @@ fire a mutation twice."
 
 **Interfaces:**
 - Consumes: `cn`, `CATEGORY_COLORS`, `CATEGORY_ICONS`, `CategoryColor`, `CategoryIcon`.
-- Produces: `Card`, `StatCard` (`icon`, `label`, `value`), `Tag` (`color?: CategoryColor | 'NEUTRAL'`), `TypeIndicator` (`type: 'INCOME' | 'EXPENSE'`), `CategoryBadge` (`icon?`, `color?`), `Avatar` (`name: string`, `size?: 'sm' | 'lg'`), `initialsFromName(name: string): string`, `Dialog` (`open`, `onClose`, `title`, `subtitle?`, `children`).
+- Produces: `Card`, `StatCard` (`icon`, `label`, `value`), `Tag` (`color?: CategoryColor | 'NEUTRAL'`), `TypeIndicator` (`type: 'INCOME' | 'EXPENSE'`), `CategoryBadge` (`icon?`, `color?`), `Avatar` (`name: string`, `size?: 'sm' | 'lg'`), `Dialog` (`open`, `onClose`, `title`, `subtitle?`, `children`). Also `initialsFromName(name: string): string` from `src/lib/initials.ts`.
+
+`initialsFromName` lives in `src/lib/initials.ts` rather than beside `Avatar`.
+A component file that also exports a plain function breaks React Fast Refresh,
+which `eslint-plugin-react-refresh` flags — and a pure string function belongs
+in `lib/` regardless of who happens to call it. Its four tests move with it to
+`src/lib/initials.test.ts`.
 
 - [ ] **Step 1: Install the dialog primitive**
 
@@ -2705,6 +2873,7 @@ color alone conveys nothing to a screen reader."
 
 **Files:**
 - Create: `apps/frontend/src/pages/StyleGuide.tsx`
+- Test: `apps/frontend/src/pages/StyleGuide.test.tsx`
 - Modify: `apps/frontend/src/routes.tsx`
 - Modify: `README.md`
 
@@ -2847,6 +3016,14 @@ export function StyleGuide() {
 }
 ```
 
+- [ ] **Step 1b: Cover the page with a render test**
+
+`apps/frontend/src/pages/StyleGuide.test.tsx` asserts that every section heading
+is present, that all seven colors and sixteen icon badges render, and that the
+dialog opens. It says nothing about appearance — that is what step 3 is for.
+What it prevents is the page silently becoming a blank screen between the later
+slices that depend on it, which a once-off manual look would not catch.
+
 - [ ] **Step 2: Register the route**
 
 In `apps/frontend/src/routes.tsx`, add the import:
@@ -2861,15 +3038,17 @@ and add this route above the catch-all:
       <Route path="/style-guide" element={<StyleGuide />} />
 ```
 
-- [ ] **Step 3: Compare against Figma**
+- [ ] **Step 3: Hand off the Figma comparison**
 
 Run: `npm run dev:frontend`, then open `http://localhost:5173/style-guide`.
 
-Open the Figma Style Guide tab beside it and check each group: button fills,
-borders and disabled opacity; input border, radius and the error state coloring
-the label; tag padding and radius; the pagination active state; the icon badge
-background. Correct the components where they differ. Record any deliberate
-difference in `frontend.md`, section 12.
+The comparison itself is the repository owner's, since the agent has no Figma
+access. Produce a checklist naming each group to check side by side with the
+Figma Style Guide tab: button fills, borders and disabled opacity; input border,
+radius and the error state coloring the label; tag padding and radius; the
+pagination active state; the icon badge background. The owner reports the
+differences, the agent corrects the components, and any deliberate difference is
+recorded in `frontend.md`, section 12.
 
 - [ ] **Step 4: Verify both applications run together**
 
@@ -2890,6 +3069,21 @@ await fetch('http://localhost:4000/graphql', {
 Expected: `{data: {health: 'ok'}}`. A CORS failure here means `CORS_ORIGIN` does
 not match the Vite origin — this is exactly the check that catches it before
 slice 1 builds on top of it.
+
+Note that this fails for a boring reason if port 5173 is already taken: Vite
+falls back to 5174 without complaint, and 5174 is not what `CORS_ORIGIN` names.
+Check what Vite actually printed before treating a rejection as a bug. The same
+distinction can be drawn from the terminal, which does not care what port Vite
+got:
+
+```bash
+curl -s -i -X POST http://localhost:4000/graphql \
+  -H 'Content-Type: application/json' -H 'Origin: http://localhost:5173' \
+  -d '{"query":"{ health }"}' | grep -i access-control-allow-origin
+```
+
+The configured origin must come back with the header; any other origin must come
+back without one.
 
 - [ ] **Step 5: Run the whole suite and the type checks**
 
@@ -2947,10 +3141,14 @@ Before opening the pull request, confirm every line of the definition of done in
 
 - [ ] `npm test` passes in both workspaces.
 - [ ] `npm run typecheck` passes in both workspaces.
+- [ ] `npm run lint` and `npm run format:check` pass at the root.
 - [ ] `npm run dev:backend` and `npm run dev:frontend` both start.
 - [ ] `/style-guide` renders every primitive and was compared against Figma.
 - [ ] The browser can reach the API without a CORS error.
 - [ ] `apps/backend/.env` and `apps/frontend/.env` are untracked; both
       `.env.example` files are committed and list every variable in use.
-- [ ] The sixteen Lucide icon names were confirmed against Figma, and
-      `backend.md`'s `CategoryIcon` enum matches `category-tokens.ts` exactly.
+- [ ] The sixteen Lucide icon names were confirmed against Figma by the
+      repository owner, and `backend.md`'s `CategoryIcon` enum matches
+      `category-tokens.ts` exactly.
+- [ ] The `/style-guide` Figma comparison checklist was handed to the owner and
+      the reported differences were corrected.

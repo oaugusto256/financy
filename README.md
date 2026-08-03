@@ -87,10 +87,31 @@ README stays a high-level overview.
 
 ## Status
 
-Design phase. Specs are written before code.
+Slice 0 of 5 complete: both applications run, and the design system is built.
+See [`docs/plans/roadmap.md`](docs/plans/roadmap.md) for the plan.
 
 - [x] Backend spec
 - [x] Frontend spec
-- [ ] Implementation
+- [x] Slice 0 — Foundations
+- [ ] Slice 1 — Auth and profile
+- [ ] Slice 2 — Categories
+- [ ] Slice 3 — Transactions
+- [ ] Slice 4 — Search, filters, pagination
+- [ ] Slice 5 — Dashboard
 
 Password recovery is deferred to phase 2 and is documented in both specs.
+
+## Running locally
+
+Requires Node 20 or newer.
+
+```bash
+npm install
+cp apps/backend/.env.example apps/backend/.env   # then fill in JWT_SECRET
+cp apps/frontend/.env.example apps/frontend/.env
+
+npm run dev:backend    # http://localhost:4000/graphql
+npm run dev:frontend   # http://localhost:5173
+```
+
+The design system is browsable at `/style-guide`.

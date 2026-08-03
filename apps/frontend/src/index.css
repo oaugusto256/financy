@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+/* Every value below is read from docs/specs/frontend.md section 3. No color
+   literal belongs anywhere else in the application. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-dark: #124b2b;
+  --color-brand-base: #1f6f43;
+
+  --color-gray-800: #111827;
+  --color-gray-700: #374151;
+  --color-gray-600: #4b5563;
+  --color-gray-500: #6b7280;
+  --color-gray-400: #9ca3af;
+  --color-gray-300: #d1d5db;
+  --color-gray-200: #e5e7eb;
+  --color-gray-100: #f8f9fa;
+
+  --color-danger: #ef4444;
+  --color-success: #19ad70;
+
+  --color-blue-dark: #1d4ed8;
+  --color-blue-base: #2563eb;
+  --color-blue-light: #dbeafe;
+
+  --color-purple-dark: #7e22ce;
+  --color-purple-base: #9333ea;
+  --color-purple-light: #f3e8ff;
+
+  --color-pink-dark: #be185d;
+  --color-pink-base: #db2777;
+  --color-pink-light: #fce7f3;
+
+  --color-red-dark: #b91c1c;
+  --color-red-base: #dc2626;
+  --color-red-light: #fee2e2;
+
+  --color-orange-dark: #c2410c;
+  --color-orange-base: #ea580c;
+  --color-orange-light: #ffedd5;
+
+  --color-yellow-dark: #a16207;
+  --color-yellow-base: #ca8a04;
+  --color-yellow-light: #f7f3ca;
+
+  --color-green-dark: #15803d;
+  --color-green-base: #16a34a;
+  --color-green-light: #e0fae9;
+}
+
+body {
+  @apply bg-gray-100 font-sans text-gray-800 antialiased;
+}
