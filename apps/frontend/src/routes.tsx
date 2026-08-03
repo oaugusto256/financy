@@ -6,6 +6,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { StyleGuide } from '@/pages/StyleGuide';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
+import { ProfilePage } from '@/features/profile/ProfilePage';
 import { useSession } from '@/features/auth/useSession';
 
 // Placeholders that slices 2 through 5 replace, each named for the page it
@@ -53,7 +54,7 @@ export function AppRoutes() {
             path="/categories"
             element={<Placeholder title="Categorias" />}
           />
-          <Route path="/profile" element={<Placeholder title="Perfil" />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 

@@ -13,14 +13,22 @@ export function ok<T extends Record<string, unknown>>(
   return HttpResponse.json({ data }) as HttpResponse<GraphQLResponseBody<T>>;
 }
 
-/** A GraphQL error carrying one of backend.md section 7's codes. */
+/**
+ * A GraphQL error carrying one of backend.md section 7's codes. `fieldErrors`
+ * mirrors what badUserInput actually sends — it is always present on a
+ * BAD_USER_INPUT, so a test that omits it is testing a response the server
+ * does not produce.
+ */
 export function graphqlError(
   code: string,
   message = 'Erro',
+  fieldErrors?: Record<string, string[]>,
 ): HttpResponse<GraphQLResponseBody<never>> {
   return HttpResponse.json({
     data: null,
-    errors: [{ message, extensions: { code } }],
+    errors: [
+      { message, extensions: { code, ...(fieldErrors ? { fieldErrors } : {}) } },
+    ],
   }) as HttpResponse<GraphQLResponseBody<never>>;
 }
 
