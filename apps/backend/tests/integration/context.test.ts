@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
+import DataLoader from 'dataloader';
 import { createContext } from '../../src/context.js';
 import { signToken } from '../../src/shared/jwt.js';
 
@@ -18,14 +19,14 @@ describe('createContext', () => {
     });
 
     expect(context.userId).toBe('user-1');
-    expect(context.loaders.categoryTotals.load).toBeTypeOf('function');
+    expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the header is absent', async () => {
     const context = await createContext({ req: requestWith() });
 
     expect(context.userId).toBeNull();
-    expect(context.loaders.categoryTotals.load).toBeTypeOf('function');
+    expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the scheme is not Bearer', async () => {
@@ -33,7 +34,7 @@ describe('createContext', () => {
     const context = await createContext({ req: requestWith(`Basic ${token}`) });
 
     expect(context.userId).toBeNull();
-    expect(context.loaders.categoryTotals.load).toBeTypeOf('function');
+    expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the token is garbage', async () => {
@@ -42,6 +43,6 @@ describe('createContext', () => {
     });
 
     expect(context.userId).toBeNull();
-    expect(context.loaders.categoryTotals.load).toBeTypeOf('function');
+    expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
   });
 });

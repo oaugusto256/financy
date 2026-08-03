@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../src/shared/prisma.js';
 import { createLoaders } from '../../src/shared/dataloaders.js';
 import { getCategoryStats } from '../../src/modules/category/service.js';
@@ -77,39 +77,47 @@ describe('category totals loader', () => {
   it('batches many categories into one grouped query and each result is correct', async () => {
     // prisma.ts constructs the client with log: ['warn', 'error'] (or just
     // ['error']), never the event-emit form, so `prisma.$on('query', ...)` has
-    // no 'query' event to listen to here. DataLoader's contract already
-    // guarantees one batch call per tick; what can actually break is a mapping
-    // bug once many keys share that one call, so this loads twenty categories
-    // through a single loader and checks every result lines up with its own
-    // category.
-    const { user } = await createUser();
-    const categories = await Promise.all(
-      Array.from({ length: 20 }, (_, index) =>
-        createCategory(user.id, {
-          name: `Categoria ${String(index).padStart(2, '0')}`,
-        }),
-      ),
-    );
-    await Promise.all(
-      categories.map((category, index) =>
-        createTransaction(user.id, {
-          categoryId: category.id,
-          amount: (index + 1) * 100,
-        }),
-      ),
-    );
+    // no 'query' event to listen to here. Correctness under batching (every
+    // key maps back to its own category) and the "one grouped query" claim
+    // are two separate properties — loadMany alone would also pass for a
+    // loader that ran one query per id and still returned the right answer,
+    // so the query count is asserted directly on the Prisma call rather than
+    // inferred from DataLoader's own batching contract.
+    const groupBy = vi.spyOn(prisma.transaction, 'groupBy');
 
-    const loaders = createLoaders(user.id);
-    const totals = await loaders.categoryTotals.loadMany(
-      categories.map((category) => category.id),
-    );
+    try {
+      const { user } = await createUser();
+      const categories = await Promise.all(
+        Array.from({ length: 20 }, (_, index) =>
+          createCategory(user.id, {
+            name: `Categoria ${String(index).padStart(2, '0')}`,
+          }),
+        ),
+      );
+      await Promise.all(
+        categories.map((category, index) =>
+          createTransaction(user.id, {
+            categoryId: category.id,
+            amount: (index + 1) * 100,
+          }),
+        ),
+      );
 
-    totals.forEach((totalsForCategory, index) => {
-      expect(totalsForCategory).toEqual({
-        transactionCount: 1,
-        totalAmount: (index + 1) * 100,
+      const loaders = createLoaders(user.id);
+      const totals = await loaders.categoryTotals.loadMany(
+        categories.map((category) => category.id),
+      );
+
+      totals.forEach((totalsForCategory, index) => {
+        expect(totalsForCategory).toEqual({
+          transactionCount: 1,
+          totalAmount: (index + 1) * 100,
+        });
       });
-    });
+      expect(groupBy).toHaveBeenCalledTimes(1);
+    } finally {
+      groupBy.mockRestore();
+    }
   });
 });
 
