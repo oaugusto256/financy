@@ -3,16 +3,74 @@ type AuthPayload {
   user: User!
 }
 
+type Category {
+  color: CategoryColor!
+  createdAt: DateTime!
+  description: String
+  icon: CategoryIcon!
+  id: ID!
+  name: String!
+  totalAmount: Int!
+  transactionCount: Int!
+  updatedAt: DateTime!
+}
+
+enum CategoryColor {
+  BLUE
+  GREEN
+  ORANGE
+  PINK
+  PURPLE
+  RED
+  YELLOW
+}
+
+enum CategoryIcon {
+  BIKE
+  BOOK_OPEN
+  BRIEFCASE
+  BUS
+  CREDIT_CARD
+  GIFT
+  HAND_COINS
+  HEART_PULSE
+  HOME
+  PIGGY_BANK
+  RECEIPT
+  SHOPPING_CART
+  STORE
+  TICKET
+  UTENSILS
+  WALLET
+}
+
+type CategoryStats {
+  mostUsed: Category
+  totalCategories: Int!
+  totalTransactions: Int!
+}
+
+input CreateCategoryInput {
+  color: CategoryColor!
+  description: String
+  icon: CategoryIcon!
+  name: String!
+}
+
 scalar DateTime
 
 type Mutation {
-  _empty: Boolean
+  createCategory(input: CreateCategoryInput!): Category!
+  deleteCategory(id: ID!): Boolean!
   signIn(input: SignInInput!): AuthPayload!
   signUp(input: SignUpInput!): AuthPayload!
+  updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
   updateProfile(input: UpdateProfileInput!): User!
 }
 
 type Query {
+  categories: [Category!]!
+  categoryStats: CategoryStats!
   health: String!
   me: User!
 }
@@ -26,6 +84,13 @@ input SignUpInput {
   email: String!
   name: String!
   password: String!
+}
+
+input UpdateCategoryInput {
+  color: CategoryColor
+  description: String
+  icon: CategoryIcon
+  name: String
 }
 
 input UpdateProfileInput {

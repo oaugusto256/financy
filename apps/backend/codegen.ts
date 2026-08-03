@@ -12,6 +12,9 @@ const config: CodegenConfig = {
         contextType: '../../context.js#GraphQLContext',
         mappers: {
           User: '@prisma/client#User as UserModel',
+          // The parent of transactionCount and totalAmount is a database row,
+          // not the GraphQL shape — those two fields do not exist on it.
+          Category: '@prisma/client#Category as CategoryModel',
         },
         scalars: { DateTime: 'Date' },
         useTypeImports: true,
