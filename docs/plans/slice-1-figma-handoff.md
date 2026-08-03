@@ -49,10 +49,8 @@ pull request is opened.
 
 ## Carried forward from slice 0, still open
 
-Both of these block slice 2, which is the first slice to render category icons.
-
-- [ ] The sixteen `CategoryIcon` names against the Style Guide.
-- [ ] The full `/style-guide` primitive comparison.
+Both moved to [`slice-2-figma-handoff.md`](./slice-2-figma-handoff.md), which
+is where they are now blocking work.
 
 ## Manual walkthrough
 
