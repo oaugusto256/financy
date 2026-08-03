@@ -1,7 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '../../src/shared/prisma.js';
 import { resetDatabase } from '../helpers/db.js';
-import { createCategory, createTransaction, createUser } from '../helpers/factories.js';
+import {
+  createCategory,
+  createTransaction,
+  createUser,
+} from '../helpers/factories.js';
 
 beforeEach(resetDatabase);
 
