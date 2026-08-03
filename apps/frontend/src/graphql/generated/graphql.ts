@@ -5,6 +5,40 @@ export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' |
 import { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
 import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
 import { fetcher } from '@/lib/graphql-client';
+export type CategoryColor =
+  | 'BLUE'
+  | 'GREEN'
+  | 'ORANGE'
+  | 'PINK'
+  | 'PURPLE'
+  | 'RED'
+  | 'YELLOW';
+
+export type CategoryIcon =
+  | 'BIKE'
+  | 'BOOK_OPEN'
+  | 'BRIEFCASE'
+  | 'BUS'
+  | 'CREDIT_CARD'
+  | 'GIFT'
+  | 'HAND_COINS'
+  | 'HEART_PULSE'
+  | 'HOME'
+  | 'PIGGY_BANK'
+  | 'RECEIPT'
+  | 'SHOPPING_CART'
+  | 'STORE'
+  | 'TICKET'
+  | 'UTENSILS'
+  | 'WALLET';
+
+export type CreateCategoryInput = {
+  color: CategoryColor;
+  description?: string | null | undefined;
+  icon: CategoryIcon;
+  name: string;
+};
+
 export type SignInInput = {
   email: string;
   password: string;
@@ -14,6 +48,13 @@ export type SignUpInput = {
   email: string;
   name: string;
   password: string;
+};
+
+export type UpdateCategoryInput = {
+  color?: CategoryColor | null | undefined;
+  description?: string | null | undefined;
+  icon?: CategoryIcon | null | undefined;
+  name?: string | null | undefined;
 };
 
 export type UpdateProfileInput = {
@@ -45,6 +86,38 @@ export type UpdateProfileMutationVariables = Exact<{
 
 
 export type UpdateProfileMutation = { updateProfile: { id: string, name: string, email: string, createdAt: string } };
+
+export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CategoriesQuery = { categories: Array<{ id: string, name: string, description: string | null, icon: CategoryIcon, color: CategoryColor, transactionCount: number }> };
+
+export type CategoryStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CategoryStatsQuery = { categoryStats: { totalCategories: number, totalTransactions: number, mostUsed: { id: string, name: string, icon: CategoryIcon, color: CategoryColor } | null } };
+
+export type CreateCategoryMutationVariables = Exact<{
+  input: CreateCategoryInput;
+}>;
+
+
+export type CreateCategoryMutation = { createCategory: { id: string } };
+
+export type UpdateCategoryMutationVariables = Exact<{
+  id: string | number;
+  input: UpdateCategoryInput;
+}>;
+
+
+export type UpdateCategoryMutation = { updateCategory: { id: string } };
+
+export type DeleteCategoryMutationVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type DeleteCategoryMutation = { deleteCategory: boolean };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -184,3 +257,143 @@ export const useUpdateProfileMutation = <
 
 
 useUpdateProfileMutation.fetcher = (variables: UpdateProfileMutationVariables, options?: RequestInit['headers']) => fetcher<UpdateProfileMutation, UpdateProfileMutationVariables>(UpdateProfileDocument, variables, options);
+
+export const CategoriesDocument = new TypedDocumentString(`
+    query Categories {
+  categories {
+    id
+    name
+    description
+    icon
+    color
+    transactionCount
+  }
+}
+    `);
+
+export const useCategoriesQuery = <
+      TData = CategoriesQuery,
+      TError = unknown
+    >(
+      variables?: CategoriesQueryVariables,
+      options?: Omit<UseQueryOptions<CategoriesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CategoriesQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<CategoriesQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Categories'] : ['Categories', variables],
+    queryFn: fetcher<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, variables),
+    ...options
+  }
+    )};
+
+useCategoriesQuery.getKey = (variables?: CategoriesQueryVariables) => variables === undefined ? ['Categories'] : ['Categories', variables];
+
+
+useCategoriesQuery.fetcher = (variables?: CategoriesQueryVariables, options?: RequestInit['headers']) => fetcher<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, variables, options);
+
+export const CategoryStatsDocument = new TypedDocumentString(`
+    query CategoryStats {
+  categoryStats {
+    totalCategories
+    totalTransactions
+    mostUsed {
+      id
+      name
+      icon
+      color
+    }
+  }
+}
+    `);
+
+export const useCategoryStatsQuery = <
+      TData = CategoryStatsQuery,
+      TError = unknown
+    >(
+      variables?: CategoryStatsQueryVariables,
+      options?: Omit<UseQueryOptions<CategoryStatsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CategoryStatsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<CategoryStatsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['CategoryStats'] : ['CategoryStats', variables],
+    queryFn: fetcher<CategoryStatsQuery, CategoryStatsQueryVariables>(CategoryStatsDocument, variables),
+    ...options
+  }
+    )};
+
+useCategoryStatsQuery.getKey = (variables?: CategoryStatsQueryVariables) => variables === undefined ? ['CategoryStats'] : ['CategoryStats', variables];
+
+
+useCategoryStatsQuery.fetcher = (variables?: CategoryStatsQueryVariables, options?: RequestInit['headers']) => fetcher<CategoryStatsQuery, CategoryStatsQueryVariables>(CategoryStatsDocument, variables, options);
+
+export const CreateCategoryDocument = new TypedDocumentString(`
+    mutation CreateCategory($input: CreateCategoryInput!) {
+  createCategory(input: $input) {
+    id
+  }
+}
+    `);
+
+export const useCreateCategoryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<CreateCategoryMutation, TError, CreateCategoryMutationVariables, TContext>) => {
+    
+    return useMutation<CreateCategoryMutation, TError, CreateCategoryMutationVariables, TContext>(
+      {
+    mutationKey: ['CreateCategory'],
+    mutationFn: (variables?: CreateCategoryMutationVariables) => fetcher<CreateCategoryMutation, CreateCategoryMutationVariables>(CreateCategoryDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useCreateCategoryMutation.fetcher = (variables: CreateCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<CreateCategoryMutation, CreateCategoryMutationVariables>(CreateCategoryDocument, variables, options);
+
+export const UpdateCategoryDocument = new TypedDocumentString(`
+    mutation UpdateCategory($id: ID!, $input: UpdateCategoryInput!) {
+  updateCategory(id: $id, input: $input) {
+    id
+  }
+}
+    `);
+
+export const useUpdateCategoryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<UpdateCategoryMutation, TError, UpdateCategoryMutationVariables, TContext>) => {
+    
+    return useMutation<UpdateCategoryMutation, TError, UpdateCategoryMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateCategory'],
+    mutationFn: (variables?: UpdateCategoryMutationVariables) => fetcher<UpdateCategoryMutation, UpdateCategoryMutationVariables>(UpdateCategoryDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useUpdateCategoryMutation.fetcher = (variables: UpdateCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<UpdateCategoryMutation, UpdateCategoryMutationVariables>(UpdateCategoryDocument, variables, options);
+
+export const DeleteCategoryDocument = new TypedDocumentString(`
+    mutation DeleteCategory($id: ID!) {
+  deleteCategory(id: $id)
+}
+    `);
+
+export const useDeleteCategoryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<DeleteCategoryMutation, TError, DeleteCategoryMutationVariables, TContext>) => {
+    
+    return useMutation<DeleteCategoryMutation, TError, DeleteCategoryMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteCategory'],
+    mutationFn: (variables?: DeleteCategoryMutationVariables) => fetcher<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useDeleteCategoryMutation.fetcher = (variables: DeleteCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument, variables, options);

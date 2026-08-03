@@ -20,6 +20,10 @@ const config: CodegenConfig = {
         // Deserializing to a Date here would mean the cache holds a value that
         // does not survive a structural clone.
         scalars: { DateTime: 'string' },
+        // Union types rather than TypeScript enums, so a value from a query is
+        // the same type as the CategoryIcon union in lib/category-tokens.ts.
+        // A real enum would need a cast at every badge and tag.
+        enumsAsTypes: true,
       },
     },
   },

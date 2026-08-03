@@ -1,0 +1,45 @@
+# No totalAmount: the card in the design shows an item count and no money.
+# The figure exists on the type and is tested on the backend; the dashboard
+# panel in slice 5 is what renders it.
+query Categories {
+  categories {
+    id
+    name
+    description
+    icon
+    color
+    transactionCount
+  }
+}
+
+query CategoryStats {
+  categoryStats {
+    totalCategories
+    totalTransactions
+    mostUsed {
+      id
+      name
+      icon
+      color
+    }
+  }
+}
+
+# The mutations ask for the id and nothing else. The lists are refetched through
+# explicit invalidation, so selecting more fields here would only produce a
+# second copy of the same data that nothing reads.
+mutation CreateCategory($input: CreateCategoryInput!) {
+  createCategory(input: $input) {
+    id
+  }
+}
+
+mutation UpdateCategory($id: ID!, $input: UpdateCategoryInput!) {
+  updateCategory(id: $id, input: $input) {
+    id
+  }
+}
+
+mutation DeleteCategory($id: ID!) {
+  deleteCategory(id: $id)
+}
