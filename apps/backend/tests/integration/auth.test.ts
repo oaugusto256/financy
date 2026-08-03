@@ -8,6 +8,11 @@ import { signToken } from '../../src/shared/jwt.js';
 import { resetDatabase } from '../helpers/db.js';
 import { createUser } from '../helpers/factories.js';
 import { errorCode, execute } from '../helpers/graphql.js';
+import {
+  TOO_SHORT_PASSWORD,
+  VALID_PASSWORD,
+  WRONG_PASSWORD,
+} from '../helpers/credentials.js';
 
 let app: Express;
 let apollo: ApolloServer<GraphQLContext>;
@@ -78,7 +83,7 @@ describe('signUp', () => {
         input: {
           name: 'Ana Souza',
           email: 'ana@exemplo.com',
-          password: 'uma-senha-boa',
+          password: VALID_PASSWORD,
         },
       },
     });
@@ -104,7 +109,7 @@ describe('signUp', () => {
         input: {
           name: 'Ana',
           email: 'ana@exemplo.com',
-          password: 'uma-senha-boa',
+          password: VALID_PASSWORD,
         },
       },
     });
@@ -116,7 +121,11 @@ describe('signUp', () => {
     const body = await execute(app, {
       query: SIGN_UP,
       variables: {
-        input: { name: 'Ana', email: 'ana@exemplo.com', password: 'curta' },
+        input: {
+          name: 'Ana',
+          email: 'ana@exemplo.com',
+          password: TOO_SHORT_PASSWORD,
+        },
       },
     });
 
@@ -131,7 +140,7 @@ describe('signUp', () => {
             input: {
               name: "Ana"
               email: "ana@exemplo.com"
-              password: "uma-senha-boa"
+              password: "${VALID_PASSWORD}"
             }
           ) {
             user {
@@ -168,7 +177,7 @@ describe('signIn', () => {
 
     const body = await execute(app, {
       query: SIGN_IN,
-      variables: { input: { email: user.email, password: 'errada' } },
+      variables: { input: { email: user.email, password: WRONG_PASSWORD } },
     });
 
     expect(errorCode(body)).toBe('INVALID_CREDENTIALS');
@@ -178,7 +187,7 @@ describe('signIn', () => {
     const body = await execute(app, {
       query: SIGN_IN,
       variables: {
-        input: { email: 'ninguem@exemplo.com', password: 'errada' },
+        input: { email: 'ninguem@exemplo.com', password: WRONG_PASSWORD },
       },
     });
 

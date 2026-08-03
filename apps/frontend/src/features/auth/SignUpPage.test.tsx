@@ -5,11 +5,12 @@ import { api, aUser, graphqlError, ok } from '@/test/msw/api';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 import { AppRoutes } from '@/routes';
+import { BELOW_MINIMUM_PASSWORD, VALID_PASSWORD } from '@/test/credentials';
 
 async function fillAndSubmit({
   name = 'Ana Souza',
   email = 'ana@exemplo.com',
-  password = 'uma-senha-boa',
+  password = VALID_PASSWORD,
 }: { name?: string; email?: string; password?: string } = {}) {
   await userEvent.type(screen.getByLabelText('Nome completo'), name);
   await userEvent.type(screen.getByLabelText('E-mail'), email);
@@ -87,7 +88,7 @@ describe('SignUpPage', () => {
     // No SignUp handler. onUnhandledRequest is 'error', so a request here
     // fails the test — which is the assertion.
     renderWithProviders(<AppRoutes />, { route: '/signup' });
-    await fillAndSubmit({ password: '1234567' });
+    await fillAndSubmit({ password: BELOW_MINIMUM_PASSWORD });
 
     expect(
       await screen.findByText('A senha deve ter no mínimo 8 caracteres'),

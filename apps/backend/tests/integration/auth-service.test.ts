@@ -10,6 +10,11 @@ import {
 } from '../../src/modules/auth/service.js';
 import { resetDatabase } from '../helpers/db.js';
 import { createUser } from '../helpers/factories.js';
+import {
+  TOO_SHORT_PASSWORD,
+  VALID_PASSWORD,
+  WRONG_PASSWORD,
+} from '../helpers/credentials.js';
 
 beforeEach(resetDatabase);
 afterAll(async () => {
@@ -26,7 +31,7 @@ describe('signUp', () => {
     const { token, user } = await signUp({
       name: 'Ana Souza',
       email: 'ana@exemplo.com',
-      password: 'uma-senha-boa',
+      password: VALID_PASSWORD,
     });
 
     expect(user.name).toBe('Ana Souza');
@@ -37,14 +42,14 @@ describe('signUp', () => {
     const { user } = await signUp({
       name: 'Ana Souza',
       email: 'ana@exemplo.com',
-      password: 'uma-senha-boa',
+      password: VALID_PASSWORD,
     });
 
     const stored = await prisma.user.findUniqueOrThrow({
       where: { id: user.id },
     });
-    expect(stored.passwordHash).not.toBe('uma-senha-boa');
-    expect(await verifyPassword(stored.passwordHash, 'uma-senha-boa')).toBe(
+    expect(stored.passwordHash).not.toBe(VALID_PASSWORD);
+    expect(await verifyPassword(stored.passwordHash, VALID_PASSWORD)).toBe(
       true,
     );
   });
@@ -53,7 +58,7 @@ describe('signUp', () => {
     const { user } = await signUp({
       name: 'Ana Souza',
       email: 'Ana@Exemplo.COM',
-      password: 'uma-senha-boa',
+      password: VALID_PASSWORD,
     });
 
     expect(user.email).toBe('ana@exemplo.com');
@@ -66,7 +71,7 @@ describe('signUp', () => {
       signUp({
         name: 'Outra Ana',
         email: 'ana@exemplo.com',
-        password: 'uma-senha-boa',
+        password: VALID_PASSWORD,
       }),
     ).rejects.toThrow(codeIs('EMAIL_ALREADY_EXISTS'));
   });
@@ -78,14 +83,18 @@ describe('signUp', () => {
       signUp({
         name: 'Outra Ana',
         email: 'ANA@EXEMPLO.COM',
-        password: 'uma-senha-boa',
+        password: VALID_PASSWORD,
       }),
     ).rejects.toThrow(codeIs('EMAIL_ALREADY_EXISTS'));
   });
 
   it('rejects a short password', async () => {
     await expect(
-      signUp({ name: 'Ana', email: 'ana@exemplo.com', password: 'curta' }),
+      signUp({
+        name: 'Ana',
+        email: 'ana@exemplo.com',
+        password: TOO_SHORT_PASSWORD,
+      }),
     ).rejects.toThrow(codeIs('BAD_USER_INPUT'));
   });
 });
@@ -111,7 +120,7 @@ describe('signIn', () => {
     const { user } = await createUser();
 
     await expect(
-      signIn({ email: user.email, password: 'senha-errada' }),
+      signIn({ email: user.email, password: WRONG_PASSWORD }),
     ).rejects.toThrow(codeIs('INVALID_CREDENTIALS'));
   });
 
@@ -120,11 +129,11 @@ describe('signIn', () => {
 
     const wrongPassword = await signIn({
       email: user.email,
-      password: 'senha-errada',
+      password: WRONG_PASSWORD,
     }).catch((error: Error) => error);
     const unknownEmail = await signIn({
       email: 'ninguem@exemplo.com',
-      password: 'senha-errada',
+      password: WRONG_PASSWORD,
     }).catch((error: Error) => error);
 
     expect((unknownEmail as Error).message).toBe(

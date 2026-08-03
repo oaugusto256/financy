@@ -5,10 +5,11 @@ import { api, aUser, graphqlError, ok } from '@/test/msw/api';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 import { AppRoutes } from '@/routes';
+import { VALID_PASSWORD } from '@/test/credentials';
 
 async function fillAndSubmit(
   email = 'ana@exemplo.com',
-  password = 'uma-senha-boa',
+  password = VALID_PASSWORD,
 ) {
   await userEvent.type(screen.getByLabelText('E-mail'), email);
   await userEvent.type(screen.getByLabelText('Senha'), password);
