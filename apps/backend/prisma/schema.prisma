@@ -8,10 +8,45 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           String        @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String        @unique
   passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  categories   Category[]
+  transactions Transaction[]
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  icon         String // CategoryIcon token
+  color        String // CategoryColor token
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id          String    @id @default(uuid())
+  description String
+  amount      Int // cents
+  type        String // "INCOME" | "EXPENSE"
+  date        DateTime
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, date])
+  @@index([categoryId])
 }
