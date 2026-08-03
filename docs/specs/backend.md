@@ -409,8 +409,9 @@ notices if they drift:
   including uncategorized ones, so it will not always equal the sum of every
   `transactionCount`.
 - `mostUsed` is the category with the highest `transactionCount`, ties broken by
-  name ascending so the result is stable between requests. It is null when the
-  user has no transactions at all.
+  name ascending so the result is stable between requests. It is null when no
+  transaction of the user's has a category — whether because they have no
+  transactions at all, or because every one of them is uncategorized.
 
 Every aggregate is scoped to the calling user, like every other read.
 

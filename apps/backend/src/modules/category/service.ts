@@ -99,3 +99,41 @@ export async function deleteCategory(
 
   return true;
 }
+
+export interface CategoryStats {
+  totalCategories: number;
+  totalTransactions: number;
+  mostUsed: Category | null;
+}
+
+export async function getCategoryStats(userId: string): Promise<CategoryStats> {
+  const [totalCategories, totalTransactions, grouped] = await Promise.all([
+    prisma.category.count({ where: { userId } }),
+    // Includes uncategorized rows, so it will not always equal the sum of every
+    // transactionCount. backend.md section 5.
+    prisma.transaction.count({ where: { userId } }),
+    prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: { userId, categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const highest = Math.max(0, ...grouped.map((row) => row._count._all));
+  const tied = grouped
+    .filter((row) => row._count._all === highest)
+    .map((row) => row.categoryId)
+    .filter((id): id is string => id !== null);
+
+  // Ties break by name ascending, so two requests with the same data give the
+  // same answer. Null when nothing is categorized: there is no most-used
+  // category to name.
+  const mostUsed = tied.length
+    ? await prisma.category.findFirst({
+        where: { userId, id: { in: tied } },
+        orderBy: { name: 'asc' },
+      })
+    : null;
+
+  return { totalCategories, totalTransactions, mostUsed };
+}
