@@ -45,8 +45,10 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-bold text-gray-800">Fazer login</h1>
-      <p className="mt-1 text-sm text-gray-500">
+      <h1 className="text-center text-2xl font-bold text-gray-800">
+        Fazer login
+      </h1>
+      <p className="mt-1 text-center text-sm text-gray-500">
         Entre na sua conta para continuar
       </p>
 
