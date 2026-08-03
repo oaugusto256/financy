@@ -7,6 +7,7 @@ export default defineConfig({
     // Later slices share one SQLite test database. Parallel files would reset
     // it under each other.
     fileParallelism: false,
+    globalSetup: ['./tests/setup/global-setup.ts'],
     // src/shared/env.ts parses process.env at module load, so importing
     // anything that touches it needs a valid environment. Declaring it here
     // rather than reading apps/backend/.env keeps the suite runnable on a
