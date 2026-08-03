@@ -26,10 +26,12 @@
   },
   "dependencies": {
     "@apollo/server": "^4.13.0",
+    "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.6",
     "express": "^4.22.2",
     "graphql": "^16.14.2",
+    "jose": "^6.2.8",
     "zod": "^4.4.3"
   }
 }
