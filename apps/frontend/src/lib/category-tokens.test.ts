@@ -25,12 +25,14 @@ describe('category tokens', () => {
     expect(CATEGORY_ICON_VALUES).toHaveLength(16);
   });
 
-  it('maps every color to a background, text and icon class', () => {
+  it('maps every color to a background, text, icon, swatch and dark class', () => {
     for (const color of CATEGORY_COLOR_VALUES) {
       const classes = CATEGORY_COLORS[color];
       expect(classes.bg).toBeTruthy();
       expect(classes.text).toBeTruthy();
       expect(classes.icon).toBeTruthy();
+      expect(classes.swatch).toBeTruthy();
+      expect(classes.dark).toBeTruthy();
     }
   });
 

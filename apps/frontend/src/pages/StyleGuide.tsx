@@ -15,6 +15,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
 import { Pagination } from '@/components/ui/Pagination';
 import { PageShell } from '@/components/layout/PageShell';
+import { cn } from '@/lib/cn';
 import {
   CATEGORY_COLORS,
   CATEGORY_COLOR_LABELS,
@@ -166,13 +167,22 @@ export function StyleGuide() {
                 {/* dark, base and light, in the order frontend.md section 3
                     lists them, so the whole family is comparable at once. */}
                 <span
-                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].dark}`}
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].dark,
+                  )}
                 />
                 <span
-                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].swatch}`}
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].swatch,
+                  )}
                 />
                 <span
-                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].bg}`}
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].bg,
+                  )}
                 />
               </span>
               <code className="text-[11px] text-gray-700">{token}</code>
