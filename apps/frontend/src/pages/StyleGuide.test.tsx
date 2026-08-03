@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { StyleGuide } from './StyleGuide';
@@ -43,8 +43,13 @@ describe('StyleGuide', () => {
   it('shows every category color and icon', () => {
     const { container } = renderStyleGuide();
 
+    // Scoped to the Tag section: the token text now also appears in the
+    // Category Colors gallery added below, so an unscoped query matches both.
+    const tagSection = screen
+      .getByRole('heading', { name: 'Tag' })
+      .closest('div');
     for (const color of CATEGORY_COLOR_VALUES) {
-      expect(screen.getByText(color)).toBeInTheDocument();
+      expect(within(tagSection!).getByText(color)).toBeInTheDocument();
     }
 
     // One badge per icon token, plus the neutral fallback.
@@ -62,5 +67,31 @@ describe('StyleGuide', () => {
       screen.getByRole('button', { name: 'Abrir diálogo' }),
     );
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Nova transação');
+  });
+
+  it('names every category icon beside the icon it draws', () => {
+    renderStyleGuide();
+
+    // The owner has to confirm these sixteen against Figma. A glyph with no
+    // token name beside it cannot be confirmed or rejected.
+    const gallery = screen.getByRole('list', { name: 'Ícones de categoria' });
+
+    for (const token of CATEGORY_ICON_VALUES) {
+      expect(within(gallery).getByText(token)).toBeInTheDocument();
+    }
+    expect(
+      within(gallery).getByText('Carrinho de compras'),
+    ).toBeInTheDocument();
+  });
+
+  it('names every category color beside the swatch it draws', () => {
+    renderStyleGuide();
+
+    const gallery = screen.getByRole('list', { name: 'Cores de categoria' });
+
+    for (const token of CATEGORY_COLOR_VALUES) {
+      expect(within(gallery).getByText(token)).toBeInTheDocument();
+    }
+    expect(within(gallery).getByText('Verde')).toBeInTheDocument();
   });
 });

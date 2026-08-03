@@ -16,7 +16,10 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Pagination } from '@/components/ui/Pagination';
 import { PageShell } from '@/components/layout/PageShell';
 import {
+  CATEGORY_COLORS,
+  CATEGORY_COLOR_LABELS,
   CATEGORY_COLOR_VALUES,
+  CATEGORY_ICON_LABELS,
   CATEGORY_ICON_VALUES,
 } from '@/lib/category-tokens';
 
@@ -127,6 +130,58 @@ export function StyleGuide() {
           />
         ))}
         <CategoryBadge />
+      </Section>
+
+      <Section title="Category Icons">
+        <ul
+          aria-label="Ícones de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8"
+        >
+          {CATEGORY_ICON_VALUES.map((token) => (
+            <li
+              key={token}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
+              <CategoryBadge icon={token} color="GREEN" />
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_ICON_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Category Colors">
+        <ul
+          aria-label="Cores de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7"
+        >
+          {CATEGORY_COLOR_VALUES.map((token) => (
+            <li
+              key={token}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
+              <span className="flex gap-1">
+                {/* dark, base and light, in the order frontend.md section 3
+                    lists them, so the whole family is comparable at once. */}
+                <span
+                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].dark}`}
+                />
+                <span
+                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].swatch}`}
+                />
+                <span
+                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].bg}`}
+                />
+              </span>
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_COLOR_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title="Type Indicator">
