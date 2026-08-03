@@ -27,6 +27,7 @@ describe('StyleGuide', () => {
       'Button',
       'Icon Button',
       'Input',
+      'Checkbox',
       'Tag',
       'Category Badge',
       'Type Indicator',

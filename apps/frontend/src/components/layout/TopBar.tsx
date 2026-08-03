@@ -42,7 +42,12 @@ export function TopBar({ userName }: TopBarProps) {
           ))}
         </nav>
 
-        <Link to="/profile" aria-label={`Perfil de ${userName}`}>
+        {/* The name is empty while `me` is in flight, and "Perfil de " with
+            nothing after it is not a label. */}
+        <Link
+          to="/profile"
+          aria-label={userName ? `Perfil de ${userName}` : 'Perfil'}
+        >
           <Avatar name={userName} />
         </Link>
       </div>

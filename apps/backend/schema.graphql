@@ -1,0 +1,40 @@
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+scalar DateTime
+
+type Mutation {
+  _empty: Boolean
+  signIn(input: SignInInput!): AuthPayload!
+  signUp(input: SignUpInput!): AuthPayload!
+  updateProfile(input: UpdateProfileInput!): User!
+}
+
+type Query {
+  health: String!
+  me: User!
+}
+
+input SignInInput {
+  email: String!
+  password: String!
+}
+
+input SignUpInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
+input UpdateProfileInput {
+  name: String!
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String!
+}

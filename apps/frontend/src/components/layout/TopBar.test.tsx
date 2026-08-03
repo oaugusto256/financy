@@ -45,4 +45,13 @@ describe('TopBar', () => {
       '/profile',
     );
   });
+
+  it('labels the avatar without a trailing name while one is loading', () => {
+    render(
+      <MemoryRouter>
+        <TopBar userName="" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: 'Perfil' })).toBeInTheDocument();
+  });
 });

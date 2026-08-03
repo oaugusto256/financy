@@ -5,6 +5,7 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Select } from '@/components/ui/Select';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Tag } from '@/components/ui/Tag';
 import { TypeIndicator } from '@/components/ui/TypeIndicator';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
@@ -100,6 +101,12 @@ export function StyleGuide() {
             ]}
           />
         </div>
+      </Section>
+
+      <Section title="Checkbox">
+        <Checkbox label="Lembrar-me" />
+        <Checkbox label="Marcado" defaultChecked />
+        <Checkbox label="Desabilitado" disabled />
       </Section>
 
       <Section title="Tag">

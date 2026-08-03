@@ -87,13 +87,14 @@ README stays a high-level overview.
 
 ## Status
 
-Slice 0 of 5 complete: both applications run, and the design system is built.
+Slice 1 of 5 complete: a person can create an account, sign in, edit their
+profile and sign out.
 See [`docs/plans/roadmap.md`](docs/plans/roadmap.md) for the plan.
 
 - [x] Backend spec
 - [x] Frontend spec
 - [x] Slice 0 — Foundations
-- [ ] Slice 1 — Auth and profile
+- [x] Slice 1 — Auth and profile
 - [ ] Slice 2 — Categories
 - [ ] Slice 3 — Transactions
 - [ ] Slice 4 — Search, filters, pagination

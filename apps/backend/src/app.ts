@@ -4,15 +4,16 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import { env } from './shared/env.js';
 import { resolvers, typeDefs } from './schema.js';
+import { createContext, type GraphQLContext } from './context.js';
 
 // A factory rather than a module that starts listening on import: tests need
 // the app without a bound port, and two test files binding the same port fail
 // in ways that look like application bugs.
 export async function createApp(): Promise<{
   app: Express;
-  apollo: ApolloServer;
+  apollo: ApolloServer<GraphQLContext>;
 }> {
-  const apollo = new ApolloServer({ typeDefs, resolvers });
+  const apollo = new ApolloServer<GraphQLContext>({ typeDefs, resolvers });
   await apollo.start();
 
   const app = express();
@@ -26,7 +27,7 @@ export async function createApp(): Promise<{
     // tell an allowed origin from a rejected one.
     cors({ origin: [env.CORS_ORIGIN], credentials: true }),
     express.json(),
-    expressMiddleware(apollo),
+    expressMiddleware(apollo, { context: createContext }),
   );
 
   app.get('/health', (_req, res) => {
