@@ -44,7 +44,9 @@ export function SignUpPage() {
       if (named.length > 0) {
         for (const [field, messages] of named) {
           if (field in form.getValues() && messages[0]) {
-            form.setError(field as keyof SignUpValues, { message: messages[0] });
+            form.setError(field as keyof SignUpValues, {
+              message: messages[0],
+            });
           }
         }
         return;

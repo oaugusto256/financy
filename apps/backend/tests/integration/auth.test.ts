@@ -177,7 +177,9 @@ describe('signIn', () => {
   it('returns INVALID_CREDENTIALS for an unknown email', async () => {
     const body = await execute(app, {
       query: SIGN_IN,
-      variables: { input: { email: 'ninguem@exemplo.com', password: 'errada' } },
+      variables: {
+        input: { email: 'ninguem@exemplo.com', password: 'errada' },
+      },
     });
 
     expect(errorCode(body)).toBe('INVALID_CREDENTIALS');

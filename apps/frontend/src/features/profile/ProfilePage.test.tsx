@@ -76,9 +76,9 @@ describe('ProfilePage', () => {
     await save();
 
     await waitFor(() =>
-      expect(screen.getByLabelText('Nome completo')).toHaveAccessibleDescription(
-        'O nome é obrigatório',
-      ),
+      expect(
+        screen.getByLabelText('Nome completo'),
+      ).toHaveAccessibleDescription('O nome é obrigatório'),
     );
   });
 
@@ -129,7 +129,9 @@ describe('ProfilePage', () => {
     const { queryClient } = renderProfile();
     await screen.findByLabelText('Nome completo');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sair da conta' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Sair da conta' }),
+    );
 
     expect(
       await screen.findByRole('heading', { name: 'Fazer login' }),

@@ -27,7 +27,10 @@ export function graphqlError(
   return HttpResponse.json({
     data: null,
     errors: [
-      { message, extensions: { code, ...(fieldErrors ? { fieldErrors } : {}) } },
+      {
+        message,
+        extensions: { code, ...(fieldErrors ? { fieldErrors } : {}) },
+      },
     ],
   }) as HttpResponse<GraphQLResponseBody<never>>;
 }

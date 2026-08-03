@@ -1,6 +1,6 @@
 # Backend Spec
 
-Status: approved, not implemented
+Status: approved, implemented through slice 1
 Last updated: 2026-08-01 (amended after the frontend design review)
 
 The Financy API manages a user's personal finances: authentication, transactions
@@ -102,20 +102,29 @@ resolvers, service and validation together.
 apps/backend/
 ├── prisma/
 │   ├── schema.prisma
+│   ├── migrations/
 │   └── seed.ts
 ├── src/
 │   ├── modules/
-│   │   ├── auth/          schema.graphql, resolvers.ts, service.ts, validation.ts
+│   │   ├── auth/          schema.ts, resolvers.ts, service.ts, validation.ts
 │   │   ├── category/      same
 │   │   └── transaction/   same
-│   ├── shared/            errors.ts, auth-guard.ts, dataloaders.ts, env.ts
+│   ├── shared/            errors.ts, auth-guard.ts, dataloaders.ts, env.ts,
+│   │                      password.ts, jwt.ts, prisma.ts
+│   ├── graphql/generated/ resolver types, written by codegen
 │   ├── context.ts
 │   ├── schema.ts          merges module SDL
 │   └── server.ts
 ├── tests/
+├── schema.graphql         the printed schema, committed for the frontend
 ├── .env.example
 └── codegen.ts
 ```
+
+A module's SDL is a template literal tagged with the `/* GraphQL */` comment in
+`schema.ts`, not a `.graphql` file. Reading SDL at runtime would mean the build
+has to copy non-TypeScript files into `dist/`, and graphql-codegen plucks the
+SDL out of the magic comment just as happily.
 
 ## 4. Data model
 

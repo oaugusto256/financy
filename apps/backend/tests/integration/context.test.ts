@@ -10,9 +10,9 @@ function requestWith(authorization?: string) {
 describe('createContext', () => {
   it('resolves a valid bearer token to its user id', async () => {
     const token = await signToken('user-1');
-    expect(await createContext({ req: requestWith(`Bearer ${token}`) })).toEqual(
-      { userId: 'user-1' },
-    );
+    expect(
+      await createContext({ req: requestWith(`Bearer ${token}`) }),
+    ).toEqual({ userId: 'user-1' });
   });
 
   it('has no user when the header is absent', async () => {
@@ -23,9 +23,11 @@ describe('createContext', () => {
 
   it('has no user when the scheme is not Bearer', async () => {
     const token = await signToken('user-1');
-    expect(await createContext({ req: requestWith(`Basic ${token}`) })).toEqual({
-      userId: null,
-    });
+    expect(await createContext({ req: requestWith(`Basic ${token}`) })).toEqual(
+      {
+        userId: null,
+      },
+    );
   });
 
   it('has no user when the token is garbage', async () => {

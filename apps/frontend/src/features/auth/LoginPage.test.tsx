@@ -111,7 +111,9 @@ describe('LoginPage', () => {
     renderWithProviders(<AppRoutes />, { route: '/' });
     await fillAndSubmit();
 
-    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeDisabled();
+    expect(
+      await screen.findByRole('button', { name: 'Entrar' }),
+    ).toBeDisabled();
 
     // Released and then awaited to completion. Left in flight, the mutation
     // resolves after this test ends and writes its token after the global

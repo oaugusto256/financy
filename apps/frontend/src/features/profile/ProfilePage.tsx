@@ -14,10 +14,7 @@ import {
   useUpdateProfileMutation,
 } from '@/graphql/generated/graphql';
 import { fieldErrorsOf } from '@/lib/graphql-errors';
-import {
-  useSession,
-  type SessionUser,
-} from '@/features/auth/useSession';
+import { useSession, type SessionUser } from '@/features/auth/useSession';
 
 const profileSchema = z.object({
   name: z
@@ -88,7 +85,11 @@ function ProfileForm({ user }: { user: SessionUser }) {
         <p className="text-sm text-gray-500">{user.email}</p>
       </div>
 
-      <form onSubmit={onSubmit} className="flex w-full flex-col gap-4" noValidate>
+      <form
+        onSubmit={onSubmit}
+        className="flex w-full flex-col gap-4"
+        noValidate
+      >
         {formError && (
           <p
             role="alert"
