@@ -5,6 +5,7 @@ import { RequireAuth } from '@/components/layout/RequireAuth';
 import { PageShell } from '@/components/layout/PageShell';
 import { StyleGuide } from '@/pages/StyleGuide';
 import { AuthLayout } from '@/features/auth/AuthLayout';
+import { LoginPage } from '@/features/auth/LoginPage';
 import { useSession } from '@/features/auth/useSession';
 
 // Placeholders that slices 2 through 5 replace, each named for the page it
@@ -19,10 +20,10 @@ function Placeholder({ title }: { title: string }) {
   );
 }
 
-// The login and sign up screens arrive in the next two tasks. This stands in
-// for them so the module graph stays loadable meanwhile — it deliberately does
-// not render either screen's heading, so routes.test.tsx fails on the two
-// assertions that are genuinely unmet rather than on a missing import.
+// The sign up screen arrives in the next task. This stands in for it so the
+// module graph stays loadable meanwhile — it deliberately does not render that
+// screen's heading, so routes.test.tsx fails on the assertion that is
+// genuinely unmet rather than on a missing import.
 function AuthPlaceholder() {
   return (
     <AuthLayout>
@@ -40,7 +41,7 @@ function AuthPlaceholder() {
 function RootRoute() {
   const { token } = useSession();
 
-  if (!token) return <AuthPlaceholder />;
+  if (!token) return <LoginPage />;
 
   return (
     <AppLayout>
