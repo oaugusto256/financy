@@ -3,9 +3,10 @@ import { beforeAll, afterAll, expect, describe, it } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../src/app.js';
 import type { ApolloServer } from '@apollo/server';
+import type { GraphQLContext } from '../../src/context.js';
 
 let app: Express;
-let apollo: ApolloServer;
+let apollo: ApolloServer<GraphQLContext>;
 
 beforeAll(async () => {
   ({ app, apollo } = await createApp());
