@@ -129,6 +129,7 @@ Built and reviewed against the Style Guide before any page uses them.
 | `Input` | empty, active, filled, error, disabled — with label, optional leading icon, and helper text that turns into the error message |
 | `PasswordInput` | `Input` plus a visibility toggle |
 | `Select` | same shell as `Input`, with a checkmark on the selected option |
+| `Checkbox` | native control with a label, default, checked and disabled |
 | `Button` | primary (filled brand) and secondary (outlined); sizes `md` and `sm`; default, hover and disabled |
 | `IconButton` | neutral and danger; default, hover and disabled |
 | `TextLink` | default, underlined on hover — named to avoid colliding with React Router's `Link`, which it wraps |
