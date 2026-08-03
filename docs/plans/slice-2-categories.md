@@ -542,6 +542,243 @@ implemented or tested without the second table."
 
 ---
 
+### Task 2b: The category token gallery in the Style Guide
+
+Added after the plan was written, at the repository owner's request. Task 1
+asks them to confirm the sixteen icon names against Figma, and nothing in the
+application renders the sixteen together with their token names — the existing
+"Category Badge" section draws sixteen glyphs in cycling colors with no way to
+tell which token produced which. The gate is unanswerable without this.
+
+It pulls the Portuguese labels forward from Task 9, so Task 9 consumes them
+rather than adding them.
+
+**This task unblocks Task 1's blocking section, so it runs before Task 9 and
+its output is what the owner reads.**
+
+**Files:**
+- Modify: `apps/frontend/src/lib/category-tokens.ts`
+- Modify: `apps/frontend/src/lib/category-tokens.test.ts`
+- Modify: `apps/frontend/src/pages/StyleGuide.tsx`
+- Modify: `apps/frontend/src/pages/StyleGuide.test.tsx`
+
+**Interfaces:**
+- Consumes: `CATEGORY_ICONS`, `CATEGORY_COLORS`, `CATEGORY_ICON_VALUES`,
+  `CATEGORY_COLOR_VALUES`.
+- Produces: `CATEGORY_ICON_LABELS: Record<CategoryIcon, string>` and
+  `CATEGORY_COLOR_LABELS: Record<CategoryColor, string>` — Task 9 and Task 10
+  both use these.
+
+- [ ] **Step 1: Write the failing tests**
+
+Add to `apps/frontend/src/lib/category-tokens.test.ts`:
+
+```ts
+describe('token labels', () => {
+  it('labels every icon', () => {
+    for (const token of CATEGORY_ICON_VALUES) {
+      expect(CATEGORY_ICON_LABELS[token]).toBeTruthy();
+    }
+  });
+
+  it('labels every color', () => {
+    for (const token of CATEGORY_COLOR_VALUES) {
+      expect(CATEGORY_COLOR_LABELS[token]).toBeTruthy();
+    }
+  });
+});
+```
+
+with `CATEGORY_ICON_LABELS` and `CATEGORY_COLOR_LABELS` added to the file's
+existing import from `@/lib/category-tokens`.
+
+Add to `apps/frontend/src/pages/StyleGuide.test.tsx`:
+
+```tsx
+it('names every category icon beside the icon it draws', () => {
+  renderStyleGuide();
+
+  // The owner has to confirm these sixteen against Figma. A glyph with no
+  // token name beside it cannot be confirmed or rejected.
+  const gallery = screen.getByRole('list', { name: 'Ícones de categoria' });
+
+  for (const token of CATEGORY_ICON_VALUES) {
+    expect(within(gallery).getByText(token)).toBeInTheDocument();
+  }
+  expect(within(gallery).getByText('Carrinho de compras')).toBeInTheDocument();
+});
+
+it('names every category color beside the swatch it draws', () => {
+  renderStyleGuide();
+
+  const gallery = screen.getByRole('list', { name: 'Cores de categoria' });
+
+  for (const token of CATEGORY_COLOR_VALUES) {
+    expect(within(gallery).getByText(token)).toBeInTheDocument();
+  }
+  expect(within(gallery).getByText('Verde')).toBeInTheDocument();
+});
+```
+
+`within` comes from `@testing-library/react` — add it to that file's existing
+import if it is not already there.
+
+- [ ] **Step 2: Run them to make sure they fail**
+
+Run: `rtk proxy "npm test -w @financy/frontend -- category-tokens StyleGuide"`
+Expected: FAIL — `CATEGORY_ICON_LABELS` is not exported, and no list named
+"Ícones de categoria" exists.
+
+- [ ] **Step 3: Add the labels**
+
+Append to `apps/frontend/src/lib/category-tokens.ts`:
+
+```ts
+/**
+ * The Portuguese name of each token. Two jobs: it is the accessible name of
+ * the option in the category dialog's icon picker, and it is what makes the
+ * Style Guide gallery checkable against the design — a glyph with no name
+ * beside it cannot be confirmed or rejected.
+ */
+export const CATEGORY_ICON_LABELS: Record<CategoryIcon, string> = {
+  BRIEFCASE: 'Maleta',
+  BUS: 'Ônibus',
+  HEART_PULSE: 'Saúde',
+  PIGGY_BANK: 'Cofrinho',
+  SHOPPING_CART: 'Carrinho de compras',
+  TICKET: 'Ingresso',
+  GIFT: 'Presente',
+  UTENSILS: 'Restaurante',
+  BIKE: 'Bicicleta',
+  HOME: 'Casa',
+  HAND_COINS: 'Moedas',
+  BOOK_OPEN: 'Livro',
+  STORE: 'Loja',
+  WALLET: 'Carteira',
+  CREDIT_CARD: 'Cartão de crédito',
+  RECEIPT: 'Recibo',
+};
+
+export const CATEGORY_COLOR_LABELS: Record<CategoryColor, string> = {
+  GREEN: 'Verde',
+  BLUE: 'Azul',
+  PURPLE: 'Roxo',
+  PINK: 'Rosa',
+  RED: 'Vermelho',
+  ORANGE: 'Laranja',
+  YELLOW: 'Amarelo',
+};
+```
+
+Also add the `swatch` class to every entry of `CATEGORY_COLORS` — the color
+gallery and Task 9's picker both need the base fill, and Tailwind compiles
+nothing for an interpolated class name:
+
+```ts
+  GREEN: {
+    bg: 'bg-green-light',
+    text: 'text-green-dark',
+    icon: 'text-green-base',
+    swatch: 'bg-green-base',
+  },
+```
+
+and widen the record's type to
+`Record<CategoryColor, { bg: string; text: string; icon: string; swatch: string }>`.
+Do the same for the other six families, each pointing at its own `-base`.
+
+- [ ] **Step 4: Add the two galleries to the Style Guide**
+
+In `apps/frontend/src/pages/StyleGuide.tsx`, add these two sections directly
+after the existing "Category Badge" section. They are `ul`/`li` rather than the
+`Section` helper's flex row, because each cell carries three lines and the
+accessible name is what the tests address:
+
+```tsx
+      <Section title="Category Icons">
+        <ul
+          aria-label="Ícones de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8"
+        >
+          {CATEGORY_ICON_VALUES.map((token) => (
+            <li key={token} className="flex flex-col items-center gap-1.5 text-center">
+              <CategoryBadge icon={token} color="GREEN" />
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_ICON_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Category Colors">
+        <ul
+          aria-label="Cores de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7"
+        >
+          {CATEGORY_COLOR_VALUES.map((token) => (
+            <li key={token} className="flex flex-col items-center gap-1.5 text-center">
+              <span className="flex gap-1">
+                {/* dark, base and light, in the order frontend.md section 3
+                    lists them, so the whole family is comparable at once. */}
+                <span
+                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].text.replace('text-', 'bg-')}`}
+                />
+                <span className={`size-5 rounded-full ${CATEGORY_COLORS[token].swatch}`} />
+                <span
+                  className={`size-5 rounded-full ${CATEGORY_COLORS[token].bg}`}
+                />
+              </span>
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_COLOR_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+```
+
+The `.replace('text-', 'bg-')` on the dark shade builds a class name at
+runtime, which Tailwind cannot see. Do not ship it: add a `dark` key to each
+`CATEGORY_COLORS` entry holding `'bg-green-dark'` and so on, spelled out the
+same way `swatch` is, and use `CATEGORY_COLORS[token].dark`. If you would
+rather not widen the record twice, drop the dark shade from the gallery and
+render only `swatch` and `bg` — but never interpolate a Tailwind class.
+
+Import `CATEGORY_COLORS`, `CATEGORY_ICON_LABELS` and `CATEGORY_COLOR_LABELS`
+into `StyleGuide.tsx` alongside the two value lists it already imports.
+
+- [ ] **Step 5: Run the tests to verify they pass**
+
+Run: `rtk proxy "npm test -w @financy/frontend -- category-tokens StyleGuide"`
+Expected: PASS.
+
+- [ ] **Step 6: Run the frontend gate**
+
+Run: `rtk proxy "npm test -w @financy/frontend"`
+then `rtk proxy "npm run typecheck -w @financy/frontend"`
+then `rtk proxy "npm run lint"`
+Expected: all pass.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add apps/frontend/src
+git commit -m "feat(frontend): name every category token in the style guide
+
+The slice 2 Figma handoff asks the owner to confirm the sixteen icon names,
+and nothing rendered a token beside the glyph it produces - the gate could not
+be answered from the running application."
+```
+
+- [ ] **Step 8: Tell the repository owner it is ready**
+
+`http://localhost:5173/style-guide` now answers Task 1's blocking section.
+
+---
+
 ### Task 3: Category input validation
 
 zod schemas, validated before anything reaches Prisma. The token lists live
