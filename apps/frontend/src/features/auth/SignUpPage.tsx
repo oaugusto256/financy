@@ -58,8 +58,10 @@ export function SignUpPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-bold text-gray-800">Criar conta</h1>
-      <p className="mt-1 text-sm text-gray-500">
+      <h1 className="text-center text-2xl font-bold text-gray-800">
+        Criar conta
+      </h1>
+      <p className="mt-1 text-center text-sm text-gray-500">
         Comece a controlar suas finanças ainda hoje
       </p>
 
@@ -78,6 +80,7 @@ export function SignUpPage() {
         <Input
           label="Nome completo"
           icon={User}
+          placeholder="Seu nome completo"
           error={form.formState.errors.name?.message}
           {...form.register('name')}
         />
@@ -86,12 +89,14 @@ export function SignUpPage() {
           label="E-mail"
           type="email"
           icon={Mail}
+          placeholder="mail@exemplo.com"
           error={form.formState.errors.email?.message}
           {...form.register('email')}
         />
 
         <PasswordInput
           label="Senha"
+          placeholder="Crie uma senha"
           helperText="A senha deve ter no mínimo 8 caracteres"
           error={form.formState.errors.password?.message}
           {...form.register('password')}
@@ -107,6 +112,10 @@ export function SignUpPage() {
         ou
         <span className="h-px flex-1 bg-gray-200" />
       </div>
+
+      <p className="mb-3 text-center text-sm text-gray-500">
+        Já tem uma conta?
+      </p>
 
       <TextLink
         to="/"

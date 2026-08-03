@@ -131,6 +131,29 @@ describe('SignUpPage', () => {
     await screen.findByRole('heading', { name: 'Dashboard' });
   });
 
+  it('gives every field a placeholder', () => {
+    renderWithProviders(<AppRoutes />, { route: '/signup' });
+
+    expect(screen.getByLabelText('Nome completo')).toHaveAttribute(
+      'placeholder',
+      'Seu nome completo',
+    );
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'placeholder',
+      'mail@exemplo.com',
+    );
+    expect(screen.getByLabelText('Senha')).toHaveAttribute(
+      'placeholder',
+      'Crie uma senha',
+    );
+  });
+
+  it('introduces the login link with a prompt', () => {
+    renderWithProviders(<AppRoutes />, { route: '/signup' });
+
+    expect(screen.getByText('Já tem uma conta?')).toBeInTheDocument();
+  });
+
   it('links back to the login screen', async () => {
     renderWithProviders(<AppRoutes />, { route: '/signup' });
     await userEvent.click(screen.getByRole('link', { name: 'Fazer login' }));

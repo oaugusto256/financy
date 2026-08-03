@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail } from 'lucide-react';
+import { Mail, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Input } from '@/components/ui/Input';
@@ -66,12 +66,14 @@ export function LoginPage() {
           label="E-mail"
           type="email"
           icon={Mail}
+          placeholder="mail@exemplo.com"
           error={form.formState.errors.email?.message}
           {...form.register('email')}
         />
 
         <PasswordInput
           label="Senha"
+          placeholder="Digite sua senha"
           error={form.formState.errors.password?.message}
           {...form.register('password')}
         />
@@ -94,8 +96,11 @@ export function LoginPage() {
           navigation — styled to match. Flagged for the owner's Figma pass. */}
       <TextLink
         to="/signup"
-        className="flex h-11 items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-200 hover:no-underline"
+        className="flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-200 hover:no-underline"
       >
+        {/* aria-hidden, so the link's accessible name stays "Criar conta"
+            rather than picking up a second, wordless element. */}
+        <UserPlus aria-hidden="true" className="size-4" />
         Criar conta
       </TextLink>
     </AuthLayout>

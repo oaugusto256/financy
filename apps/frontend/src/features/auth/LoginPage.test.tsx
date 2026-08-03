@@ -123,6 +123,28 @@ describe('LoginPage', () => {
     await screen.findByRole('heading', { name: 'Dashboard' });
   });
 
+  it('gives both fields a placeholder', () => {
+    renderWithProviders(<AppRoutes />, { route: '/' });
+
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'placeholder',
+      'mail@exemplo.com',
+    );
+    expect(screen.getByLabelText('Senha')).toHaveAttribute(
+      'placeholder',
+      'Digite sua senha',
+    );
+  });
+
+  it('keeps the sign up link named by its text, not by its icon', () => {
+    renderWithProviders(<AppRoutes />, { route: '/' });
+
+    // The icon is aria-hidden, so it must not reach the accessible name.
+    expect(
+      screen.getByRole('link', { name: 'Criar conta' }),
+    ).toBeInTheDocument();
+  });
+
   it('does not render a password recovery link', () => {
     renderWithProviders(<AppRoutes />, { route: '/' });
     expect(screen.queryByText(/recuperar senha/i)).not.toBeInTheDocument();
