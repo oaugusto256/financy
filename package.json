@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm run dev --workspace apps/backend",
     "dev:frontend": "npm run dev --workspace apps/frontend",
     "test": "npm run test --workspaces --if-present",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",

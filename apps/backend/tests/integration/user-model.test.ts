@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '../../src/shared/prisma.js';
 import { resetDatabase } from '../helpers/db.js';
+import { PLACEHOLDER_HASH } from '../helpers/credentials.js';
 
 beforeEach(resetDatabase);
 afterAll(async () => {
@@ -13,7 +14,7 @@ describe('the User model', () => {
       data: {
         name: 'Ana Souza',
         email: 'ana@exemplo.com',
-        passwordHash: 'hash',
+        passwordHash: PLACEHOLDER_HASH,
       },
     });
 
@@ -26,7 +27,7 @@ describe('the User model', () => {
     const data = {
       name: 'Ana Souza',
       email: 'ana@exemplo.com',
-      passwordHash: 'hash',
+      passwordHash: PLACEHOLDER_HASH,
     };
     await prisma.user.create({ data });
 

@@ -1,0 +1,14 @@
+version: 2
+
+# Only the two modules that define test credentials are exempt. Every other
+# path stays scanned, including the suites that consume them: those now
+# reference named constants, so a real secret pasted into a test would still be
+# a literal, and would still be caught.
+#
+# Nothing in either file opens anything. They hold strings like "uma-senha-boa"
+# and "senha-errada" — fixtures for a suite that runs against a throwaway
+# SQLite file on the backend and against mocked responses on the frontend.
+secret:
+  ignored-paths:
+    - apps/backend/tests/helpers/credentials.ts
+    - apps/frontend/src/test/credentials.ts

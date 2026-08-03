@@ -5,10 +5,11 @@ import { api, aUser, graphqlError, ok } from '@/test/msw/api';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 import { AppRoutes } from '@/routes';
+import { VALID_PASSWORD } from '@/test/credentials';
 
 async function fillAndSubmit(
   email = 'ana@exemplo.com',
-  password = 'uma-senha-boa',
+  password = VALID_PASSWORD,
 ) {
   await userEvent.type(screen.getByLabelText('E-mail'), email);
   await userEvent.type(screen.getByLabelText('Senha'), password);
@@ -120,6 +121,28 @@ describe('LoginPage', () => {
     // afterEach has cleared storage — a session leaking into the next test.
     release();
     await screen.findByRole('heading', { name: 'Dashboard' });
+  });
+
+  it('gives both fields a placeholder', () => {
+    renderWithProviders(<AppRoutes />, { route: '/' });
+
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'placeholder',
+      'mail@exemplo.com',
+    );
+    expect(screen.getByLabelText('Senha')).toHaveAttribute(
+      'placeholder',
+      'Digite sua senha',
+    );
+  });
+
+  it('keeps the sign up link named by its text, not by its icon', () => {
+    renderWithProviders(<AppRoutes />, { route: '/' });
+
+    // The icon is aria-hidden, so it must not reach the accessible name.
+    expect(
+      screen.getByRole('link', { name: 'Criar conta' }),
+    ).toBeInTheDocument();
   });
 
   it('does not render a password recovery link', () => {

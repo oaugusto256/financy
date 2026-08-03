@@ -5,11 +5,12 @@ import { api, aUser, graphqlError, ok } from '@/test/msw/api';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 import { AppRoutes } from '@/routes';
+import { BELOW_MINIMUM_PASSWORD, VALID_PASSWORD } from '@/test/credentials';
 
 async function fillAndSubmit({
   name = 'Ana Souza',
   email = 'ana@exemplo.com',
-  password = 'uma-senha-boa',
+  password = VALID_PASSWORD,
 }: { name?: string; email?: string; password?: string } = {}) {
   await userEvent.type(screen.getByLabelText('Nome completo'), name);
   await userEvent.type(screen.getByLabelText('E-mail'), email);
@@ -87,7 +88,7 @@ describe('SignUpPage', () => {
     // No SignUp handler. onUnhandledRequest is 'error', so a request here
     // fails the test — which is the assertion.
     renderWithProviders(<AppRoutes />, { route: '/signup' });
-    await fillAndSubmit({ password: '1234567' });
+    await fillAndSubmit({ password: BELOW_MINIMUM_PASSWORD });
 
     expect(
       await screen.findByText('A senha deve ter no mínimo 8 caracteres'),
@@ -128,6 +129,29 @@ describe('SignUpPage', () => {
     // afterEach has cleared storage — a session leaking into the next test.
     release();
     await screen.findByRole('heading', { name: 'Dashboard' });
+  });
+
+  it('gives every field a placeholder', () => {
+    renderWithProviders(<AppRoutes />, { route: '/signup' });
+
+    expect(screen.getByLabelText('Nome completo')).toHaveAttribute(
+      'placeholder',
+      'Seu nome completo',
+    );
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'placeholder',
+      'mail@exemplo.com',
+    );
+    expect(screen.getByLabelText('Senha')).toHaveAttribute(
+      'placeholder',
+      'Crie uma senha',
+    );
+  });
+
+  it('introduces the login link with a prompt', () => {
+    renderWithProviders(<AppRoutes />, { route: '/signup' });
+
+    expect(screen.getByText('Já tem uma conta?')).toBeInTheDocument();
   });
 
   it('links back to the login screen', async () => {

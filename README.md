@@ -110,9 +110,29 @@ Requires Node 20 or newer.
 npm install
 cp apps/backend/.env.example apps/backend/.env   # then fill in JWT_SECRET
 cp apps/frontend/.env.example apps/frontend/.env
+npm run db:migrate -w @financy/backend
 
-npm run dev:backend    # http://localhost:4000/graphql
-npm run dev:frontend   # http://localhost:5173
+npm run dev            # both, in one terminal
 ```
 
+`npm run dev` runs the backend on `http://localhost:4000/graphql` and the
+frontend on `http://localhost:5173`, prefixing each line with the process it
+came from. Ctrl-C stops both. To run one alone, `npm run dev:backend` or
+`npm run dev:frontend`.
+
 The design system is browsable at `/style-guide`.
+
+## Checks
+
+```bash
+npm test          # both workspaces
+npm run typecheck
+npm run lint
+npm run format:check
+npm run codegen:check -w @financy/backend    # must report no diff
+npm run codegen:check -w @financy/frontend
+```
+
+The test suites need no `.env` and no running server: each workspace's vitest
+config declares its own environment, and the backend applies migrations to a
+separate `test.db` before the suite runs.

@@ -5,11 +5,18 @@ import {
   signUpSchema,
   updateProfileSchema,
 } from '../../src/modules/auth/validation.js';
+import {
+  ANY_PASSWORD,
+  BELOW_MINIMUM_PASSWORD,
+  MINIMUM_LENGTH_PASSWORD,
+  TOO_SHORT_PASSWORD,
+  VALID_PASSWORD,
+} from '../helpers/credentials.js';
 
 const validSignUp = {
   name: 'Ana Souza',
   email: 'Ana@Exemplo.COM',
-  password: 'uma-senha-boa',
+  password: VALID_PASSWORD,
 };
 
 describe('signUpSchema', () => {
@@ -47,19 +54,28 @@ describe('signUpSchema', () => {
 
   it('rejects a password under 8 characters', () => {
     expect(() =>
-      parseInput(signUpSchema, { ...validSignUp, password: '1234567' }),
+      parseInput(signUpSchema, {
+        ...validSignUp,
+        password: BELOW_MINIMUM_PASSWORD,
+      }),
     ).toThrow();
   });
 
   it('accepts a password of exactly 8 characters', () => {
     expect(
-      parseInput(signUpSchema, { ...validSignUp, password: '12345678' }),
+      parseInput(signUpSchema, {
+        ...validSignUp,
+        password: MINIMUM_LENGTH_PASSWORD,
+      }),
     ).toBeTruthy();
   });
 
   it('names the failing field', () => {
     try {
-      parseInput(signUpSchema, { ...validSignUp, password: 'short' });
+      parseInput(signUpSchema, {
+        ...validSignUp,
+        password: TOO_SHORT_PASSWORD,
+      });
       throw new Error('should have thrown');
     } catch (error) {
       const { extensions } = error as {
@@ -73,8 +89,10 @@ describe('signUpSchema', () => {
 describe('signInSchema', () => {
   it('lowercases the email', () => {
     expect(
-      parseInput(signInSchema, { email: 'ANA@EXEMPLO.COM', password: 'x' })
-        .email,
+      parseInput(signInSchema, {
+        email: 'ANA@EXEMPLO.COM',
+        password: ANY_PASSWORD,
+      }).email,
     ).toBe('ana@exemplo.com');
   });
 
@@ -83,7 +101,10 @@ describe('signInSchema', () => {
     // length check here would lock out an account created under an older one,
     // and would leak that the password is short before checking anything.
     expect(
-      parseInput(signInSchema, { email: 'ana@exemplo.com', password: 'x' }),
+      parseInput(signInSchema, {
+        email: 'ana@exemplo.com',
+        password: ANY_PASSWORD,
+      }),
     ).toBeTruthy();
   });
 });
