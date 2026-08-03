@@ -457,6 +457,12 @@ parse a message:
 | `EMAIL_ALREADY_EXISTS` | Sign-up with an email already registered |
 | `INVALID_CREDENTIALS` | Sign-in failed |
 
+A duplicate category name has no code of its own. `@@unique([userId, name])` is
+reachable from `createCategory` and `updateCategory`, and both answer
+`BAD_USER_INPUT` with `fieldErrors: { name: ["Já existe uma categoria com esse
+nome"] }`. A dedicated code would need frontend handling that `fieldErrors`
+already provides, and the message belongs on the field either way.
+
 `INVALID_CREDENTIALS` is returned identically for an unknown email and a wrong
 password. Distinguishing them would turn the login endpoint into an oracle for
 which emails have accounts.
@@ -479,6 +485,8 @@ Enforced by zod at the entry point of each service:
 - `description` (category) — optional; maximum 200 characters
 - `icon` — one of the `CategoryIcon` tokens
 - `color` — one of the `CategoryColor` tokens
+- category name uniqueness — scoped to the owner; a collision is
+  `BAD_USER_INPUT` on the `name` field
 - `search` — maximum 100 characters
 - `month` — integer 1–12; `year` — integer 1970–2100
 - pagination — `limit` between 1 and 100, `offset` at least 0
