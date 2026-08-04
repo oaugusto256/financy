@@ -13,7 +13,11 @@
     "codegen:check": "graphql-codegen --config codegen.ts && git diff --exit-code schema.graphql src/graphql/generated",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx --env-file-if-exists=.env prisma/seed.ts"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^7.2.0",
