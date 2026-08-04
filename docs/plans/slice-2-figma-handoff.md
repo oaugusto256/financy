@@ -41,8 +41,12 @@ The Portuguese labels are not in the design — they are the accessible names fo
 the picker's radio buttons, which a screen reader announces. They need to be
 right, not necessarily to match anything visual.
 
-- [ ] The sixteen icons are the ones the Style Guide draws.
-- [ ] The labels read naturally in Brazilian Portuguese.
+- [x] The sixteen icons are the ones the Style Guide draws.
+      Confirmed by the owner on 2026-08-03 against the "Category Icons" gallery
+      at `/style-guide`, which renders every token beside the glyph it produces.
+      The mapping in `src/lib/category-tokens.ts` stands unchanged, and the
+      pickers are built on it.
+- [x] The labels read naturally in Brazilian Portuguese.
 
 ### The `/style-guide` primitive comparison (Style Guide tab)
 
