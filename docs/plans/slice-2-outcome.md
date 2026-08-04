@@ -71,6 +71,60 @@ pass for a command that failed.
   to compare. Three of its questions are the `frontend.md` §12 entries above.
 - The sixteen icon names **are** confirmed, as of 2026-08-03.
 
+## What the final review caught
+
+One blocking defect, in `CategoriesPage`: `CategoryDialog` was permanently
+mounted and keyed on the edit target, so create → create and
+edit → cancel → edit-the-same-category reopened the form holding the previous
+values and a stale error banner. Adding several categories in a row is the
+primary flow of this feature, and the second one would have been rejected as a
+duplicate of the first. Fixed by mounting the dialog only while it is open,
+matching what `DeleteCategoryDialog` already did, with three reopen tests that
+did not exist before.
+
+Two smaller ones, fixed in the same wave: both dialogs re-enabled their submit
+button the moment the mutation resolved, leaving a window during the awaited
+invalidation where a second click fired it again; and the style guide's badge
+count had become vacuous once the icon picker put sixteen more matching
+elements on the page.
+
+The review found the backend clean end to end — `userId` in the where clause of
+every read and write including the loader's batch query, cross-user `NOT_FOUND`
+covered at both the service and transport layers.
+
+### Parked, with the ruling
+
+**Cancelling mid-submit can set state on an unmounted dialog.** Now that the
+dialog unmounts when closed, cancelling during an in-flight save lets the
+handler's later `setFormError` run against a gone component. Functionally
+harmless — the mutation still completes and nothing crashes — but it can log a
+development warning. Left as-is: disabling "Cancelar" while submitting traps a
+user behind a slow request, and the alternative fix is an abort signal this
+codebase has no pattern for yet. Slice 3 adds a second dialog with the same
+shape and is the right place to settle it once.
+
+### Follow-ups it raised, none blocking
+
+- `parseInput` lives in `modules/auth/validation.ts` and is now imported by the
+  category module. It is a generic zod-to-`BAD_USER_INPUT` helper and belongs in
+  `src/shared/`; every future module will otherwise import it from auth.
+- `createCategory` checks the name and then writes, so a concurrent duplicate
+  raises P2002 and surfaces as `INTERNAL_SERVER_ERROR` rather than the
+  `BAD_USER_INPUT` this branch wrote into `backend.md` §7. A `try/catch` mapping
+  P2002 closes it.
+- Both skeleton containers carry `aria-label` on a plain `div`, which is not
+  reliably exposed; they want `role="status"` and `aria-busy`. The tests read
+  the attribute directly, so this looks covered and is not.
+- `PanelError` has no `role="alert"`, so a failed refetch announces nothing.
+- On a category card, delete precedes edit in DOM order, putting the destructive
+  action first for keyboard users.
+- A card's name is a `<p>`; an `<h3>` would give the grid a heading structure.
+- `IconPicker` and `ColorPicker` take a `registration: UseFormRegisterReturn`,
+  coupling two design-system primitives to React Hook Form — visible in the
+  style guide, which has to hand-fake one. A `name`/`value`/`onChange` surface
+  would be library-agnostic.
+- `CategoryStats.mostUsed` selects `icon` and `color` that nothing renders.
+
 ## Debts slice 3 inherits
 
 - **`prisma/seed.ts`.** Still deferred. It seeds categories and transactions,
