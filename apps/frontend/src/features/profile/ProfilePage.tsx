@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PageShell } from '@/components/layout/PageShell';
+import { useToast } from '@/components/ui/useToast';
 import {
   useMeQuery,
   useUpdateProfileMutation,
@@ -41,7 +42,7 @@ function ProfileSkeleton() {
 function ProfileForm({ user }: { user: SessionUser }) {
   const { signOut } = useSession();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<ProfileValues>({
@@ -54,12 +55,11 @@ function ProfileForm({ user }: { user: SessionUser }) {
       // The top bar and this page both read the current user from Me. Without
       // this the name updates in the form and stays stale everywhere else.
       await queryClient.invalidateQueries({ queryKey: useMeQuery.getKey() });
-      setStatus('Alterações salvas');
+      showToast('Alterações salvas');
     },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    setStatus(null);
     setFormError(null);
     try {
       await updateProfile.mutateAsync({ input: { name: values.name } });
@@ -114,16 +114,6 @@ function ProfileForm({ user }: { user: SessionUser }) {
           readOnly
           helperText="O e-mail não pode ser alterado"
         />
-
-        {/* An inline role="status" rather than a toast. frontend.md section 10
-            specifies toasts; slice 2 builds that component, where three more
-            mutations and two destructive confirmations need it and the shape
-            of what it carries is actually known. */}
-        {status && (
-          <p role="status" className="text-sm text-success">
-            {status}
-          </p>
-        )}
 
         <Button type="submit" disabled={updateProfile.isPending}>
           Salvar alterações

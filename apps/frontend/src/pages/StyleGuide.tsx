@@ -9,15 +9,24 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Tag } from '@/components/ui/Tag';
 import { TypeIndicator } from '@/components/ui/TypeIndicator';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
+import { IconPicker } from '@/components/ui/IconPicker';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
 import { Pagination } from '@/components/ui/Pagination';
+import { useToast } from '@/components/ui/useToast';
 import { PageShell } from '@/components/layout/PageShell';
+import { cn } from '@/lib/cn';
 import {
+  CATEGORY_COLORS,
+  CATEGORY_COLOR_LABELS,
   CATEGORY_COLOR_VALUES,
+  CATEGORY_ICON_LABELS,
   CATEGORY_ICON_VALUES,
+  type CategoryColor,
+  type CategoryIcon,
 } from '@/lib/category-tokens';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -32,8 +41,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function StyleGuide() {
+  const { showToast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [icon, setIcon] = useState<CategoryIcon>('WALLET');
+  const [color, setColor] = useState<CategoryColor>('GREEN');
 
   return (
     <PageShell
@@ -129,6 +141,94 @@ export function StyleGuide() {
         <CategoryBadge />
       </Section>
 
+      <Section title="Category Icons">
+        <ul
+          aria-label="Ícones de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8"
+        >
+          {CATEGORY_ICON_VALUES.map((token) => (
+            <li
+              key={token}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
+              <CategoryBadge icon={token} color="GREEN" />
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_ICON_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Category Colors">
+        <ul
+          aria-label="Cores de categoria"
+          className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7"
+        >
+          {CATEGORY_COLOR_VALUES.map((token) => (
+            <li
+              key={token}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
+              <span className="flex gap-1">
+                {/* dark, base and light, in the order frontend.md section 3
+                    lists them, so the whole family is comparable at once. */}
+                <span
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].dark,
+                  )}
+                />
+                <span
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].swatch,
+                  )}
+                />
+                <span
+                  className={cn(
+                    'size-5 rounded-full',
+                    CATEGORY_COLORS[token].bg,
+                  )}
+                />
+              </span>
+              <code className="text-[11px] text-gray-700">{token}</code>
+              <span className="text-[11px] text-gray-500">
+                {CATEGORY_COLOR_LABELS[token]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Pickers">
+        <IconPicker
+          legend="Ícone"
+          value={icon}
+          registration={{
+            name: 'style-guide-icon',
+            onChange: async (event: { target: { value: string } }) => {
+              setIcon(event.target.value as CategoryIcon);
+            },
+            onBlur: async () => {},
+            ref: () => {},
+          }}
+        />
+        <ColorPicker
+          legend="Cor"
+          value={color}
+          registration={{
+            name: 'style-guide-color',
+            onChange: async (event: { target: { value: string } }) => {
+              setColor(event.target.value as CategoryColor);
+            },
+            onBlur: async () => {},
+            ref: () => {},
+          }}
+        />
+      </Section>
+
       <Section title="Type Indicator">
         <TypeIndicator type="INCOME" />
         <TypeIndicator type="EXPENSE" />
@@ -162,6 +262,18 @@ export function StyleGuide() {
             <Button className="w-full">Salvar</Button>
           </div>
         </Dialog>
+      </Section>
+
+      <Section title="Toast">
+        <Button onClick={() => showToast('Categoria criada com sucesso')}>
+          Sucesso
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => showToast('Não foi possível salvar', 'error')}
+        >
+          Erro
+        </Button>
       </Section>
     </PageShell>
   );

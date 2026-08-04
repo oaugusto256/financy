@@ -34,6 +34,13 @@ describe('routing', () => {
     ).toBeInTheDocument();
   });
 
+  it('redirects /categories to / when signed out', () => {
+    renderWithProviders(<AppRoutes />, { route: '/categories' });
+    expect(
+      screen.getByRole('heading', { name: 'Fazer login' }),
+    ).toBeInTheDocument();
+  });
+
   it('redirects the sign up route to / when signed in', async () => {
     signedIn();
     renderWithProviders(<AppRoutes />, { route: '/signup' });

@@ -416,15 +416,25 @@ typeahead, screen reader semantics and the mobile picker, all to add a tick to a
 list that already shows its selection in the closed control. The native element
 is kept; the checkmark is not.
 
-**Mutation feedback on the profile screen is inline, not a toast.** Section 10
-specifies toasts. Slice 1's other two mutations give their feedback by
-navigating, leaving one operation to justify a toast system. The profile form
-renders a `role="status"` message instead. Slice 2, which adds three mutations
-and two destructive confirmations, builds the toast component and this entry is
-removed then.
-
 **Responsive behavior** is defined here, not in the design, which is
 desktop-only. See section 4.
+
+**The category card's tag carries the category name.** Section 5 lists "the
+icon badge, delete and edit icon buttons, the name, the description, the tag
+and the item count" without saying what the tag holds, and the card already
+shows the name above it. It is built as the name in the category's color, with
+the count beside it. Recorded because the reading is ours, not the design's;
+`slice-2-figma-handoff.md` asks the owner to confirm it.
+
+**The icon picker draws its sixteen icons in neutral gray**, not in the
+currently selected color. The selection is shown by a brand-green outline on
+the chosen cell, which is what section 5 specifies; tinting every icon as well
+would make the grid read as sixteen selected states. Also on the handoff for
+confirmation.
+
+**A new category opens with `WALLET` and `GREEN` preselected.** Section 5 says
+both pickers have a default selection without naming it. These two are the
+choice; changing them is a one-line change in `CategoryDialog.tsx`.
 
 ## 13. Environment
 

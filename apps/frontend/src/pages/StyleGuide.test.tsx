@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { StyleGuide } from './StyleGuide';
+import { ToastProvider } from '@/components/ui/Toast';
 import {
   CATEGORY_COLOR_VALUES,
   CATEGORY_ICON_VALUES,
@@ -9,9 +10,11 @@ import {
 
 function renderStyleGuide() {
   return render(
-    <MemoryRouter>
-      <StyleGuide />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <StyleGuide />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -41,17 +44,27 @@ describe('StyleGuide', () => {
   });
 
   it('shows every category color and icon', () => {
-    const { container } = renderStyleGuide();
+    renderStyleGuide();
 
+    // Scoped to the Tag section: the token text now also appears in the
+    // Category Colors gallery added below, so an unscoped query matches both.
+    const tagSection = screen
+      .getByRole('heading', { name: 'Tag' })
+      .closest('div');
     for (const color of CATEGORY_COLOR_VALUES) {
-      expect(screen.getByText(color)).toBeInTheDocument();
+      expect(within(tagSection!).getByText(color)).toBeInTheDocument();
     }
 
-    // One badge per icon token, plus the neutral fallback.
-    const badges = container.querySelectorAll('.rounded-lg.size-9, .size-9');
-    expect(badges.length).toBeGreaterThanOrEqual(
-      CATEGORY_ICON_VALUES.length + 1,
+    // Scoped to the Category Badge section: the unscoped selector also
+    // matched the sixteen IconPicker cells, so the count stayed above the
+    // threshold even if every CategoryBadge vanished.
+    const badgeSection = screen
+      .getByRole('heading', { name: 'Category Badge' })
+      .closest('div');
+    const badges = badgeSection!.querySelectorAll(
+      '.rounded-lg.size-9, .size-9',
     );
+    expect(badges.length).toBe(CATEGORY_ICON_VALUES.length + 1);
   });
 
   it('opens the dialog from the page', async () => {
@@ -62,5 +75,31 @@ describe('StyleGuide', () => {
       screen.getByRole('button', { name: 'Abrir diálogo' }),
     );
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Nova transação');
+  });
+
+  it('names every category icon beside the icon it draws', () => {
+    renderStyleGuide();
+
+    // The owner has to confirm these sixteen against Figma. A glyph with no
+    // token name beside it cannot be confirmed or rejected.
+    const gallery = screen.getByRole('list', { name: 'Ícones de categoria' });
+
+    for (const token of CATEGORY_ICON_VALUES) {
+      expect(within(gallery).getByText(token)).toBeInTheDocument();
+    }
+    expect(
+      within(gallery).getByText('Carrinho de compras'),
+    ).toBeInTheDocument();
+  });
+
+  it('names every category color beside the swatch it draws', () => {
+    renderStyleGuide();
+
+    const gallery = screen.getByRole('list', { name: 'Cores de categoria' });
+
+    for (const token of CATEGORY_COLOR_VALUES) {
+      expect(within(gallery).getByText(token)).toBeInTheDocument();
+    }
+    expect(within(gallery).getByText('Verde')).toBeInTheDocument();
   });
 });
