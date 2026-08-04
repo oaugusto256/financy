@@ -73,7 +73,12 @@ export function CategoryDialog({
 
   const createCategory = useCreateCategoryMutation();
   const updateCategory = useUpdateCategoryMutation();
-  const pending = createCategory.isPending || updateCategory.isPending;
+  // form.formState.isSubmitting, not createCategory.isPending /
+  // updateCategory.isPending: those flip false the moment mutateAsync
+  // resolves, while the dialog stays open and interactive through the
+  // awaited invalidateQueries refetches below. isSubmitting stays true for
+  // the whole async handler, so a second click in that window is blocked.
+  const pending = form.formState.isSubmitting;
 
   const onSubmit = form.handleSubmit(async (values) => {
     setFormError(null);

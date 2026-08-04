@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, aUser, graphqlError, ok } from '@/test/msw/api';
 import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
@@ -184,6 +184,52 @@ describe('CategoriesPage', () => {
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
   });
 
+  it('sends only one create mutation on a second click during invalidation', async () => {
+    // createCategory.isPending goes false as soon as the mutation response
+    // arrives, well before the awaited invalidateQueries refetches below
+    // settle. Holding the Categories refetch open reproduces that window.
+    populated();
+    const createCalls = vi.fn();
+    server.use(
+      api.mutation('CreateCategory', ({ variables }) => {
+        createCalls(variables);
+        return ok({ createCategory: { id: 'category-3' } });
+      }),
+    );
+    renderCategories();
+    await screen.findByRole('article', { name: 'Mercado' });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova categoria' }),
+    );
+    await userEvent.type(screen.getByLabelText('Nome'), 'Lazer');
+
+    // Only held once the initial list has already loaded: holding it from
+    // the start would hang the render this test's setup depends on.
+    let releaseList: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      releaseList = resolve;
+    });
+    server.use(
+      api.query('Categories', async () => {
+        await held;
+        return ok({ categories: [mercado, transporte] });
+      }),
+    );
+
+    const submit = screen.getByRole('button', { name: 'Salvar' });
+    await userEvent.click(submit);
+    await userEvent.click(submit);
+
+    releaseList();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', { name: 'Nova categoria' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(createCalls).toHaveBeenCalledTimes(1);
+  });
+
   it('reopens the create dialog empty after a create, not prefilled from the last one', async () => {
     // Regression for the dialog staying mounted across "+ Nova categoria"
     // opens: react-hook-form keeps field values unless the component
@@ -304,6 +350,52 @@ describe('CategoriesPage', () => {
         screen.queryByRole('article', { name: 'Mercado' }),
       ).not.toBeInTheDocument(),
     );
+  });
+
+  it('sends only one delete mutation on a second click during invalidation', async () => {
+    // deleteCategory.isPending goes false as soon as the mutation response
+    // arrives, before the awaited invalidateQueries refetches below settle.
+    // A second click in that window used to fire a second delete that
+    // answered NOT_FOUND for a row already gone.
+    populated();
+    const deleteCalls = vi.fn();
+    server.use(
+      api.mutation('DeleteCategory', ({ variables }) => {
+        deleteCalls(variables);
+        return ok({ deleteCategory: true });
+      }),
+    );
+    renderCategories();
+    const card = await screen.findByRole('article', { name: 'Mercado' });
+
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Excluir Mercado' }),
+    );
+
+    // Only held once the initial list has already loaded: holding it from
+    // the start would hang the render this test's setup depends on.
+    let releaseList: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      releaseList = resolve;
+    });
+    server.use(
+      api.query('Categories', async () => {
+        await held;
+        return ok({ categories: [transporte] });
+      }),
+    );
+
+    const confirm = screen.getByRole('button', { name: 'Excluir' });
+    await userEvent.click(confirm);
+    await userEvent.click(confirm);
+
+    releaseList();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', { name: 'Excluir categoria' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(deleteCalls).toHaveBeenCalledTimes(1);
   });
 
   it('does not delete without the confirmation', async () => {

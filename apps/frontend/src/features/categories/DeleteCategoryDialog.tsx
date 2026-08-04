@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -25,12 +26,19 @@ export function DeleteCategoryDialog({
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const deleteCategory = useDeleteCategoryMutation();
+  // deleteCategory.isPending goes false the instant mutateAsync resolves,
+  // while the dialog stays open and interactive through the awaited
+  // invalidateQueries below. A local flag stays true for the whole handler,
+  // so a second click during that window is blocked rather than firing a
+  // second delete that answers NOT_FOUND for a row already gone.
+  const [pending, setPending] = useState(false);
 
   if (!category) return null;
 
   async function confirm() {
     if (!category) return;
 
+    setPending(true);
     try {
       await deleteCategory.mutateAsync({ id: category.id });
       await Promise.all([
@@ -51,6 +59,8 @@ export function DeleteCategoryDialog({
       onClose();
     } catch {
       showToast('Não foi possível excluir. Tente novamente.', 'error');
+    } finally {
+      setPending(false);
     }
   }
 
@@ -67,7 +77,7 @@ export function DeleteCategoryDialog({
         </Button>
         <Button
           onClick={confirm}
-          loading={deleteCategory.isPending}
+          loading={pending}
           className="bg-danger hover:bg-red-dark"
         >
           Excluir
