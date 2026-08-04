@@ -4,20 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { IconPicker } from '@/components/ui/IconPicker';
 import { CATEGORY_ICON_VALUES } from '@/lib/category-tokens';
 
-function registration(onChange = vi.fn()) {
-  // The shape React Hook Form's register() returns. Passing it through keeps
-  // the inputs uncontrolled, which is why typing in the dialog does not
-  // re-render the sixteen cells.
-  return { name: 'icon', onChange, onBlur: vi.fn(), ref: vi.fn() };
-}
-
 describe('IconPicker', () => {
   it('renders one radio per token', () => {
     render(
       <IconPicker
         legend="Ícone"
+        name="icon"
         value="WALLET"
-        registration={registration()}
+        onChange={vi.fn()}
       />,
     );
 
@@ -31,8 +25,9 @@ describe('IconPicker', () => {
     render(
       <IconPicker
         legend="Ícone"
+        name="icon"
         value="WALLET"
-        registration={registration()}
+        onChange={vi.fn()}
       />,
     );
 
@@ -46,26 +41,28 @@ describe('IconPicker', () => {
     render(
       <IconPicker
         legend="Ícone"
+        name="icon"
         value="WALLET"
-        registration={registration()}
+        onChange={vi.fn()}
       />,
     );
 
     expect(screen.getByRole('group', { name: 'Ícone' })).toBeInTheDocument();
   });
 
-  it('reports a change through the registration', async () => {
+  it('reports the chosen token', async () => {
     const onChange = vi.fn();
     render(
       <IconPicker
         legend="Ícone"
+        name="icon"
         value="WALLET"
-        registration={registration(onChange)}
+        onChange={onChange}
       />,
     );
 
     await userEvent.click(screen.getByRole('radio', { name: 'Ônibus' }));
 
-    expect(onChange).toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith('BUS');
   });
 });

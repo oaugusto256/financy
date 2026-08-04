@@ -102,4 +102,16 @@ describe('StyleGuide', () => {
     }
     expect(within(gallery).getByText('Verde')).toBeInTheDocument();
   });
+
+  it('shows both segments of the segmented control', () => {
+    renderStyleGuide();
+
+    const group = screen.getByRole('group', { name: 'Tipo' });
+    expect(
+      within(group).getByRole('radio', { name: 'Despesa' }),
+    ).toBeInTheDocument();
+    expect(
+      within(group).getByRole('radio', { name: 'Receita' }),
+    ).toBeInTheDocument();
+  });
 });
