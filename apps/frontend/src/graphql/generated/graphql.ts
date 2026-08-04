@@ -39,6 +39,14 @@ export type CreateCategoryInput = {
   name: string;
 };
 
+export type CreateTransactionInput = {
+  amount: number;
+  categoryId?: string | number | null | undefined;
+  date: string;
+  description: string;
+  type: TransactionType;
+};
+
 export type SignInInput = {
   email: string;
   password: string;
@@ -50,6 +58,10 @@ export type SignUpInput = {
   password: string;
 };
 
+export type TransactionType =
+  | 'EXPENSE'
+  | 'INCOME';
+
 export type UpdateCategoryInput = {
   color?: CategoryColor | null | undefined;
   description?: string | null | undefined;
@@ -59,6 +71,14 @@ export type UpdateCategoryInput = {
 
 export type UpdateProfileInput = {
   name: string;
+};
+
+export type UpdateTransactionInput = {
+  amount?: number | null | undefined;
+  categoryId?: string | number | null | undefined;
+  date?: string | null | undefined;
+  description?: string | null | undefined;
+  type?: TransactionType | null | undefined;
 };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
@@ -118,6 +138,36 @@ export type DeleteCategoryMutationVariables = Exact<{
 
 
 export type DeleteCategoryMutation = { deleteCategory: boolean };
+
+export type TransactionsQueryVariables = Exact<{
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type TransactionsQuery = { transactions: { totalCount: number, items: Array<{ id: string, description: string, amount: number, type: TransactionType, date: string, category: { id: string, name: string, icon: CategoryIcon, color: CategoryColor } | null }> } };
+
+export type CreateTransactionMutationVariables = Exact<{
+  input: CreateTransactionInput;
+}>;
+
+
+export type CreateTransactionMutation = { createTransaction: { id: string } };
+
+export type UpdateTransactionMutationVariables = Exact<{
+  id: string | number;
+  input: UpdateTransactionInput;
+}>;
+
+
+export type UpdateTransactionMutation = { updateTransaction: { id: string } };
+
+export type DeleteTransactionMutationVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type DeleteTransactionMutation = { deleteTransaction: boolean };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -397,3 +447,115 @@ export const useDeleteCategoryMutation = <
 
 
 useDeleteCategoryMutation.fetcher = (variables: DeleteCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument, variables, options);
+
+export const TransactionsDocument = new TypedDocumentString(`
+    query Transactions($limit: Int, $offset: Int) {
+  transactions(limit: $limit, offset: $offset) {
+    totalCount
+    items {
+      id
+      description
+      amount
+      type
+      date
+      category {
+        id
+        name
+        icon
+        color
+      }
+    }
+  }
+}
+    `);
+
+export const useTransactionsQuery = <
+      TData = TransactionsQuery,
+      TError = unknown
+    >(
+      variables?: TransactionsQueryVariables,
+      options?: Omit<UseQueryOptions<TransactionsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TransactionsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<TransactionsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Transactions'] : ['Transactions', variables],
+    queryFn: fetcher<TransactionsQuery, TransactionsQueryVariables>(TransactionsDocument, variables),
+    ...options
+  }
+    )};
+
+useTransactionsQuery.getKey = (variables?: TransactionsQueryVariables) => variables === undefined ? ['Transactions'] : ['Transactions', variables];
+
+
+useTransactionsQuery.fetcher = (variables?: TransactionsQueryVariables, options?: RequestInit['headers']) => fetcher<TransactionsQuery, TransactionsQueryVariables>(TransactionsDocument, variables, options);
+
+export const CreateTransactionDocument = new TypedDocumentString(`
+    mutation CreateTransaction($input: CreateTransactionInput!) {
+  createTransaction(input: $input) {
+    id
+  }
+}
+    `);
+
+export const useCreateTransactionMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<CreateTransactionMutation, TError, CreateTransactionMutationVariables, TContext>) => {
+    
+    return useMutation<CreateTransactionMutation, TError, CreateTransactionMutationVariables, TContext>(
+      {
+    mutationKey: ['CreateTransaction'],
+    mutationFn: (variables?: CreateTransactionMutationVariables) => fetcher<CreateTransactionMutation, CreateTransactionMutationVariables>(CreateTransactionDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useCreateTransactionMutation.fetcher = (variables: CreateTransactionMutationVariables, options?: RequestInit['headers']) => fetcher<CreateTransactionMutation, CreateTransactionMutationVariables>(CreateTransactionDocument, variables, options);
+
+export const UpdateTransactionDocument = new TypedDocumentString(`
+    mutation UpdateTransaction($id: ID!, $input: UpdateTransactionInput!) {
+  updateTransaction(id: $id, input: $input) {
+    id
+  }
+}
+    `);
+
+export const useUpdateTransactionMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<UpdateTransactionMutation, TError, UpdateTransactionMutationVariables, TContext>) => {
+    
+    return useMutation<UpdateTransactionMutation, TError, UpdateTransactionMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateTransaction'],
+    mutationFn: (variables?: UpdateTransactionMutationVariables) => fetcher<UpdateTransactionMutation, UpdateTransactionMutationVariables>(UpdateTransactionDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useUpdateTransactionMutation.fetcher = (variables: UpdateTransactionMutationVariables, options?: RequestInit['headers']) => fetcher<UpdateTransactionMutation, UpdateTransactionMutationVariables>(UpdateTransactionDocument, variables, options);
+
+export const DeleteTransactionDocument = new TypedDocumentString(`
+    mutation DeleteTransaction($id: ID!) {
+  deleteTransaction(id: $id)
+}
+    `);
+
+export const useDeleteTransactionMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<DeleteTransactionMutation, TError, DeleteTransactionMutationVariables, TContext>) => {
+    
+    return useMutation<DeleteTransactionMutation, TError, DeleteTransactionMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteTransaction'],
+    mutationFn: (variables?: DeleteTransactionMutationVariables) => fetcher<DeleteTransactionMutation, DeleteTransactionMutationVariables>(DeleteTransactionDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useDeleteTransactionMutation.fetcher = (variables: DeleteTransactionMutationVariables, options?: RequestInit['headers']) => fetcher<DeleteTransactionMutation, DeleteTransactionMutationVariables>(DeleteTransactionDocument, variables, options);
