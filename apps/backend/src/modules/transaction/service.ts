@@ -4,6 +4,7 @@ import { notFound } from '../../shared/errors.js';
 import { parseInput } from '../../shared/validation.js';
 import {
   createTransactionSchema,
+  transactionPageSchema,
   updateTransactionSchema,
 } from './validation.js';
 
@@ -94,4 +95,39 @@ export async function deleteTransaction(
   if (count === 0) throw notFound('Transação');
 
   return true;
+}
+
+export interface TransactionPage {
+  items: Transaction[];
+  totalCount: number;
+}
+
+/**
+ * Offset pagination, not cursors: the frontend needs "page 3" and, from slice 4,
+ * date-range filtering — not infinite scroll. backend.md section 5.
+ *
+ * The tiebreaker on createdAt is load-bearing. Without it two transactions
+ * sharing a date have no defined order, so the same row can appear on page 1
+ * and page 2 of consecutive requests, or on neither.
+ *
+ * Both queries carry `userId`. Scoping findMany but not count would hide the
+ * other user's rows while still reporting how many of them there are.
+ */
+export async function listTransactions(
+  userId: string,
+  args: unknown,
+): Promise<TransactionPage> {
+  const { limit, offset } = parseInput(transactionPageSchema, args);
+
+  const [items, totalCount] = await prisma.$transaction([
+    prisma.transaction.findMany({
+      where: { userId },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+      skip: offset,
+    }),
+    prisma.transaction.count({ where: { userId } }),
+  ]);
+
+  return { items, totalCount };
 }
