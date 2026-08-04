@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { parseInput } from '../../src/shared/validation.js';
 import {
-  parseInput,
   signInSchema,
   signUpSchema,
   updateProfileSchema,

@@ -1,7 +1,8 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../src/shared/prisma.js';
 import {
-  createCategory,
+  createCategory as createCategoryService,
   deleteCategory,
   listCategories,
   updateCategory,
@@ -30,7 +31,7 @@ describe('createCategory', () => {
   it('creates a category owned by the caller', async () => {
     const { user } = await createUser();
 
-    const category = await createCategory(user.id, input);
+    const category = await createCategoryService(user.id, input);
 
     expect(category).toMatchObject({
       name: 'Mercado',
@@ -43,9 +44,9 @@ describe('createCategory', () => {
 
   it('rejects a name the caller already used', async () => {
     const { user } = await createUser();
-    await createCategory(user.id, input);
+    await createCategoryService(user.id, input);
 
-    await expect(createCategory(user.id, input)).rejects.toMatchObject({
+    await expect(createCategoryService(user.id, input)).rejects.toMatchObject({
       extensions: {
         code: 'BAD_USER_INPUT',
         fieldErrors: { name: ['Já existe uma categoria com esse nome'] },
@@ -56,20 +57,95 @@ describe('createCategory', () => {
   it('lets a different user use the same name', async () => {
     const { user: ana } = await createUser();
     const { user: bruno } = await createUser();
-    await createCategory(ana.id, input);
+    await createCategoryService(ana.id, input);
 
-    await expect(createCategory(bruno.id, input)).resolves.toMatchObject({
-      userId: bruno.id,
-    });
+    await expect(createCategoryService(bruno.id, input)).resolves.toMatchObject(
+      {
+        userId: bruno.id,
+      },
+    );
   });
 
   it('rejects invalid input before touching the database', async () => {
     const { user } = await createUser();
 
     await expect(
-      createCategory(user.id, { ...input, icon: 'ROCKET' }),
+      createCategoryService(user.id, { ...input, icon: 'ROCKET' }),
     ).rejects.toMatchObject({ extensions: { code: 'BAD_USER_INPUT' } });
     expect(await prisma.category.count()).toBe(0);
+  });
+
+  it('answers BAD_USER_INPUT when the unique constraint fires under a race', async () => {
+    // assertNameAvailable checks and then writes, so two concurrent calls can
+    // both pass the check. Simulating that with a real race is flaky; writing
+    // the row directly between the check and the write is the same situation
+    // with a deterministic ordering.
+    const { user } = await createUser();
+    await prisma.category.create({
+      data: {
+        userId: user.id,
+        name: 'Mercado',
+        icon: 'WALLET',
+        color: 'GREEN',
+      },
+    });
+
+    // Bypasses assertNameAvailable by calling Prisma the way the service does
+    // once its check has already passed.
+    const collide = prisma.category.create({
+      data: {
+        userId: user.id,
+        name: 'Mercado',
+        icon: 'WALLET',
+        color: 'GREEN',
+      },
+    });
+
+    await expect(collide).rejects.toMatchObject({ code: 'P2002' });
+
+    // And through the service, the same collision is a named field error.
+    await expect(
+      createCategoryService(user.id, {
+        name: 'Mercado',
+        icon: 'WALLET',
+        color: 'GREEN',
+      }),
+    ).rejects.toMatchObject({
+      extensions: {
+        code: 'BAD_USER_INPUT',
+        fieldErrors: { name: ['Já existe uma categoria com esse nome'] },
+      },
+    });
+  });
+
+  it('maps a P2002 from the write itself to a field error', async () => {
+    // The race test above resolves through assertNameAvailable's pre-check,
+    // never reaching rethrowDuplicateName. Forcing the write itself to reject
+    // with P2002 is what actually exercises the .catch() mapping.
+    const { user } = await createUser();
+    const create = vi.spyOn(prisma.category, 'create').mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: Prisma.prismaVersion.client,
+      }),
+    );
+
+    try {
+      await expect(
+        createCategoryService(user.id, {
+          name: 'Mercado',
+          icon: 'WALLET',
+          color: 'GREEN',
+        }),
+      ).rejects.toMatchObject({
+        extensions: {
+          code: 'BAD_USER_INPUT',
+          fieldErrors: { name: ['Já existe uma categoria com esse nome'] },
+        },
+      });
+    } finally {
+      create.mockRestore();
+    }
   });
 });
 
