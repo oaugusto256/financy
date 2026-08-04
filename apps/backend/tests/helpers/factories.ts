@@ -68,7 +68,13 @@ export async function createTransaction(
       description: overrides.description ?? `Transação ${sequence}`,
       amount: overrides.amount ?? 1000,
       type: overrides.type ?? 'EXPENSE',
-      date: overrides.date ?? new Date('2026-08-01T12:00:00.000Z'),
+      // Derived from `sequence`, not a shared constant: a fixed date meant
+      // every row landed in the same bucket by default, so a test that
+      // forgot to override `date` for a date-range case could pass by
+      // coincidence. Still deterministic (no Date.now(), no randomness) —
+      // that determinism is the reason a constant was here in the first
+      // place.
+      date: overrides.date ?? new Date(Date.UTC(2026, 7, sequence, 12, 0, 0)),
     },
   });
 }
