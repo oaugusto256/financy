@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -40,8 +40,11 @@ describe('Toast', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sucesso' }));
 
     // A confirmation nobody hears is not feedback. frontend.md section 10.
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Categoria criada',
+    // Radix's live-region announcer exists (empty) almost immediately, then
+    // fills in its text after a double requestAnimationFrame — waitFor
+    // retries the whole assertion against that mutation, not just presence.
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Categoria criada'),
     );
   });
 
