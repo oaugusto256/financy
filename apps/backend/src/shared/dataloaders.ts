@@ -1,4 +1,5 @@
 import DataLoader from 'dataloader';
+import type { Category } from '@prisma/client';
 import { prisma } from './prisma.js';
 
 export interface CategoryTotals {
@@ -10,6 +11,7 @@ const EMPTY: CategoryTotals = { transactionCount: 0, totalAmount: 0 };
 
 export interface Loaders {
   categoryTotals: DataLoader<string, CategoryTotals>;
+  categoryById: DataLoader<string, Category | null>;
 }
 
 /**
@@ -46,6 +48,32 @@ export function createLoaders(userId: string | null): Loaders {
         );
 
         return categoryIds.map((id) => byCategory.get(id) ?? EMPTY);
+      },
+    ),
+
+    /**
+     * Ten rows on a transactions page, each with a category, is eleven queries
+     * without this. backend.md section 5.
+     *
+     * Scoped by `userId` like every other read. A key outside the caller's
+     * scope resolves to null rather than to somebody else's row — unreachable
+     * through the API, since a transaction's categoryId always points at one of
+     * its own owner's categories, but the scope costs nothing and the invariant
+     * is then enforced rather than assumed.
+     */
+    categoryById: new DataLoader<string, Category | null>(
+      async (categoryIds) => {
+        if (!userId) return categoryIds.map(() => null);
+
+        const categories = await prisma.category.findMany({
+          where: { userId, id: { in: [...categoryIds] } },
+        });
+
+        const byId = new Map(
+          categories.map((category) => [category.id, category]),
+        );
+
+        return categoryIds.map((id) => byId.get(id) ?? null);
       },
     ),
   };

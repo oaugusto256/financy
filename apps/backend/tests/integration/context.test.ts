@@ -20,6 +20,7 @@ describe('createContext', () => {
 
     expect(context.userId).toBe('user-1');
     expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
+    expect(context.loaders.categoryById).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the header is absent', async () => {
@@ -27,6 +28,7 @@ describe('createContext', () => {
 
     expect(context.userId).toBeNull();
     expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
+    expect(context.loaders.categoryById).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the scheme is not Bearer', async () => {
@@ -35,6 +37,7 @@ describe('createContext', () => {
 
     expect(context.userId).toBeNull();
     expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
+    expect(context.loaders.categoryById).toBeInstanceOf(DataLoader);
   });
 
   it('has no user when the token is garbage', async () => {
@@ -44,5 +47,6 @@ describe('createContext', () => {
 
     expect(context.userId).toBeNull();
     expect(context.loaders.categoryTotals).toBeInstanceOf(DataLoader);
+    expect(context.loaders.categoryById).toBeInstanceOf(DataLoader);
   });
 });
