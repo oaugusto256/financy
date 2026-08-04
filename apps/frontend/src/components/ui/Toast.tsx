@@ -10,9 +10,20 @@ interface ToastMessage {
   variant: ToastVariant;
 }
 
+// The surface carries the variant, not only the icon — the same pairing the
+// inline form error already uses: the family's light shade behind its dark
+// text, which is what keeps the message legible on the tint.
 const VARIANTS = {
-  success: { icon: CheckCircle2, className: 'text-success' },
-  error: { icon: XCircle, className: 'text-danger' },
+  success: {
+    icon: CheckCircle2,
+    surface: 'border-green-base/30 bg-green-light',
+    content: 'text-green-dark',
+  },
+  error: {
+    icon: XCircle,
+    surface: 'border-danger/30 bg-red-light',
+    content: 'text-red-dark',
+  },
 } as const;
 
 // Radix owns the timer, the swipe gesture, the live region and the focus
@@ -44,24 +55,31 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {children}
 
         {toasts.map((toast) => {
-          const { icon: Icon, className } = VARIANTS[toast.variant];
+          const { icon: Icon, surface, content } = VARIANTS[toast.variant];
 
           return (
             <RadixToast.Root
               key={toast.id}
               open
               onOpenChange={(open) => !open && dismiss(toast.id)}
-              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white
-                px-4 py-3 shadow-lg"
+              className={cn(
+                'flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg',
+                surface,
+              )}
             >
-              <Icon aria-hidden="true" className={cn('size-4', className)} />
-              <RadixToast.Title className="text-sm text-gray-800">
+              <Icon aria-hidden="true" className={cn('size-4', content)} />
+              <RadixToast.Title className={cn('text-sm', content)}>
                 {toast.message}
               </RadixToast.Title>
               <RadixToast.Close
                 aria-label="Fechar aviso"
-                className="ml-auto rounded p-1 text-gray-500 hover:bg-gray-200
-                  focus:outline-none focus:ring-2 focus:ring-brand-base/30"
+                className={cn(
+                  // Opacity rather than a hover fill: any fixed neutral reads
+                  // as muddy on one of the two tints.
+                  'ml-auto rounded p-1 transition-opacity hover:opacity-70',
+                  'focus:outline-none focus:ring-2 focus:ring-brand-base/30',
+                  content,
+                )}
               >
                 <X aria-hidden="true" className="size-4" />
               </RadixToast.Close>
