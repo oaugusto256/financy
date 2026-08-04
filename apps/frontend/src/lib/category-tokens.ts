@@ -120,13 +120,34 @@ export const CATEGORY_ICONS: Record<CategoryIcon, LucideIcon> = {
   RECEIPT: Receipt,
 };
 
-export const CATEGORY_COLOR_VALUES = Object.keys(
-  CATEGORY_COLORS,
-) as CategoryColor[];
+export const CATEGORY_ICON_VALUES = [
+  'BRIEFCASE',
+  'BUS',
+  'HEART_PULSE',
+  'PIGGY_BANK',
+  'SHOPPING_CART',
+  'TICKET',
+  'GIFT',
+  'UTENSILS',
+  'BIKE',
+  'HOME',
+  'HAND_COINS',
+  'BOOK_OPEN',
+  'STORE',
+  'WALLET',
+  'CREDIT_CARD',
+  'RECEIPT',
+] as const satisfies readonly CategoryIcon[];
 
-export const CATEGORY_ICON_VALUES = Object.keys(
-  CATEGORY_ICONS,
-) as CategoryIcon[];
+export const CATEGORY_COLOR_VALUES = [
+  'GREEN',
+  'BLUE',
+  'PURPLE',
+  'PINK',
+  'RED',
+  'ORANGE',
+  'YELLOW',
+] as const satisfies readonly CategoryColor[];
 
 /**
  * The Portuguese name of each token. Two jobs: it is the accessible name of

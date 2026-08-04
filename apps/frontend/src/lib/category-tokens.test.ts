@@ -41,6 +41,18 @@ describe('category tokens', () => {
       expect(CATEGORY_ICONS[icon]).toBeTypeOf('object');
     }
   });
+
+  it('lists every icon the lookup table holds', () => {
+    expect([...CATEGORY_ICON_VALUES].sort()).toEqual(
+      Object.keys(CATEGORY_ICONS).sort(),
+    );
+  });
+
+  it('lists every color the palette holds', () => {
+    expect([...CATEGORY_COLOR_VALUES].sort()).toEqual(
+      Object.keys(CATEGORY_COLORS).sort(),
+    );
+  });
 });
 
 describe('token labels', () => {
