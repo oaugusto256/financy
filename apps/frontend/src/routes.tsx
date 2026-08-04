@@ -6,6 +6,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { StyleGuide } from '@/pages/StyleGuide';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
+import { CategoriesPage } from '@/features/categories/CategoriesPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { useSession } from '@/features/auth/useSession';
 
@@ -50,10 +51,7 @@ export function AppRoutes() {
             path="/transactions"
             element={<Placeholder title="Transações" />}
           />
-          <Route
-            path="/categories"
-            element={<Placeholder title="Categorias" />}
-          />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
