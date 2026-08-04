@@ -57,15 +57,26 @@ input CreateCategoryInput {
   name: String!
 }
 
+input CreateTransactionInput {
+  amount: Int!
+  categoryId: ID
+  date: DateTime!
+  description: String!
+  type: TransactionType!
+}
+
 scalar DateTime
 
 type Mutation {
   createCategory(input: CreateCategoryInput!): Category!
+  createTransaction(input: CreateTransactionInput!): Transaction!
   deleteCategory(id: ID!): Boolean!
+  deleteTransaction(id: ID!): Boolean!
   signIn(input: SignInInput!): AuthPayload!
   signUp(input: SignUpInput!): AuthPayload!
   updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
   updateProfile(input: UpdateProfileInput!): User!
+  updateTransaction(id: ID!, input: UpdateTransactionInput!): Transaction!
 }
 
 type Query {
@@ -73,6 +84,7 @@ type Query {
   categoryStats: CategoryStats!
   health: String!
   me: User!
+  transactions(limit: Int = 10, offset: Int = 0): TransactionPage!
 }
 
 input SignInInput {
@@ -86,6 +98,27 @@ input SignUpInput {
   password: String!
 }
 
+type Transaction {
+  amount: Int!
+  category: Category
+  createdAt: DateTime!
+  date: DateTime!
+  description: String!
+  id: ID!
+  type: TransactionType!
+  updatedAt: DateTime!
+}
+
+type TransactionPage {
+  items: [Transaction!]!
+  totalCount: Int!
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
 input UpdateCategoryInput {
   color: CategoryColor
   description: String
@@ -95,6 +128,14 @@ input UpdateCategoryInput {
 
 input UpdateProfileInput {
   name: String!
+}
+
+input UpdateTransactionInput {
+  amount: Int
+  categoryId: ID
+  date: DateTime
+  description: String
+  type: TransactionType
 }
 
 type User {

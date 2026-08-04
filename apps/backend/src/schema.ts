@@ -4,6 +4,8 @@ import { authTypeDefs } from './modules/auth/schema.js';
 import { authResolvers } from './modules/auth/resolvers.js';
 import { categoryTypeDefs } from './modules/category/schema.js';
 import { categoryResolvers } from './modules/category/resolvers.js';
+import { transactionTypeDefs } from './modules/transaction/schema.js';
+import { transactionResolvers } from './modules/transaction/resolvers.js';
 
 // `Mutation` no longer needs a placeholder field: the category module extends
 // it with three real ones.
@@ -17,7 +19,12 @@ const rootTypeDefs = /* GraphQL */ `
   type Mutation
 `;
 
-export const typeDefs = [rootTypeDefs, authTypeDefs, categoryTypeDefs];
+export const typeDefs = [
+  rootTypeDefs,
+  authTypeDefs,
+  categoryTypeDefs,
+  transactionTypeDefs,
+];
 
 // Explicitly typed: an inferred object type keeps `Category`'s `| undefined`
 // (from the optional field access below) as part of a required key, which
@@ -30,12 +37,15 @@ export const resolvers: Resolvers = {
     health: () => 'ok',
     ...(authResolvers.Query ?? {}),
     ...(categoryResolvers.Query ?? {}),
+    ...(transactionResolvers.Query ?? {}),
   },
 
   Mutation: {
     ...(authResolvers.Mutation ?? {}),
     ...(categoryResolvers.Mutation ?? {}),
+    ...(transactionResolvers.Mutation ?? {}),
   },
 
   Category: categoryResolvers.Category,
+  Transaction: transactionResolvers.Transaction,
 };
