@@ -419,6 +419,23 @@ is kept; the checkmark is not.
 **Responsive behavior** is defined here, not in the design, which is
 desktop-only. See section 4.
 
+**The category card's tag carries the category name.** Section 5 lists "the
+icon badge, delete and edit icon buttons, the name, the description, the tag
+and the item count" without saying what the tag holds, and the card already
+shows the name above it. It is built as the name in the category's color, with
+the count beside it. Recorded because the reading is ours, not the design's;
+`slice-2-figma-handoff.md` asks the owner to confirm it.
+
+**The icon picker draws its sixteen icons in neutral gray**, not in the
+currently selected color. The selection is shown by a brand-green outline on
+the chosen cell, which is what section 5 specifies; tinting every icon as well
+would make the grid read as sixteen selected states. Also on the handoff for
+confirmation.
+
+**A new category opens with `WALLET` and `GREEN` preselected.** Section 5 says
+both pickers have a default selection without naming it. These two are the
+choice; changing them is a one-line change in `CategoryDialog.tsx`.
+
 ## 13. Environment
 
 ```
