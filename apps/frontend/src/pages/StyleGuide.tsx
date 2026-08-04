@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Tag } from '@/components/ui/Tag';
 import { TypeIndicator } from '@/components/ui/TypeIndicator';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
+import { IconPicker } from '@/components/ui/IconPicker';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
@@ -23,6 +25,8 @@ import {
   CATEGORY_COLOR_VALUES,
   CATEGORY_ICON_LABELS,
   CATEGORY_ICON_VALUES,
+  type CategoryColor,
+  type CategoryIcon,
 } from '@/lib/category-tokens';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -40,6 +44,8 @@ export function StyleGuide() {
   const { showToast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [icon, setIcon] = useState<CategoryIcon>('WALLET');
+  const [color, setColor] = useState<CategoryColor>('GREEN');
 
   return (
     <PageShell
@@ -194,6 +200,33 @@ export function StyleGuide() {
             </li>
           ))}
         </ul>
+      </Section>
+
+      <Section title="Pickers">
+        <IconPicker
+          legend="Ícone"
+          value={icon}
+          registration={{
+            name: 'style-guide-icon',
+            onChange: async (event: { target: { value: string } }) => {
+              setIcon(event.target.value as CategoryIcon);
+            },
+            onBlur: async () => {},
+            ref: () => {},
+          }}
+        />
+        <ColorPicker
+          legend="Cor"
+          value={color}
+          registration={{
+            name: 'style-guide-color',
+            onChange: async (event: { target: { value: string } }) => {
+              setColor(event.target.value as CategoryColor);
+            },
+            onBlur: async () => {},
+            ref: () => {},
+          }}
+        />
       </Section>
 
       <Section title="Type Indicator">
