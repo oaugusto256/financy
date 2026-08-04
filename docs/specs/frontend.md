@@ -1,7 +1,8 @@
 # Frontend Spec
 
-Status: approved, implemented through slice 1
-Last updated: 2026-08-01
+Status: approved, implemented through slice 2
+Last updated: 2026-08-04 (section 12: the toast deviation settled and removed,
+three category-screen entries added)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
