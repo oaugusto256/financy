@@ -1,6 +1,10 @@
 # Slice 2 — outcome
 
-Status: built on `feat/slice-2-categories`, 2026-08-03 to 2026-08-04.
+Status: merged to `main` in pull request #5, on 2026-08-04.
+
+Two changes landed after the branch review, at the owner's request: the toast
+surface is tinted per variant rather than carrying the variant on its icon
+alone, and its viewport moved to the top right.
 
 What [`slice-2-categories.md`](./slice-2-categories.md) planned and what actually
 landed, so slice 3 starts from the built state rather than from the plan. The

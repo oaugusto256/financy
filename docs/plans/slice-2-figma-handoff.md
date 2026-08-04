@@ -50,8 +50,11 @@ right, not necessarily to match anything visual.
 
 ### The `/style-guide` primitive comparison (Style Guide tab)
 
-- [ ] Every primitive at `http://localhost:5173/style-guide`, in every state,
+- [x] Every primitive at `http://localhost:5173/style-guide`, in every state,
       against the Style Guide frames. This is the check slice 0 deferred.
+      Confirmed by the owner on 2026-08-04, with one correction applied: the
+      toast now tints its whole surface per variant and sits at the top right.
+      **This closes the last visual check carried from slice 0.**
 
 ## New this slice — compare after the screens are built
 
@@ -87,6 +90,12 @@ right, not necessarily to match anything visual.
 
 ### Toast
 
-- [ ] Position, width, colors for success and failure, and how long it stays.
+- [x] Position, width, colors for success and failure, and how long it stays.
       The design specifies toasts (`frontend.md` section 10) without drawing
-      one at a size we could measure.
+      one at a size we could measure. Reviewed on 2026-08-04: the owner asked
+      for the variant to colour the whole surface rather than the icon alone,
+      and for the viewport to move from the bottom right to the top right.
+      Both applied. Width (`w-80`) and duration (5s) stand.
+- [ ] One open question from that change: on signed-in pages the toast now
+      floats over the right end of the top bar, where the avatar is. If that
+      reads badly, `top-20` drops it clear of the bar.

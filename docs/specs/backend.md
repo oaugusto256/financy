@@ -1,7 +1,8 @@
 # Backend Spec
 
-Status: approved, implemented through slice 1
-Last updated: 2026-08-01 (amended after the frontend design review)
+Status: approved, implemented through slice 2
+Last updated: 2026-08-04 (section 5 `mostUsed` semantics and the section 7
+duplicate-name contract, both corrected while slice 2 was built)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does

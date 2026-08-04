@@ -10,9 +10,9 @@ TanStack Query + Tailwind 4).
 |---|---|
 | `docs/specs/backend.md`, `frontend.md` | Source of truth for behavior. Section 12 of `frontend.md` records deliberate deviations from the design. |
 | `docs/plans/roadmap.md` | The five slices and the definition of done. |
-| `docs/plans/slice-N-*.md` | Per-slice implementation plans. **Large** — `slice-1` is 126 KB, `slice-0` is 92 KB. Read `slice-1-outcome.md` (6 KB) instead; it exists so neither has to be read whole. |
-| `apps/backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. |
-| `apps/backend/src/shared/` | `errors.ts`, `auth-guard.ts`, `env.ts`, `prisma.ts`, `password.ts`, `jwt.ts`. |
+| `docs/plans/slice-N-*.md` | Per-slice implementation plans. **Large** — `slice-2` is 190 KB, `slice-1` 126 KB, `slice-0` 92 KB. Read the matching `slice-N-outcome.md` instead; they exist so none of the plans has to be read whole. |
+| `apps/backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. `auth/` and `category/` exist. |
+| `apps/backend/src/shared/` | `errors.ts`, `auth-guard.ts`, `env.ts`, `prisma.ts`, `password.ts`, `jwt.ts`, `dataloaders.ts`. |
 | `apps/frontend/src/features/<name>/` | Screens and their feature-local logic. |
 | `apps/frontend/src/components/ui/` | Design-system primitives. Browsable at `/style-guide`. |
 
@@ -85,6 +85,17 @@ The full checklist is in `roadmap.md`. The lines most often missed:
   two files, so a password-shaped literal anywhere else is still scanned.
 - **MSW is strict**: `onUnhandledRequest: 'error'`. A test that fires an
   unmocked request fails, which several tests use as the assertion.
+- **Frontend codegen sets `enumsAsTypes`.** A queried `icon` or `color` is then
+  the same string-literal union `src/lib/category-tokens.ts` is keyed by; a real
+  TypeScript enum needs a cast at every badge, tag and picker.
+- **Tailwind never sees a class name built at runtime.** No template string, no
+  `.replace()`, no interpolation — spell the class out and compose with `cn()`.
+  A constructed class compiles to nothing and the element renders unstyled,
+  which no test catches.
+- **`format:check` is part of the gate**, alongside `test`, `typecheck`, `lint`
+  and `codegen:check`. Two slice-2 tasks were sent back for skipping it.
+- **DataLoaders are built per request in `createContext`, capturing `userId`.**
+  Sharing one across requests serves one caller's totals to the next.
 
 ## Two standing constraints
 
@@ -92,6 +103,9 @@ The full checklist is in `roadmap.md`. The lines most often missed:
   comes from a local run.
 - **Figma is not reachable from the repo.** Visual comparison is the owner's
   job. Produce an explicit checklist and hand it over rather than guessing;
-  `docs/plans/slice-1-figma-handoff.md` is the format. Two checks are still
-  open and **block slice 2**: the sixteen `CategoryIcon` names and the
-  `/style-guide` primitive comparison.
+  `docs/plans/slice-2-figma-handoff.md` is the format. Nothing is blocking as of
+  slice 2: the sixteen `CategoryIcon` names and the `/style-guide` primitive
+  comparison are both confirmed. A checklist only gates work when it asks about
+  something the code is being built on — and if it does, render the thing first
+  so the owner can actually answer it. Slice 2 had to add the `/style-guide`
+  token galleries mid-flight for exactly that reason.
