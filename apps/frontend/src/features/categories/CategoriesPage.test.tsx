@@ -184,6 +184,86 @@ describe('CategoriesPage', () => {
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
   });
 
+  it('reopens the create dialog empty after a create, not prefilled from the last one', async () => {
+    // Regression for the dialog staying mounted across "+ Nova categoria"
+    // opens: react-hook-form keeps field values unless the component
+    // unmounts, so a second create used to reopen showing "Lazer" and its
+    // icon/color rather than a blank form.
+    populated();
+    server.use(
+      api.mutation('CreateCategory', () =>
+        ok({ createCategory: { id: 'category-3' } }),
+      ),
+    );
+    renderCategories();
+    await screen.findByRole('article', { name: 'Mercado' });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova categoria' }),
+    );
+    await userEvent.type(screen.getByLabelText('Nome'), 'Lazer');
+    await userEvent.click(screen.getByRole('radio', { name: 'Ingresso' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', { name: 'Nova categoria' }),
+      ).not.toBeInTheDocument(),
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova categoria' }),
+    );
+
+    expect(screen.getByLabelText('Nome')).toHaveValue('');
+    expect(screen.getByRole('radio', { name: 'Carteira' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Verde' })).toBeChecked();
+  });
+
+  it('shows the right category after canceling an edit and opening a different one', async () => {
+    populated();
+    renderCategories();
+    const mercadoCard = await screen.findByRole('article', {
+      name: 'Mercado',
+    });
+
+    await userEvent.click(
+      within(mercadoCard).getByRole('button', { name: 'Editar Mercado' }),
+    );
+    expect(screen.getByLabelText('Nome')).toHaveValue('Mercado');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    const transporteCard = screen.getByRole('article', {
+      name: 'Transporte',
+    });
+    await userEvent.click(
+      within(transporteCard).getByRole('button', {
+        name: 'Editar Transporte',
+      }),
+    );
+
+    expect(screen.getByLabelText('Nome')).toHaveValue('Transporte');
+  });
+
+  it('discards an abandoned edit when the same category is reopened', async () => {
+    populated();
+    renderCategories();
+    const card = await screen.findByRole('article', { name: 'Mercado' });
+
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Editar Mercado' }),
+    );
+    await userEvent.clear(screen.getByLabelText('Nome'));
+    await userEvent.type(screen.getByLabelText('Nome'), 'Nome abandonado');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Editar Mercado' }),
+    );
+
+    expect(screen.getByLabelText('Nome')).toHaveValue('Mercado');
+  });
+
   it('opens the dialog prefilled from a card edit button', async () => {
     populated();
     renderCategories();

@@ -143,15 +143,16 @@ export function CategoriesPage() {
         </div>
       )}
 
-      {/* Keyed on the target so React Hook Form takes fresh defaultValues:
-          without it, the second category edited opens with the first one's
-          name. */}
-      <CategoryDialog
-        key={dialogTarget?.id ?? 'new'}
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        category={dialogTarget}
-      />
+      {/* Mounted only while open, like DeleteCategoryDialog below: unmounting
+          on close drops react-hook-form's state instead of leaving stale
+          values (and a stale formError) for the next open to inherit. */}
+      {dialogOpen && (
+        <CategoryDialog
+          open
+          onClose={() => setDialogOpen(false)}
+          category={dialogTarget}
+        />
+      )}
 
       <DeleteCategoryDialog
         category={deleteTarget}
