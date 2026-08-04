@@ -34,22 +34,24 @@ export function CategoryCard({
       <div className="flex items-start justify-between">
         <CategoryBadge icon={icon} color={color} />
         <div className="flex gap-2">
+          {/* Edit first. Delete first put the destructive action ahead of the
+              safe one for anyone tabbing through twelve cards. */}
+          <IconButton
+            icon={Pencil}
+            label={`Editar ${name}`}
+            onClick={() => onEdit(category)}
+          />
           <IconButton
             icon={Trash2}
             label={`Excluir ${name}`}
             variant="danger"
             onClick={() => onDelete(category)}
           />
-          <IconButton
-            icon={Pencil}
-            label={`Editar ${name}`}
-            onClick={() => onEdit(category)}
-          />
         </div>
       </div>
 
       <div>
-        <p className="font-semibold text-gray-800">{name}</p>
+        <h3 className="font-semibold text-gray-800">{name}</h3>
         {description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">
             {description}

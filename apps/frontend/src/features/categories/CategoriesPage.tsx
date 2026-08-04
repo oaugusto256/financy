@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ArrowLeftRight, Star, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { PanelError } from '@/components/ui/PanelError';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { StatCard } from '@/components/ui/StatCard';
 import { PageShell } from '@/components/layout/PageShell';
 import {
@@ -11,36 +13,6 @@ import {
 import { CategoryCard, type CategoryCardData } from './CategoryCard';
 import { CategoryDialog, type CategoryFormTarget } from './CategoryDialog';
 import { DeleteCategoryDialog } from './DeleteCategoryDialog';
-
-function GridSkeleton() {
-  return (
-    <div
-      aria-label="Carregando categorias"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-    >
-      {Array.from({ length: 4 }, (_, index) => (
-        <Card key={index} className="h-40 animate-pulse bg-gray-200 p-5" />
-      ))}
-    </div>
-  );
-}
-
-function PanelError({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
-  return (
-    <Card className="flex flex-col items-center gap-3 p-8 text-center">
-      <p className="text-sm text-gray-600">{message}</p>
-      <Button variant="secondary" size="sm" onClick={onRetry}>
-        Tentar novamente
-      </Button>
-    </Card>
-  );
-}
 
 export function CategoriesPage() {
   const [dialogTarget, setDialogTarget] = useState<CategoryFormTarget | null>(
@@ -78,17 +50,12 @@ export function CategoriesPage() {
     >
       <div className="mb-6">
         {stats.isPending ? (
-          <div
-            aria-label="Carregando números"
-            className="grid gap-4 sm:grid-cols-3"
-          >
-            {Array.from({ length: 3 }, (_, index) => (
-              <Card
-                key={index}
-                className="h-24 animate-pulse bg-gray-200 p-5"
-              />
-            ))}
-          </div>
+          <Skeleton
+            label="Carregando números"
+            count={3}
+            className="h-24 p-5"
+            containerClassName="grid gap-4 sm:grid-cols-3"
+          />
         ) : stats.isError || !stats.data ? (
           <PanelError
             message="Não foi possível carregar os números"
@@ -116,7 +83,12 @@ export function CategoriesPage() {
       </div>
 
       {categories.isPending ? (
-        <GridSkeleton />
+        <Skeleton
+          label="Carregando categorias"
+          count={4}
+          className="h-40 p-5"
+          containerClassName="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        />
       ) : categories.isError || !categories.data ? (
         <PanelError
           message="Não foi possível carregar as categorias"

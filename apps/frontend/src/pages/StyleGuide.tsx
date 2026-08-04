@@ -16,7 +16,9 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
+import { PanelError } from '@/components/ui/PanelError';
 import { Pagination } from '@/components/ui/Pagination';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/useToast';
 import { PageShell } from '@/components/layout/PageShell';
 import { cn } from '@/lib/cn';
@@ -249,6 +251,20 @@ export function StyleGuide() {
 
       <Section title="Pagination">
         <Pagination page={page} pageCount={3} onPageChange={setPage} />
+      </Section>
+
+      <Section title="Panel States">
+        <div className="w-full max-w-xs">
+          <Skeleton
+            label="Carregando"
+            count={2}
+            className="h-24 p-5"
+            containerClassName="grid gap-4"
+          />
+        </div>
+        <div className="w-full max-w-xs">
+          <PanelError message="Não foi possível carregar" onRetry={() => {}} />
+        </div>
       </Section>
 
       <Section title="Dialog">
