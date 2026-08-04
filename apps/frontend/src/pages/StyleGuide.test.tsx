@@ -44,7 +44,7 @@ describe('StyleGuide', () => {
   });
 
   it('shows every category color and icon', () => {
-    const { container } = renderStyleGuide();
+    renderStyleGuide();
 
     // Scoped to the Tag section: the token text now also appears in the
     // Category Colors gallery added below, so an unscoped query matches both.
@@ -55,11 +55,16 @@ describe('StyleGuide', () => {
       expect(within(tagSection!).getByText(color)).toBeInTheDocument();
     }
 
-    // One badge per icon token, plus the neutral fallback.
-    const badges = container.querySelectorAll('.rounded-lg.size-9, .size-9');
-    expect(badges.length).toBeGreaterThanOrEqual(
-      CATEGORY_ICON_VALUES.length + 1,
+    // Scoped to the Category Badge section: the unscoped selector also
+    // matched the sixteen IconPicker cells, so the count stayed above the
+    // threshold even if every CategoryBadge vanished.
+    const badgeSection = screen
+      .getByRole('heading', { name: 'Category Badge' })
+      .closest('div');
+    const badges = badgeSection!.querySelectorAll(
+      '.rounded-lg.size-9, .size-9',
     );
+    expect(badges.length).toBe(CATEGORY_ICON_VALUES.length + 1);
   });
 
   it('opens the dialog from the page', async () => {
