@@ -1,8 +1,8 @@
 # Backend Spec
 
-Status: approved, implemented through slice 2
-Last updated: 2026-08-04 (section 5 `mostUsed` semantics and the section 7
-duplicate-name contract, both corrected while slice 2 was built)
+Status: approved, implemented through slice 3
+Last updated: 2026-08-05 (section 7: the pagination line now states which bound
+rejects and which clamps, corrected while slice 3 was built)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does
@@ -491,7 +491,10 @@ Enforced by zod at the entry point of each service:
   `BAD_USER_INPUT` on the `name` field
 - `search` — maximum 100 characters
 - `month` — integer 1–12; `year` — integer 1970–2100
-- pagination — `limit` between 1 and 100, `offset` at least 0
+- pagination — `limit` is an integer of at least 1 and `offset` an integer of at
+  least 0; either below its minimum is `BAD_USER_INPUT`. A `limit` above 100 is
+  clamped to 100 rather than rejected, since §5 holds the maximum "regardless of
+  what the client sends".
 
 ## 8. Configuration
 

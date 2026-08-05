@@ -1,8 +1,9 @@
 # Frontend Spec
 
-Status: approved, implemented through slice 2
-Last updated: 2026-08-04 (section 12: the toast deviation settled and removed,
-three category-screen entries added)
+Status: approved, implemented through slice 3
+Last updated: 2026-08-05 (section 12: three transactions-screen entries added —
+the scrolling table, the page number in the URL, and the cents-first amount
+mask)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
@@ -436,6 +437,23 @@ confirmation.
 **A new category opens with `WALLET` and `GREEN` preselected.** Section 5 says
 both pickers have a default selection without naming it. These two are the
 choice; changing them is a one-line change in `CategoryDialog.tsx`.
+
+**The transactions table scrolls horizontally on a narrow screen.** Six columns
+do not fit below the medium breakpoint, and the design is desktop-only. The
+alternative — collapsing each row into a card — means a second markup path for
+the same data, duplicated states, and every table test written twice or gated on
+width, all for a layout the design does not draw.
+
+**The page number lives in the URL from slice 3.** §5 puts filter state in the
+query string and slice 4 owns the filters, but the page is the same kind of
+state and costs nothing to put there early. It also gives "changing a filter
+resets to page 1" something that already exists to reset.
+
+**The amount field is a cents-first mask.** §5 says the field displays `R$ 0,00`
+and converts to integer cents on submit without saying how. Keystrokes fill from
+the right, so the field holds a valid integer at every moment and submit sends
+it unchanged — there is no decimal string to parse and no locale ambiguity
+between `12,34` and `12.34`.
 
 ## 13. Environment
 
