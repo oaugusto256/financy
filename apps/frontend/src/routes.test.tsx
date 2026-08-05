@@ -34,6 +34,22 @@ describe('routing', () => {
     ).toBeInTheDocument();
   });
 
+  it('serves the transactions page at /transactions when signed in', async () => {
+    signedIn();
+    server.use(
+      api.query('Transactions', () =>
+        ok({
+          transactions: { items: [], totalCount: 0 },
+        }),
+      ),
+    );
+    server.use(api.query('Categories', () => ok({ categories: [] })));
+    renderWithProviders(<AppRoutes />, { route: '/transactions' });
+    expect(
+      await screen.findByRole('heading', { name: 'Transações' }),
+    ).toBeInTheDocument();
+  });
+
   it('redirects /categories to / when signed out', () => {
     renderWithProviders(<AppRoutes />, { route: '/categories' });
     expect(
