@@ -70,8 +70,43 @@ export const updateTransactionSchema = z.object({
   categoryId,
 });
 
+// A filter's absent, null and empty-string forms all mean the same thing:
+// no filter on that field. That is not true of the create/update inputs,
+// where an empty categoryId means "clear the category" — hence a separate
+// set of field schemas rather than reusing the ones above.
+const searchTerm = z
+  .string({ error: 'A busca deve ser um texto' })
+  .trim()
+  .max(100, 'A busca deve ter no máximo 100 caracteres')
+  .nullish()
+  .transform((value) => value || undefined);
+
+const filterCategoryId = z
+  .string({ error: 'A categoria deve ser um texto' })
+  .trim()
+  .nullish()
+  .transform((value) => value || undefined);
+
+// Same shape as the `date` field above and for the same reason: bare
+// z.coerce.date() reads null as 1970-01-01. Here the consequence is worse
+// than a wrong stored value — a null dateTo would silently return nothing.
+const dateBound = z
+  .union([z.string(), z.date()], { error: 'Informe uma data válida' })
+  .pipe(z.coerce.date({ error: 'Informe uma data válida' }))
+  .nullish()
+  .transform((value) => value ?? undefined);
+
+export const transactionFilterSchema = z.object({
+  search: searchTerm,
+  type: type.nullish().transform((value) => value ?? undefined),
+  categoryId: filterCategoryId,
+  dateFrom: dateBound,
+  dateTo: dateBound,
+});
+
 export const transactionPageSchema = z
   .object({
+    filter: transactionFilterSchema.nullish(),
     limit: z
       .int({ error: 'O limite deve ser um número inteiro' })
       .min(1, 'O limite deve ser pelo menos 1')
@@ -85,11 +120,18 @@ export const transactionPageSchema = z
   // says the maximum holds "regardless of what the client sends", so a request
   // for 500 rows is answered with 100 rather than an error; a request for zero
   // rows is a mistake worth naming.
-  .transform(({ limit, offset }) => ({
+  .transform(({ filter, limit, offset }) => ({
+    // An empty object, never undefined: the service destructures this. Every
+    // field of TransactionFilterArgs is a required key with an `| undefined`
+    // value (zod does not mark a transformed field optional key-wise), so an
+    // untyped {} is missing keys structurally even though reading any of them
+    // off a real {} at runtime yields undefined either way — hence the cast.
+    filter: filter ?? ({} as TransactionFilterArgs),
     limit: Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT),
     offset: offset ?? 0,
   }));
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
+export type TransactionFilterArgs = z.infer<typeof transactionFilterSchema>;
 export type TransactionPageArgs = z.infer<typeof transactionPageSchema>;
