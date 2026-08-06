@@ -11,11 +11,14 @@ import { TypeIndicator } from '@/components/ui/TypeIndicator';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
 import { IconPicker } from '@/components/ui/IconPicker';
 import { ColorPicker } from '@/components/ui/ColorPicker';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
+import { PanelError } from '@/components/ui/PanelError';
 import { Pagination } from '@/components/ui/Pagination';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/useToast';
 import { PageShell } from '@/components/layout/PageShell';
 import { cn } from '@/lib/cn';
@@ -44,8 +47,9 @@ export function StyleGuide() {
   const { showToast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [icon, setIcon] = useState<CategoryIcon>('WALLET');
-  const [color, setColor] = useState<CategoryColor>('GREEN');
+  const [guideIcon, setGuideIcon] = useState<CategoryIcon>('WALLET');
+  const [guideColor, setGuideColor] = useState<CategoryColor>('GREEN');
+  const [guideType, setGuideType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
 
   return (
     <PageShell
@@ -205,27 +209,27 @@ export function StyleGuide() {
       <Section title="Pickers">
         <IconPicker
           legend="Ícone"
-          value={icon}
-          registration={{
-            name: 'style-guide-icon',
-            onChange: async (event: { target: { value: string } }) => {
-              setIcon(event.target.value as CategoryIcon);
-            },
-            onBlur: async () => {},
-            ref: () => {},
-          }}
+          name="style-guide-icon"
+          value={guideIcon}
+          onChange={setGuideIcon}
         />
+
         <ColorPicker
           legend="Cor"
-          value={color}
-          registration={{
-            name: 'style-guide-color',
-            onChange: async (event: { target: { value: string } }) => {
-              setColor(event.target.value as CategoryColor);
-            },
-            onBlur: async () => {},
-            ref: () => {},
-          }}
+          name="style-guide-color"
+          value={guideColor}
+          onChange={setGuideColor}
+        />
+
+        <SegmentedControl
+          legend="Tipo"
+          name="style-guide-type"
+          value={guideType}
+          options={[
+            { value: 'EXPENSE', label: 'Despesa', tone: 'danger' },
+            { value: 'INCOME', label: 'Receita', tone: 'success' },
+          ]}
+          onChange={setGuideType}
         />
       </Section>
 
@@ -247,6 +251,20 @@ export function StyleGuide() {
 
       <Section title="Pagination">
         <Pagination page={page} pageCount={3} onPageChange={setPage} />
+      </Section>
+
+      <Section title="Panel States">
+        <div className="w-full max-w-xs">
+          <Skeleton
+            label="Carregando"
+            count={2}
+            className="h-24 p-5"
+            containerClassName="grid gap-4"
+          />
+        </div>
+        <div className="w-full max-w-xs">
+          <PanelError message="Não foi possível carregar" onRetry={() => {}} />
+        </div>
       </Section>
 
       <Section title="Dialog">

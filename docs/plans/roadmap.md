@@ -23,8 +23,8 @@ the backend's schema, so the schema has to exist first.
 | 0 | Foundations | Prisma, Apollo, Express, CORS, env validation, health query | Vite, Tailwind theme, design system primitives, app shell |
 | 1 | Auth and profile | `User`, `signUp`, `signIn`, `me`, `updateProfile`, JWT, context, auth guard | Login, sign up, profile, session context, route guards |
 | 2 | Categories | `Category`, full CRUD, ownership enforcement | Categories page, card grid, category dialog, delete confirmation |
-| 3 | Transactions | `Transaction`, full CRUD, category unlink on delete | Transactions page, table, transaction dialog, delete confirmation |
-| 4 | Search, filters, pagination | `TransactionFilter`, offset pagination | Filter bar, URL-backed filter state, pagination |
+| 3 | Transactions | `Transaction`, full CRUD, offset pagination, category unlink on delete | Transactions page, table, pagination, transaction dialog, delete confirmation |
+| 4 | Search and filters | `TransactionFilter` | Filter bar, URL-backed filter state |
 | 5 | Dashboard | `summary`, `categoryStats`, per-category aggregates, DataLoader | Dashboard stat cards and panels |
 
 ### What each slice delivers
@@ -46,11 +46,13 @@ Chosen before transactions because a transaction references a category, and
 building the referencing entity first means seeding fake categories to test it.
 
 **Slice 3 — Transactions.** Full transaction management, including the currency
-conversion to and from integer cents, and the uncategorized state. At the end of
-this slice the application does everything the requirements literally ask for.
+conversion to and from integer cents, offset pagination, and the uncategorized
+state. At the end of this slice the application does everything the
+requirements literally ask for.
 
-**Slice 4 — Search, filters, pagination.** The transactions page becomes usable
-with real volumes of data. Filter state lives in the URL.
+**Slice 4 — Search and filters.** The transactions page becomes usable with real
+volumes of data, on top of the pagination slice 3 already built. Filter state
+lives in the URL beside the page number, which is already there.
 
 **Slice 5 — Dashboard.** Aggregates on the server, dashboard on the client. Last
 because it summarizes data that only exists once the previous slices are done.

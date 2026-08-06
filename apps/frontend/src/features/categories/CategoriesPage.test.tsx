@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, aUser, graphqlError, ok } from '@/test/msw/api';
@@ -6,8 +6,9 @@ import { server } from '@/test/msw/server';
 import { renderWithProviders } from '@/test/render';
 import { writeToken } from '@/lib/token-storage';
 import { AppRoutes } from '@/routes';
+import { CategoryCard, type CategoryCardData } from './CategoryCard';
 
-const mercado = {
+const mercado: CategoryCardData = {
   id: 'category-1',
   name: 'Mercado',
   description: 'Compras da semana',
@@ -76,11 +77,34 @@ describe('CategoriesPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('puts edit before delete in tab order', () => {
+    render(
+      <CategoryCard category={mercado} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
+
+    const buttons = screen.getAllByRole('button');
+
+    expect(buttons[0]).toHaveAccessibleName('Editar Mercado');
+    expect(buttons[1]).toHaveAccessibleName('Excluir Mercado');
+  });
+
+  it('names the card with a heading', () => {
+    render(
+      <CategoryCard category={mercado} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Mercado' }),
+    ).toBeInTheDocument();
+  });
+
   it('renders a skeleton while the list loads', () => {
     populated();
     renderCategories();
 
-    expect(screen.getByLabelText('Carregando categorias')).toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: 'Carregando categorias' }),
+    ).toBeInTheDocument();
   });
 
   it('offers to create one when there are none', async () => {

@@ -1,8 +1,11 @@
 # Backend Spec
 
-Status: approved, implemented through slice 2
-Last updated: 2026-08-04 (section 5 `mostUsed` semantics and the section 7
-duplicate-name contract, both corrected while slice 2 was built)
+Status: approved, implemented through slice 3
+Last updated: 2026-08-06 (final whole-branch review of slice 3: section 7's
+amount line now says amounts must be strictly positive rather than merely
+non-zero, section 8's `.env.example` transcript gained `SEED_PASSWORD`, and
+section 10 now says the seed password comes from `SEED_PASSWORD` rather than
+living in the seed file)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does
@@ -480,7 +483,8 @@ Enforced by zod at the entry point of each service:
 - `email` — valid format, normalized to lowercase
 - `password` — minimum 8 characters
 - `description` (transaction) — non-empty after trimming, max 200 characters
-- `amount` — integer, non-zero (sign is not used; `type` carries the direction)
+- `amount` — integer of centavos, strictly positive. The sign is not
+  used; `type` carries the direction.
 - `type` — `INCOME` or `EXPENSE`
 - `date` — a valid date
 - `name` (category) — non-empty after trimming, maximum 50 characters
@@ -491,7 +495,10 @@ Enforced by zod at the entry point of each service:
   `BAD_USER_INPUT` on the `name` field
 - `search` — maximum 100 characters
 - `month` — integer 1–12; `year` — integer 1970–2100
-- pagination — `limit` between 1 and 100, `offset` at least 0
+- pagination — `limit` is an integer of at least 1 and `offset` an integer of at
+  least 0; either below its minimum is `BAD_USER_INPUT`. A `limit` above 100 is
+  clamped to 100 rather than rejected, since §5 holds the maximum "regardless of
+  what the client sends".
 
 ## 8. Configuration
 
@@ -503,6 +510,9 @@ JWT_SECRET=
 PORT=4000
 CORS_ORIGIN=http://localhost:5173
 NODE_ENV=development
+# Password for the seed user (prisma/seed.ts). Development-only; do not set in
+# any deployed environment.
+SEED_PASSWORD=trocar-esta-senha
 ```
 
 Environment variables are validated with zod at startup. If `JWT_SECRET` is
@@ -543,8 +553,9 @@ thirty transactions spread across two months. The frontend needs realistic data
 to build the dashboard, pagination and filters against, and a fixed seed makes
 screenshots reproducible.
 
-The seed user's credentials live in the seed file, not in `.env`, and the file
-makes clear it is for development only.
+The seed password comes from the `SEED_PASSWORD` environment variable,
+falling back to a non-secret placeholder when unset, and the file makes clear
+it is for development only.
 
 ## 11. Phase 2
 

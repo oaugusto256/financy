@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -54,12 +54,6 @@ export function CategoryDialog({
       color: category?.color ?? DEFAULT_COLOR,
     },
   });
-
-  // useWatch rather than form.watch: the pickers stay uncontrolled and
-  // React Hook Form still owns the value, but the subscription is one the
-  // compiler can memoize. form.watch() cannot be, and lint says so.
-  const icon = useWatch({ control: form.control, name: 'icon' });
-  const color = useWatch({ control: form.control, name: 'color' });
 
   async function invalidate() {
     // Both lists carry counts that this mutation changed. frontend.md section 6.
@@ -144,16 +138,30 @@ export function CategoryDialog({
           {...form.register('description')}
         />
 
-        <IconPicker
-          legend="Ícone"
-          value={icon}
-          registration={form.register('icon')}
+        <Controller
+          control={form.control}
+          name="icon"
+          render={({ field }) => (
+            <IconPicker
+              legend="Ícone"
+              name={field.name}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
 
-        <ColorPicker
-          legend="Cor"
-          value={color}
-          registration={form.register('color')}
+        <Controller
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <ColorPicker
+              legend="Cor"
+              name={field.name}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
 
         <div className="mt-2 flex justify-end gap-2">

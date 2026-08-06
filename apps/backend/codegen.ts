@@ -15,6 +15,9 @@ const config: CodegenConfig = {
           // The parent of transactionCount and totalAmount is a database row,
           // not the GraphQL shape — those two fields do not exist on it.
           Category: '@prisma/client#Category as CategoryModel',
+          // Same reason as Category: the parent of the `category` field is a
+          // database row, which has a categoryId and no category.
+          Transaction: '@prisma/client#Transaction as TransactionModel',
         },
         scalars: { DateTime: 'Date' },
         useTypeImports: true,

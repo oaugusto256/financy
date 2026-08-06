@@ -1,5 +1,4 @@
 import { Check } from 'lucide-react';
-import type { UseFormRegisterReturn } from 'react-hook-form';
 import { cn } from '@/lib/cn';
 import {
   CATEGORY_COLORS,
@@ -10,11 +9,17 @@ import {
 
 export interface ColorPickerProps {
   legend: string;
+  name: string;
   value: CategoryColor;
-  registration: UseFormRegisterReturn;
+  onChange: (value: CategoryColor) => void;
 }
 
-export function ColorPicker({ legend, value, registration }: ColorPickerProps) {
+export function ColorPicker({
+  legend,
+  name,
+  value,
+  onChange,
+}: ColorPickerProps) {
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="mb-1.5 text-sm font-medium text-gray-700">
@@ -29,11 +34,12 @@ export function ColorPicker({ legend, value, registration }: ColorPickerProps) {
             <label key={token} className="cursor-pointer">
               <input
                 type="radio"
+                name={name}
                 value={token}
-                defaultChecked={selected}
+                checked={selected}
+                onChange={() => onChange(token)}
                 aria-label={CATEGORY_COLOR_LABELS[token]}
                 className="peer sr-only"
-                {...registration}
               />
               <span
                 className={cn(

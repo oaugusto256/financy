@@ -1,5 +1,5 @@
 import type { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
-import type { User as UserModel, Category as CategoryModel } from '@prisma/client';
+import type { User as UserModel, Category as CategoryModel, Transaction as TransactionModel } from '@prisma/client';
 import type { GraphQLContext } from '../../context.js';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -77,14 +77,25 @@ export type CreateCategoryInput = {
   name: Scalars['String']['input'];
 };
 
+export type CreateTransactionInput = {
+  amount: Scalars['Int']['input'];
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  date: Scalars['DateTime']['input'];
+  description: Scalars['String']['input'];
+  type: TransactionType;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   createCategory: Category;
+  createTransaction: Transaction;
   deleteCategory: Scalars['Boolean']['output'];
+  deleteTransaction: Scalars['Boolean']['output'];
   signIn: AuthPayload;
   signUp: AuthPayload;
   updateCategory: Category;
   updateProfile: User;
+  updateTransaction: Transaction;
 };
 
 
@@ -93,7 +104,17 @@ export type MutationCreateCategoryArgs = {
 };
 
 
+export type MutationCreateTransactionArgs = {
+  input: CreateTransactionInput;
+};
+
+
 export type MutationDeleteCategoryArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteTransactionArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -118,12 +139,25 @@ export type MutationUpdateProfileArgs = {
   input: UpdateProfileInput;
 };
 
+
+export type MutationUpdateTransactionArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateTransactionInput;
+};
+
 export type Query = {
   __typename?: 'Query';
   categories: Array<Category>;
   categoryStats: CategoryStats;
   health: Scalars['String']['output'];
   me: User;
+  transactions: TransactionPage;
+};
+
+
+export type QueryTransactionsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type SignInInput = {
@@ -137,6 +171,29 @@ export type SignUpInput = {
   password: Scalars['String']['input'];
 };
 
+export type Transaction = {
+  __typename?: 'Transaction';
+  amount: Scalars['Int']['output'];
+  category?: Maybe<Category>;
+  createdAt: Scalars['DateTime']['output'];
+  date: Scalars['DateTime']['output'];
+  description: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  type: TransactionType;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TransactionPage = {
+  __typename?: 'TransactionPage';
+  items: Array<Transaction>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum TransactionType {
+  Expense = 'EXPENSE',
+  Income = 'INCOME'
+}
+
 export type UpdateCategoryInput = {
   color?: InputMaybe<CategoryColor>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -146,6 +203,14 @@ export type UpdateCategoryInput = {
 
 export type UpdateProfileInput = {
   name: Scalars['String']['input'];
+};
+
+export type UpdateTransactionInput = {
+  amount?: InputMaybe<Scalars['Int']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  date?: InputMaybe<Scalars['DateTime']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<TransactionType>;
 };
 
 export type User = {
@@ -236,6 +301,7 @@ export type ResolversTypes = {
   CategoryIcon: CategoryIcon;
   CategoryStats: ResolverTypeWrapper<Omit<CategoryStats, 'mostUsed'> & { mostUsed?: Maybe<ResolversTypes['Category']> }>;
   CreateCategoryInput: CreateCategoryInput;
+  CreateTransactionInput: CreateTransactionInput;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
@@ -244,8 +310,12 @@ export type ResolversTypes = {
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Transaction: ResolverTypeWrapper<TransactionModel>;
+  TransactionPage: ResolverTypeWrapper<Omit<TransactionPage, 'items'> & { items: Array<ResolversTypes['Transaction']> }>;
+  TransactionType: TransactionType;
   UpdateCategoryInput: UpdateCategoryInput;
   UpdateProfileInput: UpdateProfileInput;
+  UpdateTransactionInput: UpdateTransactionInput;
   User: ResolverTypeWrapper<UserModel>;
 };
 
@@ -256,6 +326,7 @@ export type ResolversParentTypes = {
   Category: CategoryModel;
   CategoryStats: Omit<CategoryStats, 'mostUsed'> & { mostUsed?: Maybe<ResolversParentTypes['Category']> };
   CreateCategoryInput: CreateCategoryInput;
+  CreateTransactionInput: CreateTransactionInput;
   DateTime: Scalars['DateTime']['output'];
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
@@ -264,8 +335,11 @@ export type ResolversParentTypes = {
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
   String: Scalars['String']['output'];
+  Transaction: TransactionModel;
+  TransactionPage: Omit<TransactionPage, 'items'> & { items: Array<ResolversParentTypes['Transaction']> };
   UpdateCategoryInput: UpdateCategoryInput;
   UpdateProfileInput: UpdateProfileInput;
+  UpdateTransactionInput: UpdateTransactionInput;
   User: UserModel;
 };
 
@@ -298,11 +372,14 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
 
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   createCategory?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<MutationCreateCategoryArgs, 'input'>>;
+  createTransaction?: Resolver<ResolversTypes['Transaction'], ParentType, ContextType, RequireFields<MutationCreateTransactionArgs, 'input'>>;
   deleteCategory?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCategoryArgs, 'id'>>;
+  deleteTransaction?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTransactionArgs, 'id'>>;
   signIn?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'input'>>;
   signUp?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
   updateCategory?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<MutationUpdateCategoryArgs, 'id' | 'input'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUpdateProfileArgs, 'input'>>;
+  updateTransaction?: Resolver<ResolversTypes['Transaction'], ParentType, ContextType, RequireFields<MutationUpdateTransactionArgs, 'id' | 'input'>>;
 };
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
@@ -310,6 +387,23 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   categoryStats?: Resolver<ResolversTypes['CategoryStats'], ParentType, ContextType>;
   health?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   me?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  transactions?: Resolver<ResolversTypes['TransactionPage'], ParentType, ContextType, RequireFields<QueryTransactionsArgs, 'limit' | 'offset'>>;
+};
+
+export type TransactionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Transaction'] = ResolversParentTypes['Transaction']> = {
+  amount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  category?: Resolver<Maybe<ResolversTypes['Category']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['TransactionType'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+};
+
+export type TransactionPageResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TransactionPage'] = ResolversParentTypes['TransactionPage']> = {
+  items?: Resolver<Array<ResolversTypes['Transaction']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
 
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
@@ -326,6 +420,8 @@ export type Resolvers<ContextType = GraphQLContext> = {
   DateTime?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Transaction?: TransactionResolvers<ContextType>;
+  TransactionPage?: TransactionPageResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
 };
 

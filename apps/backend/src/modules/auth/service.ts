@@ -7,8 +7,8 @@ import {
   invalidCredentials,
   notFound,
 } from '../../shared/errors.js';
+import { parseInput } from '../../shared/validation.js';
 import {
-  parseInput,
   signInSchema,
   signUpSchema,
   updateProfileSchema,

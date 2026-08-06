@@ -1,7 +1,8 @@
 import type { Category } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/prisma.js';
 import { badUserInput, notFound } from '../../shared/errors.js';
-import { parseInput } from '../auth/validation.js';
+import { parseInput } from '../../shared/validation.js';
 import { createCategorySchema, updateCategorySchema } from './validation.js';
 
 const DUPLICATE_NAME = 'Já existe uma categoria com esse nome';
@@ -10,6 +11,23 @@ function duplicateName() {
   // No dedicated error code: the frontend already renders fieldErrors on the
   // field they name. backend.md section 7 records this.
   return badUserInput(DUPLICATE_NAME, { name: [DUPLICATE_NAME] });
+}
+
+/**
+ * assertNameAvailable checks and then writes, so a concurrent request with the
+ * same name can slip between the two and hit @@unique([userId, name]). Without
+ * this the caller gets INTERNAL_SERVER_ERROR for what backend.md section 7
+ * promises is a BAD_USER_INPUT on the name field.
+ */
+function rethrowDuplicateName(error: unknown): never {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  ) {
+    throw duplicateName();
+  }
+
+  throw error;
 }
 
 async function assertNameAvailable(
@@ -50,15 +68,17 @@ export async function createCategory(
   const data = parseInput(createCategorySchema, input);
   await assertNameAvailable(userId, data.name);
 
-  return prisma.category.create({
-    data: {
-      userId,
-      name: data.name,
-      description: data.description,
-      icon: data.icon,
-      color: data.color,
-    },
-  });
+  return prisma.category
+    .create({
+      data: {
+        userId,
+        name: data.name,
+        description: data.description,
+        icon: data.icon,
+        color: data.color,
+      },
+    })
+    .catch(rethrowDuplicateName);
 }
 
 export async function updateCategory(
@@ -74,15 +94,19 @@ export async function updateCategory(
   await getCategory(userId, id);
   if (data.name !== undefined) await assertNameAvailable(userId, data.name, id);
 
-  const { count } = await prisma.category.updateMany({
-    where: { id, userId },
-    data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.icon !== undefined && { icon: data.icon }),
-      ...(data.color !== undefined && { color: data.color }),
-    },
-  });
+  const { count } = await prisma.category
+    .updateMany({
+      where: { id, userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+        ...(data.icon !== undefined && { icon: data.icon }),
+        ...(data.color !== undefined && { color: data.color }),
+      },
+    })
+    .catch(rethrowDuplicateName);
   if (count === 0) throw notFound('Categoria');
 
   return getCategory(userId, id);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseInput } from '../../src/modules/auth/validation.js';
+import { parseInput } from '../../src/shared/validation.js';
 import {
   createCategorySchema,
   updateCategorySchema,

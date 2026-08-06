@@ -7,11 +7,11 @@ import { StyleGuide } from '@/pages/StyleGuide';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
 import { CategoriesPage } from '@/features/categories/CategoriesPage';
+import { TransactionsPage } from '@/features/transactions/TransactionsPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { useSession } from '@/features/auth/useSession';
 
-// Placeholders that slices 2 through 5 replace, each named for the page it
-// will become.
+// The dashboard placeholder, which slice 5 replaces.
 function Placeholder({ title }: { title: string }) {
   return (
     <PageShell title={title} subtitle="Em construção">
@@ -47,10 +47,7 @@ export function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
-          <Route
-            path="/transactions"
-            element={<Placeholder title="Transações" />}
-          />
+          <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

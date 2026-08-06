@@ -98,14 +98,10 @@ covered at both the service and transport layers.
 
 ### Parked, with the ruling
 
-**Cancelling mid-submit can set state on an unmounted dialog.** Now that the
-dialog unmounts when closed, cancelling during an in-flight save lets the
-handler's later `setFormError` run against a gone component. Functionally
-harmless — the mutation still completes and nothing crashes — but it can log a
-development warning. Left as-is: disabling "Cancelar" while submitting traps a
-user behind a slow request, and the alternative fix is an abort signal this
-codebase has no pattern for yet. Slice 3 adds a second dialog with the same
-shape and is the right place to settle it once.
+**Cancelling mid-submit can set state on an unmounted dialog**, was parked
+here. Slice 3 added the second dialog with the same shape this section
+predicted and settled it — see `slice-3-outcome.md`'s "Slice 2's parked
+defect, resolved" for the ruling.
 
 ### Follow-ups it raised, none blocking
 
