@@ -36,11 +36,23 @@ export const transactionTypeDefs = /* GraphQL */ `
     categoryId: ID
   }
 
+  input TransactionFilter {
+    "Case-insensitive substring of the description."
+    search: String
+    type: TransactionType
+    categoryId: ID
+    "Inclusive lower bound on the transaction's own date."
+    dateFrom: DateTime
+    "Inclusive upper bound."
+    dateTo: DateTime
+  }
+
   extend type Query {
-    # No filter argument: TransactionFilter and the filter bar are slice 4.
-    # Declaring it here with nothing calling it would put an untested parameter
-    # in the public schema.
-    transactions(limit: Int = 10, offset: Int = 0): TransactionPage!
+    transactions(
+      filter: TransactionFilter
+      limit: Int = 10
+      offset: Int = 0
+    ): TransactionPage!
   }
 
   extend type Mutation {

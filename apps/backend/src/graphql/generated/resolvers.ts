@@ -156,6 +156,7 @@ export type Query = {
 
 
 export type QueryTransactionsArgs = {
+  filter?: InputMaybe<TransactionFilter>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -181,6 +182,17 @@ export type Transaction = {
   id: Scalars['ID']['output'];
   type: TransactionType;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TransactionFilter = {
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  /** Inclusive lower bound on the transaction's own date. */
+  dateFrom?: InputMaybe<Scalars['DateTime']['input']>;
+  /** Inclusive upper bound. */
+  dateTo?: InputMaybe<Scalars['DateTime']['input']>;
+  /** Case-insensitive substring of the description. */
+  search?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<TransactionType>;
 };
 
 export type TransactionPage = {
@@ -311,6 +323,7 @@ export type ResolversTypes = {
   SignUpInput: SignUpInput;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Transaction: ResolverTypeWrapper<TransactionModel>;
+  TransactionFilter: TransactionFilter;
   TransactionPage: ResolverTypeWrapper<Omit<TransactionPage, 'items'> & { items: Array<ResolversTypes['Transaction']> }>;
   TransactionType: TransactionType;
   UpdateCategoryInput: UpdateCategoryInput;
@@ -336,6 +349,7 @@ export type ResolversParentTypes = {
   SignUpInput: SignUpInput;
   String: Scalars['String']['output'];
   Transaction: TransactionModel;
+  TransactionFilter: TransactionFilter;
   TransactionPage: Omit<TransactionPage, 'items'> & { items: Array<ResolversParentTypes['Transaction']> };
   UpdateCategoryInput: UpdateCategoryInput;
   UpdateProfileInput: UpdateProfileInput;
