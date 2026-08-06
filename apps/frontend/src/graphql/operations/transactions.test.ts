@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { useTransactionsQuery } from '@/graphql/generated/graphql';
+import {
+  TransactionsDocument,
+  useTransactionsQuery,
+} from '@/graphql/generated/graphql';
 
 describe('the generated transactions query key', () => {
   it('starts with the literal DeleteCategoryDialog already invalidates', () => {
@@ -47,5 +50,11 @@ describe('the generated transactions query key', () => {
         offset: 0,
       }),
     );
+  });
+
+  it('declares the filter variable on the document', () => {
+    const document = String(TransactionsDocument);
+    expect(document).toContain('$filter: TransactionFilter');
+    expect(document).toContain('filter: $filter');
   });
 });
