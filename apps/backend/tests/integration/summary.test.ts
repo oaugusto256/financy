@@ -1,12 +1,41 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import type { Express } from 'express';
+import type { ApolloServer } from '@apollo/server';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { createApp } from '../../src/app.js';
+import type { GraphQLContext } from '../../src/context.js';
 import { prisma } from '../../src/shared/prisma.js';
+import { signToken } from '../../src/shared/jwt.js';
 import { getSummary } from '../../src/modules/summary/service.js';
 import { resetDatabase } from '../helpers/db.js';
 import { createTransaction, createUser } from '../helpers/factories.js';
+import { errorCode, execute } from '../helpers/graphql.js';
+
+let app: Express;
+let apollo: ApolloServer<GraphQLContext>;
+
+const SUMMARY = /* GraphQL */ `
+  query Summary($month: Int!, $year: Int!) {
+    summary(month: $month, year: $year) {
+      totalBalance
+      monthIncome
+      monthExpense
+    }
+  }
+`;
+
+async function signedIn() {
+  const { user } = await createUser();
+  return { user, token: await signToken(user.id) };
+}
+
+beforeAll(async () => {
+  ({ app, apollo } = await createApp());
+});
 
 beforeEach(resetDatabase);
 
 afterAll(async () => {
+  await apollo.stop();
   await prisma.$disconnect();
 });
 
@@ -182,5 +211,100 @@ describe('getSummary', () => {
     await expect(
       getSummary(user.id, { month: 13, year: 2026 }),
     ).rejects.toThrow('O mês deve estar entre 1 e 12');
+  });
+});
+
+describe('the summary query', () => {
+  it('answers the caller’s three figures', async () => {
+    const { user, token } = await signedIn();
+    await createTransaction(user.id, {
+      amount: 300_000,
+      type: 'INCOME',
+      date: utc(2026, 8, 5),
+    });
+    await createTransaction(user.id, {
+      amount: 120_000,
+      type: 'EXPENSE',
+      date: utc(2026, 8, 6),
+    });
+    await createTransaction(user.id, {
+      amount: 50_000,
+      type: 'EXPENSE',
+      date: utc(2026, 7, 6),
+    });
+
+    const body = await execute(app, {
+      query: SUMMARY,
+      variables: { month: 8, year: 2026 },
+      token,
+    });
+
+    expect(body.data?.summary).toEqual({
+      totalBalance: 130_000,
+      monthIncome: 300_000,
+      monthExpense: 120_000,
+    });
+  });
+
+  it('answers zeros, not null and not an error, for an empty month', async () => {
+    const { token } = await signedIn();
+
+    const body = await execute(app, {
+      query: SUMMARY,
+      variables: { month: 2, year: 2026 },
+      token,
+    });
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data?.summary).toEqual({
+      totalBalance: 0,
+      monthIncome: 0,
+      monthExpense: 0,
+    });
+  });
+
+  it('rejects an unauthenticated caller', async () => {
+    const body = await execute(app, {
+      query: SUMMARY,
+      variables: { month: 8, year: 2026 },
+    });
+
+    expect(errorCode(body)).toBe('UNAUTHENTICATED');
+  });
+
+  it('answers BAD_USER_INPUT for each out-of-range argument', async () => {
+    const { token } = await signedIn();
+
+    for (const variables of [
+      { month: 0, year: 2026 },
+      { month: 13, year: 2026 },
+      { month: 8, year: 1969 },
+      { month: 8, year: 10_000 },
+    ]) {
+      const body = await execute(app, { query: SUMMARY, variables, token });
+      expect(errorCode(body)).toBe('BAD_USER_INPUT');
+    }
+  });
+
+  it('never shows one user another user’s figures', async () => {
+    const { user: ana } = await createUser();
+    const { token } = await signedIn();
+    await createTransaction(ana.id, {
+      amount: 999_999,
+      type: 'INCOME',
+      date: utc(2026, 8, 10),
+    });
+
+    const body = await execute(app, {
+      query: SUMMARY,
+      variables: { month: 8, year: 2026 },
+      token,
+    });
+
+    expect(body.data?.summary).toEqual({
+      totalBalance: 0,
+      monthIncome: 0,
+      monthExpense: 0,
+    });
   });
 });

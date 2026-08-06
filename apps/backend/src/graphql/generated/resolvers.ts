@@ -151,7 +151,15 @@ export type Query = {
   categoryStats: CategoryStats;
   health: Scalars['String']['output'];
   me: User;
+  /** The month window is built in UTC. backend.md section 5. */
+  summary: Summary;
   transactions: TransactionPage;
+};
+
+
+export type QuerySummaryArgs = {
+  month: Scalars['Int']['input'];
+  year: Scalars['Int']['input'];
 };
 
 
@@ -170,6 +178,16 @@ export type SignUpInput = {
   email: Scalars['String']['input'];
   name: Scalars['String']['input'];
   password: Scalars['String']['input'];
+};
+
+export type Summary = {
+  __typename?: 'Summary';
+  /** Expense within the requested month, in cents, unsigned. */
+  monthExpense: Scalars['Int']['output'];
+  /** Income within the requested month, in cents. */
+  monthIncome: Scalars['Int']['output'];
+  /** All-time income minus expense, in cents. Can be negative. */
+  totalBalance: Scalars['Int']['output'];
 };
 
 export type Transaction = {
@@ -322,6 +340,7 @@ export type ResolversTypes = {
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Summary: ResolverTypeWrapper<Summary>;
   Transaction: ResolverTypeWrapper<TransactionModel>;
   TransactionFilter: TransactionFilter;
   TransactionPage: ResolverTypeWrapper<Omit<TransactionPage, 'items'> & { items: Array<ResolversTypes['Transaction']> }>;
@@ -348,6 +367,7 @@ export type ResolversParentTypes = {
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
   String: Scalars['String']['output'];
+  Summary: Summary;
   Transaction: TransactionModel;
   TransactionFilter: TransactionFilter;
   TransactionPage: Omit<TransactionPage, 'items'> & { items: Array<ResolversParentTypes['Transaction']> };
@@ -401,7 +421,14 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   categoryStats?: Resolver<ResolversTypes['CategoryStats'], ParentType, ContextType>;
   health?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   me?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  summary?: Resolver<ResolversTypes['Summary'], ParentType, ContextType, RequireFields<QuerySummaryArgs, 'month' | 'year'>>;
   transactions?: Resolver<ResolversTypes['TransactionPage'], ParentType, ContextType, RequireFields<QueryTransactionsArgs, 'limit' | 'offset'>>;
+};
+
+export type SummaryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Summary'] = ResolversParentTypes['Summary']> = {
+  monthExpense?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  monthIncome?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalBalance?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
 
 export type TransactionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Transaction'] = ResolversParentTypes['Transaction']> = {
@@ -434,6 +461,7 @@ export type Resolvers<ContextType = GraphQLContext> = {
   DateTime?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Summary?: SummaryResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;
   TransactionPage?: TransactionPageResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
