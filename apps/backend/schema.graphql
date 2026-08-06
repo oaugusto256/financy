@@ -84,7 +84,7 @@ type Query {
   categoryStats: CategoryStats!
   health: String!
   me: User!
-  transactions(limit: Int = 10, offset: Int = 0): TransactionPage!
+  transactions(filter: TransactionFilter, limit: Int = 10, offset: Int = 0): TransactionPage!
 }
 
 input SignInInput {
@@ -107,6 +107,20 @@ type Transaction {
   id: ID!
   type: TransactionType!
   updatedAt: DateTime!
+}
+
+input TransactionFilter {
+  categoryId: ID
+
+  """Inclusive lower bound on the transaction's own date."""
+  dateFrom: DateTime
+
+  """Inclusive upper bound."""
+  dateTo: DateTime
+
+  """Case-insensitive substring of the description."""
+  search: String
+  type: TransactionType
 }
 
 type TransactionPage {

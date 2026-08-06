@@ -1,11 +1,12 @@
 # Backend Spec
 
-Status: approved, implemented through slice 3
-Last updated: 2026-08-06 (final whole-branch review of slice 3: section 7's
-amount line now says amounts must be strictly positive rather than merely
-non-zero, section 8's `.env.example` transcript gained `SEED_PASSWORD`, and
-section 10 now says the seed password comes from `SEED_PASSWORD` rather than
-living in the seed file)
+Status: approved, implemented through slice 4
+Last updated: 2026-08-06 (slice 4: section 2 notes that `%` and `_` in a
+search term are unescaped `LIKE` wildcards, section 5 states `TransactionFilter`'s
+optionality, AND-combination, inclusive date bounds and the empty-page
+behavior for another user's `categoryId`, and section 7 notes that an empty
+string and `null` both mean "no filter" in a filter, unlike `categoryId` in
+`UpdateTransactionInput`)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does
@@ -78,6 +79,14 @@ search therefore relies on SQLite's `LIKE`, which is already case-insensitive fo
 ASCII. This is adequate for the search box in the design, with one known limit
 worth writing down: it does not fold accents, so "cafe" will not match "café".
 Moving to Postgres replaces this with an explicit case-insensitive filter.
+
+A second limit sits beside it: `%` and `_` inside a search term are `LIKE`
+wildcards, not literal characters — `%` matches any run of characters and `_`
+matches any single one. Prisma's `contains` emits no `ESCAPE` clause, so a
+search for "50% off" also matches "50XYZ off" for any characters in place of
+the `%`, and "a_b" matches "axb" for any single character in place of the
+`_`. Escaping them is possible, but only by dropping to `prisma.$queryRaw` for
+this one query; not done here.
 
 ## 3. Architecture
 
@@ -385,6 +394,13 @@ The default `limit` is 10, matching the transactions table in the design
 ("1 a 10 | 27 resultados"). It is clamped to a maximum of 100 regardless of what
 the client sends.
 
+Every field of `TransactionFilter` is optional, and any fields supplied
+combine with AND — a request carrying both `type` and `categoryId` returns
+rows matching both, not either. `dateFrom` and `dateTo` are inclusive at both
+ends. A `categoryId` belonging to another user is not rejected: it returns an
+empty page rather than `NOT_FOUND`, because `userId` is already part of the
+same `where` clause, and answering `NOT_FOUND` would confirm the id exists.
+
 `Transaction.category` resolves through a DataLoader batched per request, so
 listing transactions does not produce one category query per row.
 `Category.transactionCount` and `Category.totalAmount` do the same, resolving
@@ -494,6 +510,9 @@ Enforced by zod at the entry point of each service:
 - category name uniqueness — scoped to the owner; a collision is
   `BAD_USER_INPUT` on the `name` field
 - `search` — maximum 100 characters
+- in a `TransactionFilter`, an empty string and `null` both mean "no filter on
+  that field" — unlike `categoryId` in `UpdateTransactionInput`, where an
+  empty string means "clear it"
 - `month` — integer 1–12; `year` — integer 1970–2100
 - pagination — `limit` is an integer of at least 1 and `offset` an integer of at
   least 0; either below its minimum is `BAD_USER_INPUT`. A `limit` above 100 is

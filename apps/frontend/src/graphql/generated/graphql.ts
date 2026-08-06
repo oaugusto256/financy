@@ -58,6 +58,17 @@ export type SignUpInput = {
   password: string;
 };
 
+export type TransactionFilter = {
+  categoryId?: string | number | null | undefined;
+  /** Inclusive lower bound on the transaction's own date. */
+  dateFrom?: string | null | undefined;
+  /** Inclusive upper bound. */
+  dateTo?: string | null | undefined;
+  /** Case-insensitive substring of the description. */
+  search?: string | null | undefined;
+  type?: TransactionType | null | undefined;
+};
+
 export type TransactionType =
   | 'EXPENSE'
   | 'INCOME';
@@ -140,6 +151,7 @@ export type DeleteCategoryMutationVariables = Exact<{
 export type DeleteCategoryMutation = { deleteCategory: boolean };
 
 export type TransactionsQueryVariables = Exact<{
+  filter?: TransactionFilter | null | undefined;
   limit?: number | null | undefined;
   offset?: number | null | undefined;
 }>;
@@ -449,8 +461,8 @@ export const useDeleteCategoryMutation = <
 useDeleteCategoryMutation.fetcher = (variables: DeleteCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument, variables, options);
 
 export const TransactionsDocument = new TypedDocumentString(`
-    query Transactions($limit: Int, $offset: Int) {
-  transactions(limit: $limit, offset: $offset) {
+    query Transactions($filter: TransactionFilter, $limit: Int, $offset: Int) {
+  transactions(filter: $filter, limit: $limit, offset: $offset) {
     totalCount
     items {
       id

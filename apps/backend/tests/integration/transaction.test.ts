@@ -44,6 +44,18 @@ const TRANSACTIONS = /* GraphQL */ `
   }
 `;
 
+const FILTERED_TRANSACTIONS = /* GraphQL */ `
+  query Transactions($filter: TransactionFilter, $limit: Int, $offset: Int) {
+    transactions(filter: $filter, limit: $limit, offset: $offset) {
+      totalCount
+      items {
+        id
+        description
+      }
+    }
+  }
+`;
+
 const CREATE_TRANSACTION = /* GraphQL */ `
   mutation CreateTransaction($input: CreateTransactionInput!) {
     createTransaction(input: $input) {
@@ -277,6 +289,98 @@ describe('transactions', () => {
     const body = await execute(app, { query: TRANSACTIONS });
 
     expect(errorCode(body)).toBe('UNAUTHENTICATED');
+  });
+});
+
+describe('transactions(filter:)', () => {
+  it('narrows the page and its count together', async () => {
+    const { user, token } = await signedIn();
+    await createTransaction(user.id, { description: 'Mercado' });
+    await createTransaction(user.id, { description: 'Aluguel' });
+
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { search: 'Merc' } },
+      token,
+    });
+
+    expect(body.data?.transactions).toEqual({
+      totalCount: 1,
+      items: [expect.objectContaining({ description: 'Mercado' })],
+    });
+  });
+
+  it('accepts a filter beside limit and offset', async () => {
+    // The arguments have to coexist: an SDL that declares `filter` in place of
+    // the pagination arguments, or a resolver that forwards only one of them,
+    // passes every single-argument test.
+    const { user, token } = await signedIn();
+    for (let day = 1; day <= 3; day += 1) {
+      await createTransaction(user.id, {
+        description: `Mercado ${day}`,
+        date: new Date(Date.UTC(2026, 7, day, 12, 0, 0)),
+      });
+    }
+
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { search: 'Mercado' }, limit: 1, offset: 1 },
+      token,
+    });
+
+    expect(body.data?.transactions).toMatchObject({
+      totalCount: 3,
+      items: [expect.objectContaining({ description: 'Mercado 2' })],
+    });
+  });
+
+  it('rejects a search over the limit as BAD_USER_INPUT', async () => {
+    const { token } = await signedIn();
+
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { search: 'a'.repeat(101) } },
+      token,
+    });
+
+    expect(errorCode(body)).toBe('BAD_USER_INPUT');
+  });
+
+  it('rejects an unknown filter field at the schema level', async () => {
+    // Guards the input's shape: a filter typed as a free-form scalar would
+    // accept this and quietly ignore it.
+    const { token } = await signedIn();
+
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { minimumAmount: 100 } },
+      token,
+    });
+
+    expect(body.errors?.length).toBeGreaterThan(0);
+  });
+
+  it('still requires authentication with a filter present', async () => {
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { search: 'Mercado' } },
+    });
+
+    expect(errorCode(body)).toBe('UNAUTHENTICATED');
+  });
+
+  it('does not reach another user’s rows through a filter', async () => {
+    const { token } = await signedIn();
+    const { user: other } = await createUser();
+    await createTransaction(other.id, { description: 'Mercado alheio' });
+
+    const body = await execute(app, {
+      query: FILTERED_TRANSACTIONS,
+      variables: { filter: { search: 'Mercado' } },
+      token,
+    });
+
+    expect(body.data?.transactions).toEqual({ totalCount: 0, items: [] });
   });
 });
 

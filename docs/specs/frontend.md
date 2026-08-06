@@ -1,9 +1,10 @@
 # Frontend Spec
 
-Status: approved, implemented through slice 3
-Last updated: 2026-08-06 (final whole-branch review of slice 3: section 12
-gains two more entries — the out-of-range page clamp and the transaction
-dialog's `…` placeholder category option)
+Status: approved, implemented through slice 4
+Last updated: 2026-08-06 (slice 4: section 5 states the period select's
+thirteen options and its "all" default, and section 12 gains two more
+entries — the thirteenth period option and the short filter-state parameter
+names)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
@@ -208,10 +209,11 @@ Title, subtitle, and a "+ Nova transação" button.
 
 A filter bar with four controls: a description search, a type select
 (Todos / Entrada / Saída), a category select (Todas, plus the user's
-categories), and a month/year period select. The period select offers the
-current month and the eleven before it. Changing any filter resets to page 1 —
-staying on page 3 of a different result set shows an empty table for no visible
-reason.
+categories), and a month/year period select. The period select offers
+thirteen options: "Todos os períodos", then the current month and the eleven
+before it, with "Todos os períodos" as the default. Changing any filter
+resets to page 1 — staying on page 3 of a different result set shows an empty
+table for no visible reason.
 
 Search is debounced at 300ms so typing does not fire a request per keystroke.
 All filter state lives in the URL query string, so a filtered view can be
@@ -448,6 +450,20 @@ width, all for a layout the design does not draw.
 query string and slice 4 owns the filters, but the page is the same kind of
 state and costs nothing to put there early. It also gives "changing a filter
 resets to page 1" something that already exists to reset.
+
+**The period select has a thirteenth option.** §5 named twelve: the current
+month and the eleven before it. Defaulting to the current month would land a
+user with older rows on the filtered-empty state on a first visit, and
+silently stop `/transactions` from being a full ledger the first time someone
+opens it. The owner ruled for the "all" default; "Todos os períodos" is the
+thirteenth option, and it is first in the list.
+
+**Filter state uses short parameter names.** `q`, `type`, `category` and
+`period`, not the field's full GraphQL name — they are user-visible in a
+shared link. The search write is `replace: true` so a debounced keystroke does
+not become a history entry of its own. Changing a filter deletes the `page`
+parameter rather than setting it to `1`; an absent page already means page 1,
+so deleting it is the reset.
 
 **The amount field is a cents-first mask.** §5 says the field displays `R$ 0,00`
 and converts to integer cents on submit without saying how. Keystrokes fill from

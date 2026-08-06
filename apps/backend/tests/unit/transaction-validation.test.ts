@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseInput } from '../../src/shared/validation.js';
 import {
   createTransactionSchema,
+  transactionFilterSchema,
   transactionPageSchema,
   updateTransactionSchema,
 } from '../../src/modules/transaction/validation.js';
@@ -135,6 +136,19 @@ describe('createTransactionSchema', () => {
       );
     }
   });
+
+  it('trims the description', () => {
+    // Untested through slice 3: .trim() could have been dropped from the
+    // shared `description` schema and nothing would have failed.
+    expect(
+      createTransactionSchema.parse({
+        description: '  Mercado  ',
+        amount: 1000,
+        type: 'EXPENSE',
+        date: '2026-08-01T12:00:00.000Z',
+      }).description,
+    ).toBe('Mercado');
+  });
 });
 
 describe('updateTransactionSchema', () => {
@@ -221,11 +235,22 @@ describe('updateTransactionSchema', () => {
       'Informe uma data válida',
     );
   });
+
+  it('trims the description and keeps a real categoryId untouched', () => {
+    const parsed = updateTransactionSchema.parse({
+      description: '  Luz  ',
+      categoryId: 'category-1',
+    });
+
+    expect(parsed.description).toBe('Luz');
+    expect(parsed.categoryId).toBe('category-1');
+  });
 });
 
 describe('transactionPageSchema', () => {
   it('defaults to ten rows from the start', () => {
     expect(parseInput(transactionPageSchema, {})).toEqual({
+      filter: {},
       limit: 10,
       offset: 0,
     });
@@ -234,7 +259,7 @@ describe('transactionPageSchema', () => {
   it('passes a limit within range through untouched', () => {
     expect(
       parseInput(transactionPageSchema, { limit: 25, offset: 50 }),
-    ).toEqual({ limit: 25, offset: 50 });
+    ).toEqual({ filter: {}, limit: 25, offset: 50 });
   });
 
   it('clamps a limit above the maximum instead of erroring', () => {
@@ -267,6 +292,116 @@ describe('transactionPageSchema', () => {
   it('treats null the way GraphQL sends an omitted nullable argument', () => {
     expect(
       parseInput(transactionPageSchema, { limit: null, offset: null }),
-    ).toEqual({ limit: 10, offset: 0 });
+    ).toEqual({ filter: {}, limit: 10, offset: 0 });
+  });
+});
+
+describe('transactionFilterSchema', () => {
+  it('accepts every field the SDL offers', () => {
+    const filter = transactionFilterSchema.parse({
+      search: 'mercado',
+      type: 'EXPENSE',
+      categoryId: 'category-1',
+      dateFrom: '2026-08-01T00:00:00.000Z',
+      dateTo: '2026-08-31T23:59:59.999Z',
+    });
+
+    expect(filter.search).toBe('mercado');
+    expect(filter.type).toBe('EXPENSE');
+    expect(filter.categoryId).toBe('category-1');
+    expect(filter.dateFrom).toEqual(new Date('2026-08-01T00:00:00.000Z'));
+    expect(filter.dateTo).toEqual(new Date('2026-08-31T23:59:59.999Z'));
+  });
+
+  it('treats an empty or blank search as no search at all', () => {
+    // The bar clears its input to '' rather than removing the param mid-edit.
+    // Left as an empty string this becomes `contains: ''`, which is a LIKE
+    // '%%' — harmless today, but it also makes the "is anything filtered"
+    // question un-answerable from the parsed object.
+    expect(
+      transactionFilterSchema.parse({ search: '' }).search,
+    ).toBeUndefined();
+    expect(
+      transactionFilterSchema.parse({ search: '   ' }).search,
+    ).toBeUndefined();
+  });
+
+  it('trims a search term', () => {
+    expect(transactionFilterSchema.parse({ search: '  luz  ' }).search).toBe(
+      'luz',
+    );
+  });
+
+  it('rejects a search longer than 100 characters', () => {
+    // backend.md section 7.
+    const result = transactionFilterSchema.safeParse({
+      search: 'a'.repeat(101),
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe(
+      'A busca deve ter no máximo 100 caracteres',
+    );
+  });
+
+  it('accepts exactly 100 characters', () => {
+    expect(
+      transactionFilterSchema.safeParse({ search: 'a'.repeat(100) }).success,
+    ).toBe(true);
+  });
+
+  it('treats an empty category as no category filter', () => {
+    expect(
+      transactionFilterSchema.parse({ categoryId: '' }).categoryId,
+    ).toBeUndefined();
+    expect(
+      transactionFilterSchema.parse({ categoryId: null }).categoryId,
+    ).toBeUndefined();
+  });
+
+  it('rejects a type outside the enum', () => {
+    expect(
+      transactionFilterSchema.safeParse({ type: 'TRANSFER' }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a null date bound rather than reading it as the epoch', () => {
+    // The same trap slice 3's review found on `date`: new Date(null) is
+    // 1970-01-01, a valid Date. A null bound must mean "no bound", never
+    // "since the epoch" — which would silently exclude nothing on dateFrom
+    // and everything on dateTo.
+    expect(transactionFilterSchema.parse({ dateFrom: null }).dateFrom).toBe(
+      undefined,
+    );
+    expect(transactionFilterSchema.parse({ dateTo: null }).dateTo).toBe(
+      undefined,
+    );
+  });
+
+  it('rejects a date bound that is not date-shaped', () => {
+    const result = transactionFilterSchema.safeParse({ dateFrom: 42 });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('Informe uma data válida');
+  });
+
+  it('parses an absent filter to an empty object, not undefined', () => {
+    // The service destructures it. `undefined` there is a crash on the first
+    // unfiltered request, which is every request the app makes today.
+    expect(transactionPageSchema.parse({}).filter).toEqual({});
+    expect(transactionPageSchema.parse({ filter: null }).filter).toEqual({});
+  });
+
+  it('carries the filter through beside the pagination bounds', () => {
+    const args = transactionPageSchema.parse({
+      filter: { type: 'INCOME' },
+      limit: 500,
+      offset: 20,
+    });
+
+    expect(args.filter.type).toBe('INCOME');
+    // The clamp still applies with a filter present.
+    expect(args.limit).toBe(100);
+    expect(args.offset).toBe(20);
   });
 });

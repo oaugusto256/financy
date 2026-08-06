@@ -1,4 +1,4 @@
-import type { Transaction } from '@prisma/client';
+import type { Prisma, Transaction } from '@prisma/client';
 import { prisma } from '../../shared/prisma.js';
 import { notFound } from '../../shared/errors.js';
 import { parseInput } from '../../shared/validation.js';
@@ -6,6 +6,7 @@ import {
   createTransactionSchema,
   transactionPageSchema,
   updateTransactionSchema,
+  type TransactionFilterArgs,
 } from './validation.js';
 
 /**
@@ -103,6 +104,36 @@ export interface TransactionPage {
 }
 
 /**
+ * The single source of the read's where clause. `userId` is not optional and
+ * is not spread — it is the first key, unconditionally, so no future field can
+ * be added in a way that forgets it. backend.md section 6.
+ *
+ * `contains` carries no `mode`: this client is generated for SQLite, which has
+ * no QueryMode, and SQLite's LIKE is already case-insensitive for ASCII
+ * (backend.md section 2). Note that `%` and `_` in a search term act as LIKE
+ * wildcards — Prisma emits no ESCAPE clause, and §2 records the limit.
+ */
+function transactionWhere(
+  userId: string,
+  filter: TransactionFilterArgs,
+): Prisma.TransactionWhereInput {
+  const { search, type, categoryId, dateFrom, dateTo } = filter;
+
+  return {
+    userId,
+    ...(search && { description: { contains: search } }),
+    ...(type && { type }),
+    ...(categoryId && { categoryId }),
+    ...((dateFrom || dateTo) && {
+      date: {
+        ...(dateFrom && { gte: dateFrom }),
+        ...(dateTo && { lte: dateTo }),
+      },
+    }),
+  };
+}
+
+/**
  * Offset pagination, not cursors: the frontend needs "page 3" and, from slice 4,
  * date-range filtering — not infinite scroll. backend.md section 5.
  *
@@ -110,23 +141,25 @@ export interface TransactionPage {
  * sharing a date have no defined order, so the same row can appear on page 1
  * and page 2 of consecutive requests, or on neither.
  *
- * Both queries carry `userId`. Scoping findMany but not count would hide the
- * other user's rows while still reporting how many of them there are.
+ * One `where` object, built once, handed to both queries. Two objects — even
+ * two that look identical — is how a filter gets applied to the page and not
+ * to the count, leaving a footer that promises rows the table cannot show.
  */
 export async function listTransactions(
   userId: string,
   args: unknown,
 ): Promise<TransactionPage> {
-  const { limit, offset } = parseInput(transactionPageSchema, args);
+  const { filter, limit, offset } = parseInput(transactionPageSchema, args);
+  const where = transactionWhere(userId, filter);
 
   const [items, totalCount] = await prisma.$transaction([
     prisma.transaction.findMany({
-      where: { userId },
+      where,
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       take: limit,
       skip: offset,
     }),
-    prisma.transaction.count({ where: { userId } }),
+    prisma.transaction.count({ where }),
   ]);
 
   return { items, totalCount };
