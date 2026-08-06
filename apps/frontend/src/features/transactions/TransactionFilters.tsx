@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
+import { parse } from 'date-fns';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { periodOptions } from '@/lib/period';
+import { monthLabel, periodOptions } from '@/lib/period';
 import { SEARCH_MAX_LENGTH, type FilterValues } from './useTransactionFilters';
 
 export interface TransactionFiltersProps {
@@ -60,6 +61,25 @@ export function TransactionFilters({
     categoryOptions.push({ value: values.categoryId, label: '…' });
   }
 
+  const periodOptionsList = [...periods];
+
+  // Mirrors the category placeholder above: `values.period` has already
+  // passed `periodRange`'s validation in useTransactionFilters — a hand-typed
+  // ?period=banana never reaches this component at all — so a value that
+  // still matches no <option> is a real month outside the twelve-month
+  // window `periods` covers, e.g. an old bookmark or shared link. Unlike the
+  // category id, the label is derivable from the value itself, so this needs
+  // no `…` placeholder.
+  if (
+    values.period &&
+    !periods.some((option) => option.value === values.period)
+  ) {
+    periodOptionsList.push({
+      value: values.period,
+      label: monthLabel(parse(values.period, 'yyyy-MM', new Date())),
+    });
+  }
+
   return (
     <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Input
@@ -93,7 +113,7 @@ export function TransactionFilters({
 
       <Select
         label="Período"
-        options={periods}
+        options={periodOptionsList}
         value={values.period}
         onChange={(event) => onValueChange('period', event.target.value)}
       />

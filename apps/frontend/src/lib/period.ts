@@ -31,7 +31,7 @@ const VALUE_SHAPE = /^\d{4}-\d{2}$/;
  * lowercase in prose, but this is a select option, and every other option in
  * the bar starts with a capital.
  */
-function monthLabel(month: Date): string {
+export function monthLabel(month: Date): string {
   const label = format(month, "MMMM 'de' yyyy", { locale: ptBR });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }

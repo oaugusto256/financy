@@ -137,6 +137,21 @@ describe('TransactionFilters', () => {
     expect(screen.getByLabelText('Categoria')).toHaveValue('cat-9');
   });
 
+  it('holds a selected period that is outside the twelve-month window', () => {
+    // Reachable from an old bookmark or shared link: useTransactionFilters
+    // only rejects a period that fails to parse, so `values.period` can be a
+    // real month `periodOptions()` does not offer. A native select cannot
+    // hold a value with no matching <option> and would silently fall back to
+    // "Todos os períodos", desyncing the control from the rows actually shown.
+    renderBar({ values: { ...values, period: '2020-03' } });
+
+    const period = screen.getByLabelText('Período');
+    expect(period).toHaveValue('2020-03');
+    expect(
+      within(period).getByRole('option', { name: 'Março de 2020' }),
+    ).toBeInTheDocument();
+  });
+
   it('says so when the category list could not be loaded', () => {
     // The gap slice 3 left in the dialog: categories.isError was never read,
     // so a failed list looked identical to a slow one.
