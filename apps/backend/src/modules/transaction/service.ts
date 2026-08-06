@@ -110,8 +110,8 @@ export interface TransactionPage {
  *
  * `contains` carries no `mode`: this client is generated for SQLite, which has
  * no QueryMode, and SQLite's LIKE is already case-insensitive for ASCII
- * (backend.md section 4). Note that `%` and `_` in a search term act as LIKE
- * wildcards — Prisma emits no ESCAPE clause, and §4 records the limit.
+ * (backend.md section 2). Note that `%` and `_` in a search term act as LIKE
+ * wildcards — Prisma emits no ESCAPE clause, and §2 records the limit.
  */
 function transactionWhere(
   userId: string,

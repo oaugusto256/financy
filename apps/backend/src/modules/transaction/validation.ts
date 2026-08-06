@@ -87,9 +87,14 @@ const filterCategoryId = z
   .nullish()
   .transform((value) => value || undefined);
 
-// Same shape as the `date` field above and for the same reason: bare
-// z.coerce.date() reads null as 1970-01-01. Here the consequence is worse
-// than a wrong stored value — a null dateTo would silently return nothing.
+// Same union+pipe as the `date` field above, but followed by `.nullish()`
+// instead of leaving the field required: a filter's dateFrom/dateTo really
+// can be null. `.nullish()` is what turns that null (and undefined) into
+// undefined before the pipe ever runs, heading off bare z.coerce.date()
+// reading null as 1970-01-01 — here the consequence is worse than a wrong
+// stored value, since a null dateTo would silently return nothing. The union
+// above it still does its own job: guarding a non-date-shaped value like
+// `42` from being silently coerced.
 const dateBound = z
   .union([z.string(), z.date()], { error: 'Informe uma data válida' })
   .pipe(z.coerce.date({ error: 'Informe uma data válida' }))
