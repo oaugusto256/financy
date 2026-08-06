@@ -165,6 +165,16 @@ describe('useTransactionFilters', () => {
     expect(screen.getByTestId('values-period')).toHaveTextContent('');
   });
 
+  it('ignores an unpadded period that date-fns would still parse', async () => {
+    // date-fns' `parse` is lenient about padding — '2026-8' parses to a
+    // valid August 2026 — but `periodOptions()` only ever emits the
+    // zero-padded form, so this value would still match no <option>.
+    renderProbe('/transactions?period=2026-8');
+
+    expect(screen.getByTestId('filter')).toHaveTextContent('null');
+    expect(screen.getByTestId('values-period')).toHaveTextContent('');
+  });
+
   it('ignores a type outside the enum', () => {
     // Likewise ?type=TRANSFER — the API would answer BAD_USER_INPUT and the
     // table would show an error state for a URL, not for a real failure.

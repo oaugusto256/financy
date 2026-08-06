@@ -17,6 +17,16 @@ const MONTH_COUNT = 12;
 const VALUE_FORMAT = 'yyyy-MM';
 
 /**
+ * date-fns `parse` is lenient about padding — `parse('2026-8', 'yyyy-MM', …)`
+ * happily returns August 2026 — but `periodOptions()` only ever emits the
+ * zero-padded form via `format`. An unpadded value would pass `isValid` and
+ * still match no `<option>`, desyncing the select from the URL. This is the
+ * shape every value `periodOptions()` produces, checked before `parse` gets
+ * a chance to be lenient about it.
+ */
+const VALUE_SHAPE = /^\d{4}-\d{2}$/;
+
+/**
  * "agosto de 2026" from date-fns, capitalised. Portuguese month names are
  * lowercase in prose, but this is a select option, and every other option in
  * the bar starts with a capital.
@@ -57,12 +67,16 @@ export function periodOptions(
  * push it into the next one for everyone west of Greenwich.
  *
  * Undefined for "all periods" and for anything unparseable — a hand-typed
- * ?period=banana must produce no filter, never a range of Invalid Date.
+ * ?period=banana must produce no filter, never a range of Invalid Date. Also
+ * undefined for a right-shaped-but-unpadded value like `2026-8` or a
+ * two-digit year like `26-08`: neither is a value `periodOptions()` would
+ * ever produce, so accepting it would still leave the select unable to match
+ * it to an `<option>`.
  */
 export function periodRange(
   value: string,
 ): { dateFrom: string; dateTo: string } | undefined {
-  if (!value) return undefined;
+  if (!value || !VALUE_SHAPE.test(value)) return undefined;
 
   const month = parse(value, VALUE_FORMAT, new Date());
   if (!isValid(month)) return undefined;

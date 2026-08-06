@@ -71,4 +71,27 @@ describe('periodRange', () => {
     expect(periodRange('banana')).toBeUndefined();
     expect(periodRange('2026-13')).toBeUndefined();
   });
+
+  it('is undefined for a right-shaped but unpadded value', () => {
+    // date-fns' `parse` is lenient about padding on its own — '2026-8' and
+    // '26-08' both parse to a valid date — but `periodOptions()` never emits
+    // either shape, only the zero-padded, four-digit-year form. Accepting
+    // them here would leave a value no <option> matches, desyncing the
+    // select from the URL.
+    expect(periodRange('2026-8')).toBeUndefined();
+    expect(periodRange('26-08')).toBeUndefined();
+  });
+
+  it('round-trips every value periodOptions() actually emits', () => {
+    // The property the shape guard must not break: every real value the
+    // select offers still produces a range.
+    const values = periodOptions(AUGUST_2026)
+      .slice(1)
+      .map((option) => option.value);
+
+    expect(values).toHaveLength(12);
+    for (const value of values) {
+      expect(periodRange(value)).not.toBeUndefined();
+    }
+  });
 });
