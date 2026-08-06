@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { periodOptions } from '@/lib/period';
-import type { FilterValues } from './useTransactionFilters';
+import { SEARCH_MAX_LENGTH, type FilterValues } from './useTransactionFilters';
 
 export interface TransactionFiltersProps {
   values: FilterValues;
@@ -69,6 +69,7 @@ export function TransactionFilters({
         type="search"
         value={draftSearch}
         onChange={(event) => onSearchChange(event.target.value)}
+        maxLength={SEARCH_MAX_LENGTH}
       />
 
       <Select

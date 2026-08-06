@@ -507,6 +507,31 @@ describe('TransactionsPage filters', () => {
     );
   });
 
+  it('caps a search over the length the API accepts, instead of erroring', async () => {
+    // Simulates the backend's own BAD_USER_INPUT for a `search` over 100
+    // characters (validation.ts) — the failure mode a hook-level clamp is
+    // meant to make unreachable from a hand-typed or shared URL.
+    const longSearch = 'a'.repeat(101);
+    server.use(
+      api.query('Transactions', ({ variables }) => {
+        const { filter } = variables as { filter?: { search?: string } };
+        if (filter?.search && filter.search.length > 100) {
+          return graphqlError('BAD_USER_INPUT');
+        }
+        return ok({
+          transactions: { items: [aTransaction(1)], totalCount: 1 },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />, {
+      route: `/transactions?q=${longSearch}`,
+    });
+
+    expect(await screen.findByText('Transação 1')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('offers the categories it loaded in the category select', async () => {
     server.use(
       api.query('Categories', () =>

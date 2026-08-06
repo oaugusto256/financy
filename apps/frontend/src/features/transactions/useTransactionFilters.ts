@@ -6,6 +6,15 @@ import { ALL_PERIODS, periodRange } from '@/lib/period';
 /** frontend.md section 5: typing must not fire a request per keystroke. */
 export const SEARCH_DEBOUNCE_MS = 300;
 
+/**
+ * Matches the backend's cap (validation.ts's `searchTerm`, `.max(100, …)`).
+ * Without this, a search longer than 100 characters — pasted, hand-typed, or
+ * carried by a shared URL — would reach the API as-is and come back
+ * BAD_USER_INPUT, which the table would show as its generic "failed to load"
+ * error: an error about the URL, dressed as a failure to load.
+ */
+export const SEARCH_MAX_LENGTH = 100;
+
 const TYPES = ['INCOME', 'EXPENSE'];
 
 export interface FilterValues {
@@ -50,7 +59,12 @@ const PARAM = {
 export function useTransactionFilters(): TransactionFiltersState {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const search = searchParams.get(PARAM.search) ?? '';
+  // Mirrors `type` and `period` below: a hand-typed or shared ?q= longer than
+  // the API accepts must not reach it verbatim.
+  const search = (searchParams.get(PARAM.search) ?? '').slice(
+    0,
+    SEARCH_MAX_LENGTH,
+  );
   const rawType = searchParams.get(PARAM.type) ?? '';
   // A hand-typed ?type=TRANSFER would be BAD_USER_INPUT at the API and would
   // surface as the table's error state — an error about the URL, dressed as a

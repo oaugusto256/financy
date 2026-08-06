@@ -175,6 +175,18 @@ describe('useTransactionFilters', () => {
     expect(screen.getByTestId('values-period')).toHaveTextContent('');
   });
 
+  it('clamps a search longer than the API accepts', () => {
+    // The backend rejects a `search` over 100 characters with BAD_USER_INPUT
+    // (validation.ts's `searchTerm`), which the table would show as its
+    // generic "failed to load" error. A hand-typed or shared URL can carry
+    // any length, so the hook has to clamp it before it becomes `filter`.
+    const longSearch = 'a'.repeat(150);
+    renderProbe(`/transactions?q=${longSearch}`);
+
+    const filter = JSON.parse(screen.getByTestId('filter').textContent ?? '');
+    expect(filter.search).toBe('a'.repeat(100));
+  });
+
   it('ignores a type outside the enum', () => {
     // Likewise ?type=TRANSFER — the API would answer BAD_USER_INPUT and the
     // table would show an error state for a URL, not for a real failure.
