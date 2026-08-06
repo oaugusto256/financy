@@ -121,7 +121,10 @@ describe('ProfilePage', () => {
 
     // A form that starts empty and then fills in loses whatever the user typed
     // in between. frontend.md section 10 requires the loading state.
-    expect(screen.getByLabelText('Carregando perfil')).toBeInTheDocument();
+    // role="status" is the mechanism a screen reader actually announces —
+    // Skeleton's docstring calls out aria-label alone on a plain element as
+    // not reliably exposed.
+    expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByLabelText('Nome completo')).not.toBeInTheDocument();
   });
 

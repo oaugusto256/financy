@@ -14,23 +14,33 @@ export const DEFAULT_LIMIT = 10;
 export const MAX_LIMIT = 100;
 
 const description = z
-  .string()
+  .string({ error: 'A descrição é obrigatória' })
   .trim()
   .min(1, 'A descrição é obrigatória')
   .max(200, 'A descrição deve ter no máximo 200 caracteres');
 
+// The sign is not used; `type` carries the direction — but a negative value
+// still corrupts Category.totalAmount (an unsigned sum, backend.md section 5)
+// and totalBalance (a signed sum by `type`), so it is rejected outright.
+// `.positive()` also excludes zero, the one amount with no meaning.
 const amount = z
   .int({ error: 'O valor deve ser um número inteiro de centavos' })
-  // The sign is not used; `type` carries the direction. Zero is the only amount
-  // with no meaning.
-  .refine((value) => value !== 0, 'O valor não pode ser zero');
+  .positive('O valor deve ser maior que zero');
 
 // zod 4 takes the message as `{ error }`; `required_error` is silently ignored.
 const type = z.enum(TRANSACTION_TYPES, { error: 'Selecione um tipo válido' });
 
-// coerce, not z.date(): the resolver hands over whatever the DateTime scalar
-// produced, and the service is also called directly from tests with a string.
-const date = z.coerce.date({ error: 'Informe uma data válida' });
+// Coercion still runs, since the resolver hands over whatever the DateTime
+// scalar produced and the service is also called directly from tests with a
+// string — but bare z.coerce.date() also accepts `null`, because
+// `new Date(null)` is the valid Date 1970-01-01. A `date: null` update input
+// (well-formed GraphQL: the field is nullable in the SDL) would otherwise
+// reach the service and silently overwrite the row with the epoch. Requiring
+// a string or a Date first, then coercing, rejects null and anything else
+// that is not already date-shaped.
+const date = z
+  .union([z.string(), z.date()], { error: 'Informe uma data válida' })
+  .pipe(z.coerce.date({ error: 'Informe uma data válida' }));
 
 const categoryId = z
   .string()

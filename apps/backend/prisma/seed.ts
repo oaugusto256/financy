@@ -253,6 +253,17 @@ function atLocalMidnight(day: string): Date {
 }
 
 async function main() {
+  // `prisma migrate dev` and `prisma migrate reset` both invoke this file
+  // automatically (package.json's `prisma.seed` entry), with no prompt and no
+  // typed `npm run db:seed`. Pointed at a non-development `DATABASE_URL`, the
+  // delete-then-recreate below destroys a real account and replaces it with a
+  // password the repo publishes. Bail before that can happen.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Refusing to run prisma/seed.ts with NODE_ENV=production: it deletes and recreates the seed user, which would destroy real data.',
+    );
+  }
+
   const existing = await prisma.user.findUnique({
     where: { email: SEED_EMAIL },
     select: { id: true },
@@ -300,7 +311,13 @@ async function main() {
   console.log(
     `Seeded ${SEED_EMAIL} with ${CATEGORIES.length} categories and ${TRANSACTIONS.length} transactions.`,
   );
-  console.log(`Development password: ${SEED_PASSWORD}`);
+
+  // Only the non-secret built-in fallback is safe to print. A developer who
+  // sets a real SEED_PASSWORD must never see it echoed back in a shell or CI
+  // log — they already know it, and logging it is the only way it leaks.
+  if (process.env.SEED_PASSWORD === undefined) {
+    console.log(`Development password: ${SEED_PASSWORD}`);
+  }
 }
 
 main()

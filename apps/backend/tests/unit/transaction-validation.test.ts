@@ -54,7 +54,22 @@ describe('createTransactionSchema', () => {
     // amount with no meaning. backend.md section 7.
     expect(() =>
       parseInput(createTransactionSchema, { ...valid, amount: 0 }),
-    ).toThrow('O valor não pode ser zero');
+    ).toThrow('O valor deve ser maior que zero');
+  });
+
+  it('rejects a negative amount', () => {
+    // A stored negative silently falsifies Category.totalAmount (an unsigned
+    // sum) and totalBalance (a signed sum keyed by `type`). backend.md
+    // section 7 — the owner ruled negatives are rejected, not merely unused.
+    expect(() =>
+      parseInput(createTransactionSchema, { ...valid, amount: -500 }),
+    ).toThrow('O valor deve ser maior que zero');
+  });
+
+  it('rejects a null description with a Portuguese message', () => {
+    expect(() =>
+      parseInput(createTransactionSchema, { ...valid, description: null }),
+    ).toThrow('A descrição é obrigatória');
   });
 
   it('rejects a type outside the two tokens', () => {
@@ -66,6 +81,15 @@ describe('createTransactionSchema', () => {
   it('rejects a date it cannot parse', () => {
     expect(() =>
       parseInput(createTransactionSchema, { ...valid, date: 'ontem' }),
+    ).toThrow('Informe uma data válida');
+  });
+
+  it('rejects a null date instead of writing the epoch', () => {
+    // z.coerce.date() alone treats null as new Date(null), which is the
+    // valid Date 1970-01-01 — not an invalid one. A well-formed
+    // `{ date: null }` GraphQL input must not silently write the epoch.
+    expect(() =>
+      parseInput(createTransactionSchema, { ...valid, date: null }),
     ).toThrow('Informe uma data válida');
   });
 
@@ -141,11 +165,23 @@ describe('updateTransactionSchema', () => {
 
   it('applies the same limits as creation', () => {
     expect(() => parseInput(updateTransactionSchema, { amount: 0 })).toThrow(
-      'O valor não pode ser zero',
+      'O valor deve ser maior que zero',
     );
     expect(() =>
       parseInput(updateTransactionSchema, { description: 'a'.repeat(201) }),
     ).toThrow('A descrição deve ter no máximo 200 caracteres');
+  });
+
+  it('rejects a negative amount', () => {
+    expect(() => parseInput(updateTransactionSchema, { amount: -500 })).toThrow(
+      'O valor deve ser maior que zero',
+    );
+  });
+
+  it('rejects a null description with a Portuguese message', () => {
+    expect(() =>
+      parseInput(updateTransactionSchema, { description: null }),
+    ).toThrow('A descrição é obrigatória');
   });
 
   it('accepts both transaction types unchanged', () => {
@@ -178,6 +214,12 @@ describe('updateTransactionSchema', () => {
     expect(() =>
       parseInput(updateTransactionSchema, { date: 'ontem' }),
     ).toThrow('Informe uma data válida');
+  });
+
+  it('rejects a null date instead of writing the epoch', () => {
+    expect(() => parseInput(updateTransactionSchema, { date: null })).toThrow(
+      'Informe uma data válida',
+    );
   });
 });
 

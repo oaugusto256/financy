@@ -13,10 +13,12 @@ export const transactionFormSchema = z.object({
     .min(1, 'Informe uma descrição')
     .max(200, 'A descrição deve ter no máximo 200 caracteres'),
   // Already an integer number of cents — the field is masked, so there is no
-  // decimal string to parse here or anywhere else.
-  amount: z
-    .int()
-    .refine((value) => value !== 0, 'Informe um valor maior que zero'),
+  // decimal string to parse here or anywhere else. Negative is rejected, not
+  // just zero: the mask can never type a sign, but this schema is the
+  // client-side mirror of backend.md section 7, where the owner ruled a
+  // negative amount is rejected outright (it would falsify Category
+  // totalAmount and totalBalance if it ever reached the server).
+  amount: z.int().positive('Informe um valor maior que zero'),
   type: z.enum(['EXPENSE', 'INCOME'], { error: 'Selecione um tipo' }),
   // The yyyy-MM-dd an <input type="date"> holds, converted on submit.
   date: z.string().min(1, 'Informe uma data'),

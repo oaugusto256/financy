@@ -7,8 +7,8 @@ import { categoryResolvers } from './modules/category/resolvers.js';
 import { transactionTypeDefs } from './modules/transaction/schema.js';
 import { transactionResolvers } from './modules/transaction/resolvers.js';
 
-// `Mutation` no longer needs a placeholder field: the category module extends
-// it with three real ones.
+// `Mutation` no longer needs a placeholder field: the category and
+// transaction modules each extend it with real fields.
 const rootTypeDefs = /* GraphQL */ `
   scalar DateTime
 

@@ -29,7 +29,12 @@ type ProfileValues = z.infer<typeof profileSchema>;
 
 function ProfileSkeleton() {
   return (
-    <Card className="mx-auto max-w-lg p-8" aria-label="Carregando perfil">
+    <Card
+      className="mx-auto max-w-lg p-8"
+      role="status"
+      aria-busy="true"
+      aria-label="Carregando perfil"
+    >
       <div className="flex animate-pulse flex-col items-center gap-4">
         <span className="size-20 rounded-full bg-gray-200" />
         <span className="h-4 w-40 rounded bg-gray-200" />
