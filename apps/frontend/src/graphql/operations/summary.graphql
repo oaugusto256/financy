@@ -1,0 +1,11 @@
+# Named `Summary` deliberately: TransactionDialog.tsx and
+# DeleteTransactionDialog.tsx have invalidated the literal ['Summary'] since
+# slice 3, with nothing to invalidate. Codegen keys a query on its operation
+# name, so this name is what makes those two calls do something.
+query Summary($month: Int!, $year: Int!) {
+  summary(month: $month, year: $year) {
+    totalBalance
+    monthIncome
+    monthExpense
+  }
+}

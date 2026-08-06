@@ -86,3 +86,19 @@ export function periodRange(
     dateTo: endOfMonth(month).toISOString(),
   };
 }
+
+/**
+ * The month the dashboard's stat cards ask `summary(month, year)` for, read
+ * from the browser's local time. The server windows that month in UTC, so on
+ * the last day of a month in a negative-offset zone the two disagree for a few
+ * hours — recorded as a deviation in frontend.md section 12.
+ *
+ * `now` is a parameter so the tests are not written against the wall clock,
+ * like periodOptions above.
+ */
+export function currentPeriod(now: Date = new Date()): {
+  month: number;
+  year: number;
+} {
+  return { month: now.getMonth() + 1, year: now.getFullYear() };
+}

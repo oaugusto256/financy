@@ -1,6 +1,8 @@
-# No totalAmount: the card in the design shows an item count and no money.
-# The figure exists on the type and is tested on the backend; the dashboard
-# panel in slice 5 is what renders it.
+# totalAmount is selected for the dashboard's "Categorias" panel, which sorts by
+# it. The categories page's card shows an item count and no money and simply
+# does not read it — one document rather than two, because a second document is
+# a second cache entry for the same rows and the mutations invalidate by
+# operation name.
 query Categories {
   categories {
     id
@@ -9,6 +11,7 @@ query Categories {
     icon
     color
     transactionCount
+    totalAmount
   }
 }
 
