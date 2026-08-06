@@ -87,17 +87,18 @@ README stays a high-level overview.
 
 ## Status
 
-Slice 1 of 5 complete: a person can create an account, sign in, edit their
-profile and sign out.
+Slices 0 through 4 of 5 complete: a person can create an account, sign in,
+edit their profile, manage categories, and manage transactions in a paginated
+table they can search and filter. Only the dashboard remains.
 See [`docs/plans/roadmap.md`](docs/plans/roadmap.md) for the plan.
 
 - [x] Backend spec
 - [x] Frontend spec
 - [x] Slice 0 — Foundations
 - [x] Slice 1 — Auth and profile
-- [ ] Slice 2 — Categories
-- [ ] Slice 3 — Transactions
-- [ ] Slice 4 — Search, filters, pagination
+- [x] Slice 2 — Categories
+- [x] Slice 3 — Transactions
+- [x] Slice 4 — Search and filters
 - [ ] Slice 5 — Dashboard
 
 Password recovery is deferred to phase 2 and is documented in both specs.

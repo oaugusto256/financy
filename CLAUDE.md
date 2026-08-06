@@ -10,8 +10,8 @@ TanStack Query + Tailwind 4).
 |---|---|
 | `docs/specs/backend.md`, `frontend.md` | Source of truth for behavior. Section 12 of `frontend.md` records deliberate deviations from the design. |
 | `docs/plans/roadmap.md` | The five slices and the definition of done. |
-| `docs/plans/slice-N-*.md` | Per-slice implementation plans. **Large** — `slice-2` is 190 KB, `slice-1` 126 KB, `slice-0` 92 KB. Read the matching `slice-N-outcome.md` instead; they exist so none of the plans has to be read whole. |
-| `apps/backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. `auth/` and `category/` exist. |
+| `docs/plans/slice-N-*.md` | Per-slice implementation plans. **Large** — `slice-3` is 184 KB, `slice-2` 153 KB, `slice-1` 129 KB, `slice-4` and `slice-0` 92 KB each. Read the matching `slice-N-outcome.md` instead; they exist so none of the plans has to be read whole. |
+| `apps/backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. `auth/`, `category/` and `transaction/` exist. |
 | `apps/backend/src/shared/` | `errors.ts`, `auth-guard.ts`, `env.ts`, `prisma.ts`, `password.ts`, `jwt.ts`, `dataloaders.ts`. |
 | `apps/frontend/src/features/<name>/` | Screens and their feature-local logic. |
 | `apps/frontend/src/components/ui/` | Design-system primitives. Browsable at `/style-guide`. |
@@ -104,8 +104,10 @@ The full checklist is in `roadmap.md`. The lines most often missed:
 - **Figma is not reachable from the repo.** Visual comparison is the owner's
   job. Produce an explicit checklist and hand it over rather than guessing;
   `docs/plans/slice-2-figma-handoff.md` is the format. Nothing is blocking as of
-  slice 2: the sixteen `CategoryIcon` names and the `/style-guide` primitive
-  comparison are both confirmed. A checklist only gates work when it asks about
-  something the code is being built on — and if it does, render the thing first
-  so the owner can actually answer it. Slice 2 had to add the `/style-guide`
-  token galleries mid-flight for exactly that reason.
+  slice 4: the sixteen `CategoryIcon` names are confirmed. The `/style-guide`
+  primitive comparison is still unanswered after four slices — it has never
+  gated anything, so it is carried forward rather than chased. A checklist only
+  gates work when it asks about something the code is being built on — and if
+  it does, render the thing first so the owner can actually answer it. Slice 2
+  had to add the `/style-guide` token galleries mid-flight for exactly that
+  reason.
