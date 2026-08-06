@@ -23,6 +23,7 @@ function Probe() {
       <p data-testid="filter">{JSON.stringify(filters.filter ?? null)}</p>
       <p data-testid="page">{filters.page}</p>
       <p data-testid="isFiltered">{String(filters.isFiltered)}</p>
+      <p data-testid="values-period">{filters.values.period}</p>
       <input
         aria-label="busca"
         value={filters.draftSearch}
@@ -157,6 +158,11 @@ describe('useTransactionFilters', () => {
     renderProbe('/transactions?period=banana');
 
     expect(screen.getByTestId('filter')).toHaveTextContent('null');
+    // `values.period` has to fall back to ALL_PERIODS too, not just `filter`:
+    // it feeds a native <select> directly, and "banana" matches no <option>,
+    // which would desync the visible control from the "all periods" state
+    // the URL actually produces.
+    expect(screen.getByTestId('values-period')).toHaveTextContent('');
   });
 
   it('ignores a type outside the enum', () => {
@@ -211,5 +217,74 @@ describe('useTransactionFilters', () => {
     expect(screen.getByTestId('filter')).not.toHaveTextContent(
       '"type":"EXPENSE"',
     );
+  });
+
+  it('replaces the debounced search rather than growing history', async () => {
+    // "Seven keystrokes must not become seven history entries between the
+    // user and the page they came from" — the reason the debounced write
+    // uses `{ replace: true }`. A single step back cannot tell a replace from
+    // a push apart: both a replaced and a pushed `q=luz` entry land on the
+    // same content after one step back from a later `tipo` push. The
+    // difference only shows on a *second* step back — a pushed write leaves a
+    // genuinely empty entry underneath to land on; a replaced write does not,
+    // because it never created a separate entry in the first place.
+    const user = userEvent.setup();
+    const { router } = renderProbe();
+
+    await user.type(screen.getByLabelText('busca'), 'luz');
+    await waitFor(() =>
+      expect(screen.getByTestId('search')).toHaveTextContent('q=luz'),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'tipo' }));
+    expect(screen.getByTestId('search')).toHaveTextContent('type=INCOME');
+    expect(screen.getByTestId('search')).toHaveTextContent('q=luz');
+
+    await act(() => router.navigate(-1));
+    await waitFor(() =>
+      expect(screen.getByTestId('search')).not.toHaveTextContent('type='),
+    );
+    expect(screen.getByTestId('search')).toHaveTextContent('q=luz');
+
+    await act(() => router.navigate(-1));
+    // No earlier entry exists to land on: the debounced write replaced the
+    // starting location instead of pushing beside it.
+    expect(screen.getByTestId('search')).toHaveTextContent('q=luz');
+  });
+
+  it('pulls the search box back with the URL, not just on clear', async () => {
+    // The render-phase sync exists so a back navigation restores the input —
+    // not only `clear()`, which resets it directly and would pass even with
+    // the sync deleted. Two different search values have to land on two
+    // different history entries for a back step to actually change `search`;
+    // since the debounced write always replaces the *current* entry, that
+    // only happens by writing the second value after an unrelated push
+    // (`tipo`) has moved the current entry forward.
+    const user = userEvent.setup();
+    const { router } = renderProbe();
+
+    await user.type(screen.getByLabelText('busca'), 'mercado');
+    await waitFor(() =>
+      expect(screen.getByTestId('search')).toHaveTextContent('q=mercado'),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'tipo' }));
+    expect(screen.getByTestId('search')).toHaveTextContent('type=INCOME');
+    expect(screen.getByTestId('search')).toHaveTextContent('q=mercado');
+
+    await user.clear(screen.getByLabelText('busca'));
+    await user.type(screen.getByLabelText('busca'), 'luz');
+    await waitFor(() =>
+      expect(screen.getByTestId('search')).toHaveTextContent('q=luz'),
+    );
+    expect(screen.getByLabelText('busca')).toHaveValue('luz');
+
+    await act(() => router.navigate(-1));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('search')).toHaveTextContent('q=mercado'),
+    );
+    expect(screen.getByTestId('search')).not.toHaveTextContent('q=luz');
+    expect(screen.getByLabelText('busca')).toHaveValue('mercado');
   });
 });

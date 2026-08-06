@@ -57,8 +57,13 @@ export function useTransactionFilters(): TransactionFiltersState {
   // failure to load. Unknown values are simply not filters.
   const type = TYPES.includes(rawType) ? rawType : '';
   const categoryId = searchParams.get(PARAM.categoryId) ?? '';
-  const period = searchParams.get(PARAM.period) ?? ALL_PERIODS;
-  const range = periodRange(period);
+  const rawPeriod = searchParams.get(PARAM.period) ?? ALL_PERIODS;
+  const range = periodRange(rawPeriod);
+  // Mirrors `type` above: a hand-typed ?period=banana must not reach the
+  // select as its value — `values.period` feeds a native <select> in Task 7,
+  // and a value matching no <option> would desync the visible control from
+  // the "all periods" state the URL actually produces.
+  const period = rawPeriod === ALL_PERIODS || range ? rawPeriod : ALL_PERIODS;
 
   const requested = Number(searchParams.get('page'));
   const page = Number.isInteger(requested) && requested > 0 ? requested : 1;
