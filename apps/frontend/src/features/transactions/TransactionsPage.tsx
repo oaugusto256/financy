@@ -48,9 +48,11 @@ export function TransactionsPage() {
   const transactions = useTransactionsQuery({
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
-    // Spread, not `filter: filters.filter`: an explicit `filter: undefined`
-    // is still a key with a `filter` property, and would miss the cache entry
-    // every pre-filter caller wrote.
+    // Spread rather than `filter: filters.filter` so the query key carries
+    // no `filter` property at all when nothing is filtered. TanStack's
+    // default hashKey drops undefined values, so this does not change the
+    // cache entry — it keeps the key itself readable in devtools and safe
+    // if a custom queryKeyHashFn is ever configured.
     ...(filters.filter && { filter: filters.filter }),
   });
 
