@@ -274,3 +274,262 @@ describe('TransactionsPage', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('TransactionsPage filters', () => {
+  it('renders the bar above the loading state', async () => {
+    mockPage([], 0);
+    renderWithProviders(<TransactionsPage />);
+
+    // Above the state switch, not inside the populated branch: a user who has
+    // filtered into nothing needs the controls that got them there.
+    expect(screen.getByLabelText('Buscar')).toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: 'Carregando transações' }),
+    ).toBeInTheDocument();
+    await screen.findByText('Nenhuma transação ainda');
+  });
+
+  it('renders the bar above the error state', async () => {
+    server.use(api.query('Transactions', () => graphqlError('NOT_FOUND')));
+    renderWithProviders(<TransactionsPage />);
+
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText('Buscar')).toBeInTheDocument();
+  });
+
+  it('sends the filter the URL asks for', async () => {
+    const variables = vi.fn();
+    server.use(
+      api.query('Transactions', ({ variables: received }) => {
+        variables(received);
+        return ok({
+          transactions: { items: [aTransaction(1)], totalCount: 1 },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />, {
+      route: '/transactions?q=mercado&type=EXPENSE&period=2026-08',
+    });
+    await screen.findByText('Transação 1');
+
+    expect(variables).toHaveBeenLastCalledWith({
+      limit: 10,
+      offset: 0,
+      filter: {
+        search: 'mercado',
+        type: 'EXPENSE',
+        dateFrom: '2026-08-01T03:00:00.000Z',
+        dateTo: '2026-09-01T02:59:59.999Z',
+      },
+    });
+  });
+
+  it('sends no filter when nothing is filtered', async () => {
+    // The unfiltered page must keep making exactly the request it made before
+    // this slice, or every cached entry is a miss and the default view of
+    // /transactions quietly stops being the whole ledger.
+    const variables = vi.fn();
+    server.use(
+      api.query('Transactions', ({ variables: received }) => {
+        variables(received);
+        return ok({
+          transactions: { items: [aTransaction(1)], totalCount: 1 },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />);
+    await screen.findByText('Transação 1');
+
+    expect(variables).toHaveBeenLastCalledWith({ limit: 10, offset: 0 });
+  });
+
+  it('refetches when the type select changes', async () => {
+    const variables = vi.fn();
+    server.use(
+      api.query('Transactions', ({ variables: received }) => {
+        variables(received);
+        return ok({
+          transactions: { items: [aTransaction(1)], totalCount: 1 },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />);
+    await screen.findByText('Transação 1');
+
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'INCOME');
+
+    await waitFor(() =>
+      expect(variables).toHaveBeenLastCalledWith({
+        limit: 10,
+        offset: 0,
+        filter: { type: 'INCOME' },
+      }),
+    );
+  });
+
+  it('goes back to page 1 when a filter changes, without bouncing off the clamp', async () => {
+    // slice-3-outcome.md flagged this as the one place slice 4 could race the
+    // out-of-range clamp effect: both want to rewrite `page`. It cannot,
+    // because changing the filter changes the query key, so `result` is
+    // undefined on that render and the clamp's `!!result` guard holds. The
+    // offset in the request is the assertion.
+    const variables = vi.fn();
+    server.use(
+      api.query('Transactions', ({ variables: received }) => {
+        variables(received);
+        return ok({
+          transactions: {
+            items: [aTransaction(1)],
+            totalCount: 27,
+          },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />, {
+      route: '/transactions?page=3',
+    });
+    await screen.findByText('Transação 1');
+    expect(variables).toHaveBeenLastCalledWith({ limit: 10, offset: 20 });
+
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'INCOME');
+
+    await waitFor(() =>
+      expect(variables).toHaveBeenLastCalledWith({
+        limit: 10,
+        offset: 0,
+        filter: { type: 'INCOME' },
+      }),
+    );
+    // And it stays there — a clamp firing after the data lands would push the
+    // offset back to 20.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '1' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      ),
+    );
+  });
+
+  it('says nothing matched, not that there is nothing, when a filter empties the table', async () => {
+    // frontend.md section 10: "A user who filters into nothing should not be
+    // told they have no transactions."
+    mockPage([], 0);
+    renderWithProviders(<TransactionsPage />, {
+      route: '/transactions?q=nada-disso',
+    });
+
+    expect(
+      await screen.findByText('Nenhuma transação encontrada'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Nenhuma transação ainda'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Limpar filtros' }),
+    ).toBeInTheDocument();
+  });
+
+  it('clears every filter from the filtered-empty state', async () => {
+    server.use(
+      api.query('Transactions', ({ variables }) => {
+        const { filter } = variables as { filter?: unknown };
+        return ok({
+          transactions: filter
+            ? { items: [], totalCount: 0 }
+            : { items: [aTransaction(1)], totalCount: 1 },
+        });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />, {
+      route: '/transactions?q=nada-disso&type=EXPENSE',
+    });
+    await screen.findByText('Nenhuma transação encontrada');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Limpar filtros' }),
+    );
+
+    expect(await screen.findByText('Transação 1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Buscar')).toHaveValue('');
+    expect(screen.getByLabelText('Tipo')).toHaveValue('');
+  });
+
+  it('still shows the genuine empty state when nothing is filtered', async () => {
+    mockPage([], 0);
+    renderWithProviders(<TransactionsPage />);
+
+    expect(
+      await screen.findByText('Nenhuma transação ainda'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Criar primeira transação' }),
+    ).toBeInTheDocument();
+  });
+
+  it('refetches a filtered list after a delete', async () => {
+    // The carry-over from slice-3-outcome.md: both dialogs invalidate the bare
+    // ['Transactions'], and the key now carries a filter object. If prefix
+    // matching failed, a deleted row would stay on screen — on a filtered
+    // page only, which is the case nothing covered.
+    let deleted = false;
+    server.use(
+      api.query('Transactions', () =>
+        ok({
+          transactions: deleted
+            ? { items: [], totalCount: 0 }
+            : { items: [aTransaction(1)], totalCount: 1 },
+        }),
+      ),
+      api.mutation('DeleteTransaction', () => {
+        deleted = true;
+        return ok({ deleteTransaction: true });
+      }),
+    );
+
+    renderWithProviders(<TransactionsPage />, {
+      route: '/transactions?type=EXPENSE',
+    });
+    await screen.findByText('Transação 1');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Excluir Transação 1' }),
+    );
+    await screen.findByRole('heading', { name: 'Excluir transação' });
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('Transação 1')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('offers the categories it loaded in the category select', async () => {
+    server.use(
+      api.query('Categories', () =>
+        ok({
+          categories: [
+            {
+              id: 'cat-1',
+              name: 'Mercado',
+              description: null,
+              icon: 'SHOPPING_CART',
+              color: 'GREEN',
+              transactionCount: 0,
+            },
+          ],
+        }),
+      ),
+    );
+    mockPage([aTransaction(1)], 1);
+    renderWithProviders(<TransactionsPage />);
+    await screen.findByText('Transação 1');
+
+    expect(
+      await screen.findByRole('option', { name: 'Mercado' }),
+    ).toBeInTheDocument();
+  });
+});

@@ -6,7 +6,10 @@ import { Pagination } from '@/components/ui/Pagination';
 import { PanelError } from '@/components/ui/PanelError';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PageShell } from '@/components/layout/PageShell';
-import { useTransactionsQuery } from '@/graphql/generated/graphql';
+import {
+  useCategoriesQuery,
+  useTransactionsQuery,
+} from '@/graphql/generated/graphql';
 import {
   TransactionsTable,
   type TransactionRowData,
@@ -19,17 +22,22 @@ import {
   DeleteTransactionDialog,
   type DeleteTransactionTarget,
 } from './DeleteTransactionDialog';
+import { useTransactionFilters } from './useTransactionFilters';
+import { TransactionFilters } from './TransactionFilters';
 
 /** Ten rows per page, matching the design. */
 export const PAGE_SIZE = 10;
 
 export function TransactionsPage() {
-  // In the URL rather than in state: a page can be reloaded, bookmarked and
-  // shared, the back button behaves, and slice 4's "changing a filter resets to
-  // page 1" has something that already exists to reset.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requested = Number(searchParams.get('page'));
-  const page = Number.isInteger(requested) && requested > 0 ? requested : 1;
+  // Every filter, and the page, live in the query string. useTransactionFilters
+  // owns the reading and the writing; nothing here mirrors them in state.
+  const filters = useTransactionFilters();
+  const { page } = filters;
+  const [, setSearchParams] = useSearchParams();
+
+  // The bar's category select. Already in the cache whenever the categories
+  // page or the transaction dialog has run; here it is just another query.
+  const categories = useCategoriesQuery();
 
   const [dialogTarget, setDialogTarget] =
     useState<TransactionFormTarget | null>(null);
@@ -40,6 +48,10 @@ export function TransactionsPage() {
   const transactions = useTransactionsQuery({
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
+    // Spread, not `filter: filters.filter`: an explicit `filter: undefined`
+    // is still a key with a `filter` property, and would miss the cache entry
+    // every pre-filter caller wrote.
+    ...(filters.filter && { filter: filters.filter }),
   });
 
   function goToPage(next: number) {
@@ -104,6 +116,15 @@ export function TransactionsPage() {
       subtitle="Acompanhe suas entradas e saídas"
       action={<Button onClick={openCreate}>+ Nova transação</Button>}
     >
+      <TransactionFilters
+        values={filters.values}
+        draftSearch={filters.draftSearch}
+        onSearchChange={filters.setDraftSearch}
+        onValueChange={filters.setValue}
+        categories={categories.data?.categories ?? []}
+        categoriesFailed={categories.isError}
+      />
+
       {transactions.isPending || pageOutOfRange ? (
         // The out-of-range case renders as loading rather than the stale,
         // empty response for the dead page — the effect above is about to
@@ -121,15 +142,33 @@ export function TransactionsPage() {
           onRetry={() => void transactions.refetch()}
         />
       ) : totalCount === 0 ? (
-        // Gated on totalCount, not on this page's items: an out-of-range page
-        // also comes back with an empty items array, and that is a page
-        // problem, not a "this user has nothing" problem.
+        // Two different empty states. frontend.md section 10: a user who
+        // filtered into nothing must not be told they have no transactions —
+        // and must be offered the way out.
         <Card className="flex flex-col items-center gap-3 p-10 text-center">
-          <p className="font-medium text-gray-800">Nenhuma transação ainda</p>
-          <p className="text-sm text-gray-500">
-            Registre sua primeira despesa ou receita.
-          </p>
-          <Button onClick={openCreate}>Criar primeira transação</Button>
+          {filters.isFiltered ? (
+            <>
+              <p className="font-medium text-gray-800">
+                Nenhuma transação encontrada
+              </p>
+              <p className="text-sm text-gray-500">
+                Nenhum resultado corresponde aos filtros aplicados.
+              </p>
+              <Button variant="secondary" onClick={filters.clear}>
+                Limpar filtros
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="font-medium text-gray-800">
+                Nenhuma transação ainda
+              </p>
+              <p className="text-sm text-gray-500">
+                Registre sua primeira despesa ou receita.
+              </p>
+              <Button onClick={openCreate}>Criar primeira transação</Button>
+            </>
+          )}
         </Card>
       ) : (
         <Card className="overflow-hidden">
