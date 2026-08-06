@@ -1,8 +1,8 @@
 # createdAt and updatedAt are on the type and nothing renders them — the table
 # shows the transaction's own date. Selecting them would put two more fields in
 # every cache entry for no reader.
-query Transactions($limit: Int, $offset: Int) {
-  transactions(limit: $limit, offset: $offset) {
+query Transactions($filter: TransactionFilter, $limit: Int, $offset: Int) {
+  transactions(filter: $filter, limit: $limit, offset: $offset) {
     totalCount
     items {
       id
