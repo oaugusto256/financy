@@ -1,8 +1,7 @@
 # Slice 3 — outcome
 
-Status: code-complete on `feat/slice-3-transactions`, HEAD `d1dc31f` before this
-task's own commit. Not yet merged — a whole-branch review runs after this
-document, ahead of the pull request.
+Status: code-complete on `feat/slice-3-transactions`. The whole-branch review
+has run; its findings are closed and recorded below. Not yet merged.
 
 What [`slice-3-transactions.md`](./slice-3-transactions.md) planned and what
 actually landed, so slice 4 starts from the built state rather than from the
@@ -39,8 +38,10 @@ clamps to the last valid page with `replace: true` rather than dead-ending on
 
 **Verification at the end of this slice**, all through `rtk proxy`:
 
-- `npm test` — backend 210 tests (22 files), frontend 239 tests (44 files), all
-  passing.
+- `npm test` — backend 216 tests (22 files), frontend 242 tests (45 files), all
+  passing. Run per workspace: a single run of both suites on a loaded machine
+  fails four frontend files on vitest worker-startup timeouts rather than on any
+  assertion, which is a resource-contention artifact and not a test failure.
 - `npm run typecheck` — exit 0, both workspaces, no `any` introduced.
 - `npm run lint` — exit 0.
 - `npm run format:check` — exit 0, "All matched files use Prettier code style!".
@@ -57,9 +58,8 @@ clamps to the last valid page with `replace: true` rather than dead-ending on
 | Task 14 added a new `routes.test.tsx` case instead of repurposing an existing one | The plan's Step 6 assumed a signed-in `/transactions` visit was already covered there; none existed. |
 | Nine of the build's fourteen tasks needed at least one plan-prescribed test strengthened after review, closed additively without touching the production code it covers | See "Test quality, for slice 4's plan" below. |
 
-Every other departure recorded task-by-task in
-[`progress.md`](../../.superpowers/sdd/slice-3-transactions/progress.md) —
-extra cross-user cases, mixed-batch DataLoader ordering, the removed
+Every other departure — extra cross-user cases, mixed-batch DataLoader
+ordering, the removed
 `Math.trunc(... / 100)` in `currency.ts` — was a strengthening closed inside its
 own task, with the production code left as the plan specified or corrected to
 match a constraint the plan itself states elsewhere (no division in
@@ -206,21 +206,63 @@ would produce anyway is not evidence of anything.
 - **No CI.** Nothing runs the checks on push. Every number in this file came
   from a local run, through `rtk proxy`.
 
-## Deferred minors, for the whole-branch review to triage
+## What the whole-branch review found, and what closed it
 
-Not fixed in this task, by design — this document records what shipped, not
-what should change next. Full detail, task by task, is in
-[`progress.md`](../../.superpowers/sdd/slice-3-transactions/progress.md):
+The review ran as two passes, backend and frontend. The frontend pass returned
+no Critical and no Important finding: the four hazards most likely to be wrong
+at branch scale — a Tailwind class assembled at runtime, an asymmetry between
+the create/update and delete invalidation sets, a dialog holding a previous
+row's values, and the pagination clamp looping or stranding a skeleton — were
+each checked and each clean. The backend pass found four things worth fixing,
+all closed before this document was finalized:
+
+- **`z.coerce.date()` turned an explicit `null` into the Unix epoch.**
+  `new Date(null)` is `1970-01-01`, a *valid* date, so `updateTransaction`
+  with `{ date: null }` — a well-formed request, since the SDL field is
+  nullable — silently overwrote the row's date instead of rejecting. The
+  shipped UI cannot send it; the API accepted it. The field now requires a
+  string or a `Date` before coercing.
+- **Negative amounts were accepted.** §7 said "sign is not used", so the code
+  matched the spec, but §5's `totalAmount` is "the unsigned sum" and slice 5's
+  `totalBalance` is Σ INCOME − Σ EXPENSE — one stored negative falsifies both
+  with nothing pointing at the row that caused it. The owner ruled: reject
+  them. `.positive()` on the backend schema and its frontend mirror, and §7
+  now says strictly positive. This is a spec correction, not just a code fix.
+- **The seed was unguarded and ran automatically.** It deletes and recreates
+  the seed user, and `package.json` registers it as Prisma's `seed` entry
+  point, so `prisma migrate dev` and `prisma migrate reset` invoke it with no
+  prompt. Against a real `DATABASE_URL` it would have destroyed an account and
+  replaced it with a published password. It now refuses to run under
+  `NODE_ENV=production`, and logs the resolved password only when that
+  password is the non-secret built-in fallback.
+- **Two spec lines this branch's own definition of done required it to
+  correct** and had missed: §10 still claimed the seed credentials live in the
+  seed file, and §8's `.env.example` transcript omitted `SEED_PASSWORD`.
+
+Three smaller items were folded into the same change: `description: null`
+returned zod's default English message where every neighbouring field carried a
+Portuguese one; two user-visible behaviours this slice introduced were missing
+from `frontend.md` §12 (the out-of-range page clamp and the dialog's `…`
+placeholder option); and `ProfilePage`'s loading card still used the bare
+`aria-label` pattern that this slice's own `Skeleton` docstring calls out as
+unreliable, which the panel-states task had fixed in the app's other two
+loading states and left in this one.
+
+## Deferred minors, triaged by the whole-branch review
+
+Reviewed and deliberately shipped as-is:
 
 - No test that `updateTransactionSchema` preserves a real non-empty
   `categoryId` unchanged, or trims whitespace on either transaction schema.
-- A stale comment at `src/schema.ts:10-11` says only the category module
-  extends `Mutation`; the transaction module now does too.
+- `prisma/seed.ts`'s `NODE_ENV=production` guard and its password-logging
+  condition have no automated coverage — dropping either would go undetected by
+  `npm test`. The file is a top-level script that constructs its own Prisma
+  client at import time, so testing it means restructuring it first; `seed.ts`
+  had no tests before this slice either. Worth closing when slice 5 re-bases the
+  seed's fixed dates, which touches the same file.
 - `codegen:check` uses `git diff --exit-code` (unstaged-only), so it would pass
   on a dirty tree once files are staged — a roadmap-level fix, not scoped to
   this slice.
-- `seed.ts:303` logs the resolved `SEED_PASSWORD` on every run; harmless for
-  the placeholder, would echo a real value if a developer set one.
 - `digitsToCents`'s `.slice(0, 15)` guard is unreachable in practice.
 - No test exercises `formatSignedAmount(0, ...)`.
 - The two TZ pins (the npm script prefix and `vite.config.ts`'s `test.env`)

@@ -1,9 +1,9 @@
 # Frontend Spec
 
 Status: approved, implemented through slice 3
-Last updated: 2026-08-05 (section 12: three transactions-screen entries added —
-the scrolling table, the page number in the URL, and the cents-first amount
-mask)
+Last updated: 2026-08-06 (final whole-branch review of slice 3: section 12
+gains two more entries — the out-of-range page clamp and the transaction
+dialog's `…` placeholder category option)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
@@ -454,6 +454,23 @@ and converts to integer cents on submit without saying how. Keystrokes fill from
 the right, so the field holds a valid integer at every moment and submit sends
 it unchanged — there is no decimal string to parse and no locale ambiguity
 between `12,34` and `12.34`.
+
+**An out-of-range transactions page clamps to the last valid page.** The design
+draws no state for a page number past the end — deleting the last row(s) on the
+last page, or a hand-typed `?page=99`, has no equivalent in it. The alternative,
+rendering the empty state ("Nenhuma transação ainda"), would tell a user with
+data that they have none. `TransactionsPage.tsx` instead renders the loading
+skeleton while an effect rewrites the URL to the last valid page with
+`replace: true`, then renders that page — a brief loading flash rather than a
+dead end or a lie about the user having no transactions.
+
+**The transaction dialog's category select shows a `…` placeholder `<option>`**
+for the transaction's current category while the real category list is still
+loading. A native `<select>` can only hold a value that matches one of its
+options, and the category list arrives asynchronously; without a placeholder
+slot the control would render with no category selected for the instant before
+the real list arrives, which for an edit is a value the field never actually
+had.
 
 ## 13. Environment
 
