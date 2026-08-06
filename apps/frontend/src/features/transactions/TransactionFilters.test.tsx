@@ -2,12 +2,22 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TransactionFilters } from './TransactionFilters';
+import { periodOptions } from '@/lib/period';
 
 const values = { search: '', type: '', categoryId: '', period: '' };
 const categories = [
   { id: 'cat-1', name: 'Mercado' },
   { id: 'cat-2', name: 'Salário' },
 ];
+
+/**
+ * The most recent real month periodOptions() offers, not "all periods"
+ * (index 0). Read from periodOptions() rather than hard-coded so the test
+ * does not age out once that month falls out of the twelve-month window.
+ */
+function aRealMonth(): string {
+  return periodOptions()[1]!.value;
+}
 
 function renderBar(
   overrides: Partial<Parameters<typeof TransactionFilters>[0]> = {},
@@ -84,21 +94,26 @@ describe('TransactionFilters', () => {
 
   it('reports a chosen type, category and period by field name', async () => {
     const { onValueChange } = renderBar();
+    const month = aRealMonth();
 
     await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'INCOME');
     await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'cat-1');
+    await userEvent.selectOptions(screen.getByLabelText('Período'), month);
 
     expect(onValueChange).toHaveBeenCalledWith('type', 'INCOME');
     expect(onValueChange).toHaveBeenCalledWith('categoryId', 'cat-1');
+    expect(onValueChange).toHaveBeenCalledWith('period', month);
   });
 
   it('shows the values it was given', () => {
+    const month = aRealMonth();
+
     renderBar({
       values: {
         search: 'mercado',
         type: 'EXPENSE',
         categoryId: 'cat-2',
-        period: '',
+        period: month,
       },
       draftSearch: 'mercado',
     });
@@ -106,6 +121,7 @@ describe('TransactionFilters', () => {
     expect(screen.getByLabelText('Buscar')).toHaveValue('mercado');
     expect(screen.getByLabelText('Tipo')).toHaveValue('EXPENSE');
     expect(screen.getByLabelText('Categoria')).toHaveValue('cat-2');
+    expect(screen.getByLabelText('Período')).toHaveValue(month);
   });
 
   it('holds a selected category that is not in the list yet', () => {
