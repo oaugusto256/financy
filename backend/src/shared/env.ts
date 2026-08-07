@@ -5,9 +5,13 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   PORT: z.coerce.number().int().positive().default(4000),
   CORS_ORIGIN: z.url().default('http://localhost:5173'),
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
+  // Required, with no default. It used to default to 'development', which made
+  // the most permissive posture — introspection served, stack traces in every
+  // error — the one a deploy got for forgetting a variable. Failing at startup
+  // is the safer way to be wrong.
+  NODE_ENV: z.enum(['development', 'test', 'production'], {
+    error: 'NODE_ENV must be development, test or production',
+  }),
 });
 
 export type Env = z.infer<typeof envSchema>;

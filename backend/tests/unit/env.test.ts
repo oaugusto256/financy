@@ -24,11 +24,23 @@ describe('parseEnv', () => {
     expect(parseEnv(valid).PORT).toBe(4000);
   });
 
-  it('defaults PORT and NODE_ENV when absent', () => {
+  it('defaults PORT when absent', () => {
     const { PORT: _PORT, ...rest } = valid;
-    const parsed = parseEnv({ ...rest, NODE_ENV: undefined });
-    expect(parsed.PORT).toBe(4000);
-    expect(parsed.NODE_ENV).toBe('development');
+    expect(parseEnv(rest).PORT).toBe(4000);
+  });
+
+  it('throws when NODE_ENV is missing', () => {
+    // Deliberately not defaulted: a deploy that omits it would otherwise be
+    // handed the development posture silently.
+    expect(() => parseEnv({ ...valid, NODE_ENV: undefined })).toThrow(
+      /NODE_ENV/,
+    );
+  });
+
+  it('throws when NODE_ENV is not one of the three known values', () => {
+    expect(() => parseEnv({ ...valid, NODE_ENV: 'staging' })).toThrow(
+      /NODE_ENV/,
+    );
   });
 
   it('throws when JWT_SECRET is missing', () => {

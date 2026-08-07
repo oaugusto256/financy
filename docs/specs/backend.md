@@ -498,8 +498,16 @@ already provides, and the message belongs on the field either way.
 password. Distinguishing them would turn the login endpoint into an oracle for
 which emails have accounts.
 
-In production, unexpected errors are logged server-side and returned as a generic
-message with no stack trace.
+Every error is logged server-side with the operation name, the caller's `userId`
+and the error itself — in every environment, since production is the one where
+the log is the only record. Only the five codes above and the protocol codes
+graphql-js raises before execution (`GRAPHQL_VALIDATION_FAILED` and its
+siblings, whose messages describe the caller's own request) are returned as
+written. Anything else is replaced with `INTERNAL_SERVER_ERROR` and the fixed
+message "Erro interno do servidor", carrying no path, no location and no stack
+trace. Masking is not conditional on the environment either: an error that is
+safe to show in development is safe to show anywhere, and one that is not
+should never have been formatted twice.
 
 ### Validation rules
 
@@ -548,6 +556,13 @@ Environment variables are validated with zod at startup. If `JWT_SECRET` is
 missing or empty, the process exits immediately with a clear message. A server
 that boots with an empty signing secret issues tokens anyone can forge, and it
 fails silently — so it must fail loudly instead.
+
+`NODE_ENV` is required for the same reason and has no default. It is the only
+input to the server's error posture: introspection is served unless it is
+`production`, and a stack trace is attached to an error response only when it is
+`development`. Both are passed to Apollo explicitly, because Apollo otherwise
+reads `process.env.NODE_ENV` itself and would hand a deploy that omitted the
+variable the most permissive of the three settings.
 
 Any variable added later must be added to `.env.example` in the same change.
 
