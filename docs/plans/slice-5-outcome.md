@@ -53,7 +53,7 @@ the final commit before this one:
   style!".
 - `npm run codegen:check -w @financy/backend` — exit 0, no diff.
 - `npm run codegen:check -w @financy/frontend` — exit 0, no diff.
-- `git diff package.json apps/backend/package.json apps/frontend/package.json`
+- `git diff package.json backend/package.json frontend/package.json`
   — empty. No task in this slice installed anything.
 
 Every number above matches what this task was handed at the start; none
@@ -94,8 +94,8 @@ differed on re-run.
   while the dashboard reads the local month, with the UTC-3 boundary example
   and the rejected alternatives (`dateFrom`/`dateTo` arguments, a
   server-local window). This closes the forward reference two source
-  comments already carried — `apps/backend/src/modules/summary/service.ts`
-  and `apps/frontend/src/lib/period.ts:92` both cite `frontend.md` section 12
+  comments already carried — `backend/src/modules/summary/service.ts`
+  and `frontend/src/lib/period.ts:92` both cite `frontend.md` section 12
   for this deviation; without this entry those citations pointed at nothing.
 
 ## The invalidation this slice existed to make live

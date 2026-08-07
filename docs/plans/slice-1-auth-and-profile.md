@@ -88,12 +88,12 @@ test database gets its migrations applied before the suite runs, and its rows
 deleted between tests.
 
 **Files:**
-- Modify: `apps/backend/prisma/schema.prisma`
-- Create: `apps/backend/prisma/migrations/**` (generated)
-- Create: `apps/backend/tests/setup/global-setup.ts`
-- Create: `apps/backend/tests/helpers/db.ts`
-- Modify: `apps/backend/vitest.config.ts`
-- Test: `apps/backend/tests/integration/user-model.test.ts`
+- Modify: `backend/prisma/schema.prisma`
+- Create: `backend/prisma/migrations/**` (generated)
+- Create: `backend/tests/setup/global-setup.ts`
+- Create: `backend/tests/helpers/db.ts`
+- Modify: `backend/vitest.config.ts`
+- Test: `backend/tests/integration/user-model.test.ts`
 
 **Interfaces:**
 - Consumes: `prisma` from `src/shared/prisma.ts`.
@@ -101,7 +101,7 @@ deleted between tests.
 
 - [x] **Step 1: Add the model**
 
-`apps/backend/prisma/schema.prisma` — append, exactly as `backend.md` section 4
+`backend/prisma/schema.prisma` — append, exactly as `backend.md` section 4
 writes it:
 
 ```prisma
@@ -125,14 +125,14 @@ back-relation alongside the model that needs it.
 npm run db:migrate -w @financy/backend -- --name add_user
 ```
 
-Expected: a new `apps/backend/prisma/migrations/<timestamp>_add_user/` holding
+Expected: a new `backend/prisma/migrations/<timestamp>_add_user/` holding
 `migration.sql`, and `dev.db` created. Confirm `git status` shows the migration
 directory as untracked — `*.db` is gitignored, `migrations/` is not, and a
 migration that never gets committed is a schema that only exists on one machine.
 
 - [x] **Step 3: Apply migrations to the test database before the suite**
 
-`apps/backend/tests/setup/global-setup.ts`:
+`backend/tests/setup/global-setup.ts`:
 
 ```ts
 import { execFileSync } from 'node:child_process';
@@ -151,10 +151,10 @@ export default function setup() {
 ```
 
 Prisma resolves a relative `file:` URL against the directory holding
-`schema.prisma`, so this is `apps/backend/prisma/test.db` — the same file slice
+`schema.prisma`, so this is `backend/prisma/test.db` — the same file slice
 0's `DATABASE_URL` already names.
 
-`apps/backend/tests/helpers/db.ts`:
+`backend/tests/helpers/db.ts`:
 
 ```ts
 import { prisma } from '../../src/shared/prisma.js';
@@ -171,7 +171,7 @@ if they add a row that no user owns.
 
 - [x] **Step 4: Register the global setup**
 
-In `apps/backend/vitest.config.ts`, add to the `test` block:
+In `backend/vitest.config.ts`, add to the `test` block:
 
 ```ts
     globalSetup: ['./tests/setup/global-setup.ts'],
@@ -182,7 +182,7 @@ Leave `fileParallelism: false` as it is. It is what stops one file's
 
 - [x] **Step 5: Write the failing test**
 
-`apps/backend/tests/integration/user-model.test.ts`:
+`backend/tests/integration/user-model.test.ts`:
 
 ```ts
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -233,12 +233,12 @@ Expected: PASS — 2 new tests, plus slice 0's 10.
 
 If the run fails with `The table main.User does not exist`, the global setup did
 not run. Check that the path in `globalSetup` is relative to
-`apps/backend/`, and that `npx prisma migrate deploy` succeeds by hand.
+`backend/`, and that `npx prisma migrate deploy` succeeds by hand.
 
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): add the User model and the test database harness
 
 Migrations are applied to test.db by a global setup rather than by
@@ -255,10 +255,10 @@ neither is worth a commit alone and both are pure logic that unit tests cover
 completely.
 
 **Files:**
-- Create: `apps/backend/src/shared/password.ts`
-- Create: `apps/backend/src/shared/jwt.ts`
-- Test: `apps/backend/tests/unit/password.test.ts`
-- Test: `apps/backend/tests/unit/jwt.test.ts`
+- Create: `backend/src/shared/password.ts`
+- Create: `backend/src/shared/jwt.ts`
+- Test: `backend/tests/unit/password.test.ts`
+- Test: `backend/tests/unit/jwt.test.ts`
 
 **Interfaces:**
 - Consumes: `env` from `src/shared/env.ts`.
@@ -282,7 +282,7 @@ already is.
 
 - [x] **Step 2: Write the failing password test**
 
-`apps/backend/tests/unit/password.test.ts`:
+`backend/tests/unit/password.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -336,7 +336,7 @@ Expected: FAIL — cannot resolve `../../src/shared/password.js`.
 
 - [x] **Step 4: Implement password hashing**
 
-`apps/backend/src/shared/password.ts`:
+`backend/src/shared/password.ts`:
 
 ```ts
 import { hash, verify } from '@node-rs/argon2';
@@ -365,7 +365,7 @@ them.
 
 - [x] **Step 5: Write the failing JWT test**
 
-`apps/backend/tests/unit/jwt.test.ts`:
+`backend/tests/unit/jwt.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -409,7 +409,7 @@ any account to anyone who can base64-encode a JSON object.
 
 - [x] **Step 6: Implement the JWT module**
 
-`apps/backend/src/shared/jwt.ts`:
+`backend/src/shared/jwt.ts`:
 
 ```ts
 import { SignJWT, jwtVerify } from 'jose';
@@ -458,7 +458,7 @@ Expected: PASS — 9 new tests.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): add password hashing and JWT signing
 
 verifyToken pins the algorithm rather than trusting the token header,
@@ -475,12 +475,12 @@ The three pieces that make ownership enforceable. Built before the service, so
 the service has something to throw and something to trust.
 
 **Files:**
-- Create: `apps/backend/src/shared/errors.ts`
-- Create: `apps/backend/src/shared/auth-guard.ts`
-- Create: `apps/backend/src/context.ts`
-- Modify: `apps/backend/src/app.ts`
-- Test: `apps/backend/tests/unit/auth-guard.test.ts`
-- Test: `apps/backend/tests/integration/context.test.ts`
+- Create: `backend/src/shared/errors.ts`
+- Create: `backend/src/shared/auth-guard.ts`
+- Create: `backend/src/context.ts`
+- Modify: `backend/src/app.ts`
+- Test: `backend/tests/unit/auth-guard.test.ts`
+- Test: `backend/tests/integration/context.test.ts`
 
 **Interfaces:**
 - Consumes: `verifyToken` from `src/shared/jwt.ts`.
@@ -488,7 +488,7 @@ the service has something to throw and something to trust.
 
 - [x] **Step 1: Write the error module**
 
-`apps/backend/src/shared/errors.ts`:
+`backend/src/shared/errors.ts`:
 
 ```ts
 import { GraphQLError } from 'graphql';
@@ -538,7 +538,7 @@ the frontend reads one shape.
 
 - [x] **Step 2: Write the failing guard test**
 
-`apps/backend/tests/unit/auth-guard.test.ts`:
+`backend/tests/unit/auth-guard.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -561,7 +561,7 @@ describe('requireUser', () => {
 
 - [x] **Step 3: Implement the guard**
 
-`apps/backend/src/shared/auth-guard.ts`:
+`backend/src/shared/auth-guard.ts`:
 
 ```ts
 import type { GraphQLContext } from '../context.js';
@@ -580,7 +580,7 @@ export function requireUser(context: GraphQLContext): string {
 
 - [x] **Step 4: Implement the context**
 
-`apps/backend/src/context.ts`:
+`backend/src/context.ts`:
 
 ```ts
 import type { Request } from 'express';
@@ -613,7 +613,7 @@ export async function createContext({
 
 - [x] **Step 5: Wire the context into the app**
 
-In `apps/backend/src/app.ts`, type the server and pass the context factory:
+In `backend/src/app.ts`, type the server and pass the context factory:
 
 ```ts
 import { ApolloServer } from '@apollo/server';
@@ -653,7 +653,7 @@ stay exactly as slice 0 left them.
 
 - [x] **Step 6: Write the context integration test**
 
-`apps/backend/tests/integration/context.test.ts` proves the wiring end to end,
+`backend/tests/integration/context.test.ts` proves the wiring end to end,
 which the unit tests cannot: a real HTTP request carrying a real header reaches
 a resolver with the right `userId`. Add a temporary probe query? No — instead
 assert through the guard's observable behavior once `me` exists, in task 6. For
@@ -707,7 +707,7 @@ Expected: PASS — 6 new tests, and slice 0's health and CORS tests still green.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): add error codes, request context and the auth guard
 
 A bad token yields a context with no user rather than an error. Whether
@@ -725,8 +725,8 @@ executable. Written before the service so the service can assume its inputs are
 already clean.
 
 **Files:**
-- Create: `apps/backend/src/modules/auth/validation.ts`
-- Test: `apps/backend/tests/unit/auth-validation.test.ts`
+- Create: `backend/src/modules/auth/validation.ts`
+- Test: `backend/tests/unit/auth-validation.test.ts`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -734,7 +734,7 @@ already clean.
 
 - [x] **Step 1: Write the failing test**
 
-`apps/backend/tests/unit/auth-validation.test.ts`:
+`backend/tests/unit/auth-validation.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -850,7 +850,7 @@ Expected: FAIL — cannot resolve `../../src/modules/auth/validation.js`.
 
 - [x] **Step 3: Implement the schemas**
 
-`apps/backend/src/modules/auth/validation.ts`:
+`backend/src/modules/auth/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -919,7 +919,7 @@ Expected: PASS — 14 new tests.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): validate auth inputs with zod
 
 Sign-in deliberately does not enforce the password policy: applying
@@ -935,9 +935,9 @@ Business rules, taking no request context and returning no GraphQL types. This
 is the layer `backend.md` section 3 puts between resolvers and Prisma.
 
 **Files:**
-- Create: `apps/backend/src/modules/auth/service.ts`
-- Test: `apps/backend/tests/integration/auth-service.test.ts`
-- Create: `apps/backend/tests/helpers/factories.ts`
+- Create: `backend/src/modules/auth/service.ts`
+- Test: `backend/tests/integration/auth-service.test.ts`
+- Create: `backend/tests/helpers/factories.ts`
 
 **Interfaces:**
 - Consumes: `prisma`, `hashPassword`, `verifyPassword`, `signToken`, the validation schemas, the error helpers.
@@ -945,7 +945,7 @@ is the layer `backend.md` section 3 puts between resolvers and Prisma.
 
 - [x] **Step 1: Write the test factory**
 
-`apps/backend/tests/helpers/factories.ts`:
+`backend/tests/helpers/factories.ts`:
 
 ```ts
 import { prisma } from '../../src/shared/prisma.js';
@@ -976,7 +976,7 @@ sign-in does not fail because sign-up is broken.
 
 - [x] **Step 2: Write the failing service test**
 
-`apps/backend/tests/integration/auth-service.test.ts`:
+`backend/tests/integration/auth-service.test.ts`:
 
 ```ts
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -1173,7 +1173,7 @@ Expected: FAIL — cannot resolve `../../src/modules/auth/service.js`.
 
 - [x] **Step 4: Implement the service**
 
-`apps/backend/src/modules/auth/service.ts`:
+`backend/src/modules/auth/service.ts`:
 
 ```ts
 import type { User } from '@prisma/client';
@@ -1264,7 +1264,7 @@ Expected: PASS — 17 new tests.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): add the auth service
 
 An unknown email and a wrong password return the same error object.
@@ -1280,11 +1280,11 @@ The transport layer. Resolvers extract the user id through the guard, call the
 service, and do nothing else.
 
 **Files:**
-- Create: `apps/backend/src/modules/auth/schema.ts`
-- Create: `apps/backend/src/modules/auth/resolvers.ts`
-- Modify: `apps/backend/src/schema.ts`
-- Test: `apps/backend/tests/integration/auth.test.ts`
-- Create: `apps/backend/tests/helpers/graphql.ts`
+- Create: `backend/src/modules/auth/schema.ts`
+- Create: `backend/src/modules/auth/resolvers.ts`
+- Modify: `backend/src/schema.ts`
+- Test: `backend/tests/integration/auth.test.ts`
+- Create: `backend/tests/helpers/graphql.ts`
 
 **Interfaces:**
 - Consumes: the auth service, `requireUser`, `GraphQLContext`.
@@ -1304,7 +1304,7 @@ becomes a malformed string in the response rather than an error.
 
 - [x] **Step 2: Write the auth SDL**
 
-`apps/backend/src/modules/auth/schema.ts`:
+`backend/src/modules/auth/schema.ts`:
 
 ```ts
 export const authTypeDefs = /* GraphQL */ `
@@ -1360,7 +1360,7 @@ same root types without any module owning them.
 
 - [x] **Step 3: Write the resolvers**
 
-`apps/backend/src/modules/auth/resolvers.ts`:
+`backend/src/modules/auth/resolvers.ts`:
 
 ```ts
 import type { GraphQLContext } from '../../context.js';
@@ -1395,7 +1395,7 @@ written out here so this task's tests pass on their own.
 
 - [x] **Step 4: Merge the module into the schema**
 
-`apps/backend/src/schema.ts`:
+`backend/src/schema.ts`:
 
 ```ts
 import { DateTimeISOResolver } from 'graphql-scalars';
@@ -1439,7 +1439,7 @@ does not need a token is worth keeping.
 
 - [x] **Step 5: Write the GraphQL test helper**
 
-`apps/backend/tests/helpers/graphql.ts`:
+`backend/tests/helpers/graphql.ts`:
 
 ```ts
 import request from 'supertest';
@@ -1479,7 +1479,7 @@ and Prisma in one pass, which is where `roadmap.md` puts the weight.
 
 - [x] **Step 6: Write the failing integration test**
 
-`apps/backend/tests/integration/auth.test.ts`:
+`backend/tests/integration/auth.test.ts`:
 
 ```ts
 import type { Express } from 'express';
@@ -1770,7 +1770,7 @@ run `npm run db:migrate -w @financy/backend`.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): add the auth module
 
 Resolvers reach a user id only through requireUser, and the SDL has no
@@ -1787,16 +1787,16 @@ keep hand-written SDL and resolvers in sync. This task adds it, and emits the
 printed schema that the frontend's codegen reads without running the server.
 
 **Files:**
-- Create: `apps/backend/codegen.ts`
-- Create: `apps/backend/src/graphql/generated/resolvers.ts` (generated, committed)
-- Create: `apps/backend/schema.graphql` (generated, committed)
-- Modify: `apps/backend/src/modules/auth/resolvers.ts`
-- Modify: `apps/backend/package.json`
-- Test: `apps/backend/tests/unit/schema-artifact.test.ts`
+- Create: `backend/codegen.ts`
+- Create: `backend/src/graphql/generated/resolvers.ts` (generated, committed)
+- Create: `backend/schema.graphql` (generated, committed)
+- Modify: `backend/src/modules/auth/resolvers.ts`
+- Modify: `backend/package.json`
+- Test: `backend/tests/unit/schema-artifact.test.ts`
 
 **Interfaces:**
 - Consumes: the module SDL.
-- Produces: `Resolvers` and the operation argument types from `src/graphql/generated/resolvers.ts`; `apps/backend/schema.graphql`, the printed schema.
+- Produces: `Resolvers` and the operation argument types from `src/graphql/generated/resolvers.ts`; `backend/schema.graphql`, the printed schema.
 
 - [x] **Step 1: Install**
 
@@ -1808,7 +1808,7 @@ npm install -w @financy/backend -D @graphql-codegen/cli \
 
 - [x] **Step 2: Write the codegen config**
 
-`apps/backend/codegen.ts`:
+`backend/codegen.ts`:
 
 ```ts
 import type { CodegenConfig } from '@graphql-codegen/cli';
@@ -1853,7 +1853,7 @@ starting the backend.
 
 - [x] **Step 3: Add the scripts**
 
-In `apps/backend/package.json`:
+In `backend/package.json`:
 
 ```json
 "codegen": "graphql-codegen --config codegen.ts",
@@ -1870,7 +1870,7 @@ three mutations and `me` — and no `passwordHash`.
 
 - [x] **Step 5: Type the resolvers with the generated types**
 
-Rewrite `apps/backend/src/modules/auth/resolvers.ts`:
+Rewrite `backend/src/modules/auth/resolvers.ts`:
 
 ```ts
 import type { Resolvers } from '../../graphql/generated/resolvers.js';
@@ -1911,7 +1911,7 @@ optional on the `Resolvers` type. Spread them with `?? {}`:
 
 - [x] **Step 6: Write the drift test**
 
-`apps/backend/tests/unit/schema-artifact.test.ts`:
+`backend/tests/unit/schema-artifact.test.ts`:
 
 ```ts
 import { readFileSync } from 'node:fs';
@@ -1950,7 +1950,7 @@ Expected: all pass. `generated/` is already excluded from lint by slice 0's
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): generate resolver types and commit the schema
 
 schema.graphql is committed so the frontend's codegen runs on a fresh
@@ -1967,15 +1967,15 @@ The frontend's half of the codegen setup. It reads the schema file task 7
 committed, so this runs on a fresh clone with no backend process.
 
 **Files:**
-- Create: `apps/frontend/codegen.ts`
-- Create: `apps/frontend/src/graphql/operations/auth.graphql`
-- Create: `apps/frontend/src/graphql/generated/graphql.ts` (generated, committed)
-- Modify: `apps/frontend/src/lib/graphql-client.ts`
-- Modify: `apps/frontend/package.json`
-- Test: `apps/frontend/src/graphql/generated/query-keys.test.ts`
+- Create: `frontend/codegen.ts`
+- Create: `frontend/src/graphql/operations/auth.graphql`
+- Create: `frontend/src/graphql/generated/graphql.ts` (generated, committed)
+- Modify: `frontend/src/lib/graphql-client.ts`
+- Modify: `frontend/package.json`
+- Test: `frontend/src/graphql/generated/query-keys.test.ts`
 
 **Interfaces:**
-- Consumes: `apps/backend/schema.graphql`.
+- Consumes: `backend/schema.graphql`.
 - Produces: `useMeQuery`, `useSignInMutation`, `useSignUpMutation`, `useUpdateProfileMutation` and their types from `src/graphql/generated/graphql.ts`. `fetcher` from `src/lib/graphql-client.ts`.
 
 - [x] **Step 1: Install**
@@ -1988,7 +1988,7 @@ npm install -w @financy/frontend -D @graphql-codegen/cli \
 
 - [x] **Step 2: Add the fetcher to the client**
 
-In `apps/frontend/src/lib/graphql-client.ts`, append:
+In `frontend/src/lib/graphql-client.ts`, append:
 
 ```ts
 /**
@@ -2009,7 +2009,7 @@ on the client, so every generated hook picks it up without knowing it exists.
 
 - [x] **Step 3: Write the operations**
 
-`apps/frontend/src/graphql/operations/auth.graphql`:
+`frontend/src/graphql/operations/auth.graphql`:
 
 ```graphql
 query Me {
@@ -2065,7 +2065,7 @@ the `Me` cache in task 11 without a second request.
 
 - [x] **Step 4: Write the codegen config**
 
-`apps/frontend/codegen.ts`:
+`frontend/codegen.ts`:
 
 ```ts
 import type { CodegenConfig } from '@graphql-codegen/cli';
@@ -2101,7 +2101,7 @@ export default config;
 
 - [x] **Step 5: Add the scripts**
 
-In `apps/frontend/package.json`:
+In `frontend/package.json`:
 
 ```json
 "codegen": "graphql-codegen --config codegen.ts",
@@ -2116,7 +2116,7 @@ Expected: `src/graphql/generated/graphql.ts` written, exporting `useMeQuery`,
 
 - [x] **Step 7: Pin the query keys with a test**
 
-`apps/frontend/src/graphql/generated/query-keys.test.ts`:
+`frontend/src/graphql/generated/query-keys.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -2149,7 +2149,7 @@ Expected: PASS.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): generate typed hooks from the backend schema
 
 Codegen reads the committed schema.graphql rather than a running
@@ -2166,10 +2166,10 @@ screen has one and it controls where the token is stored. This adds the
 fourteenth and amends the table.
 
 **Files:**
-- Create: `apps/frontend/src/components/ui/Checkbox.tsx`
-- Test: `apps/frontend/src/components/ui/Checkbox.test.tsx`
-- Modify: `apps/frontend/src/pages/StyleGuide.tsx`
-- Modify: `apps/frontend/src/pages/StyleGuide.test.tsx`
+- Create: `frontend/src/components/ui/Checkbox.tsx`
+- Test: `frontend/src/components/ui/Checkbox.test.tsx`
+- Modify: `frontend/src/pages/StyleGuide.tsx`
+- Modify: `frontend/src/pages/StyleGuide.test.tsx`
 - Modify: `docs/specs/frontend.md`
 
 **Interfaces:**
@@ -2178,7 +2178,7 @@ fourteenth and amends the table.
 
 - [x] **Step 1: Write the failing test**
 
-`apps/frontend/src/components/ui/Checkbox.test.tsx`:
+`frontend/src/components/ui/Checkbox.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2233,7 +2233,7 @@ Expected: FAIL — cannot resolve `./Checkbox`.
 
 - [x] **Step 3: Implement Checkbox**
 
-`apps/frontend/src/components/ui/Checkbox.tsx`:
+`frontend/src/components/ui/Checkbox.tsx`:
 
 ```tsx
 import { forwardRef, useId, type InputHTMLAttributes } from 'react';
@@ -2282,7 +2282,7 @@ the platform's focus ring behavior on every browser.
 
 - [x] **Step 4: Add it to the style guide**
 
-In `apps/frontend/src/pages/StyleGuide.tsx`, import `Checkbox` and add a section
+In `frontend/src/pages/StyleGuide.tsx`, import `Checkbox` and add a section
 after `Input`:
 
 ```tsx
@@ -2317,7 +2317,7 @@ Expected: PASS — 5 new tests plus the updated style guide test.
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/frontend docs/specs/frontend.md
+git add frontend docs/specs/frontend.md
 git commit -m "feat(frontend): add the Checkbox primitive
 
 The login screen's Lembrar-me controls localStorage versus
@@ -2335,11 +2335,11 @@ the storage module the session context wraps, and the network mocking every
 screen test from here on depends on.
 
 **Files:**
-- Create: `apps/frontend/src/lib/token-storage.ts`
-- Create: `apps/frontend/src/test/msw/server.ts`
-- Create: `apps/frontend/src/test/msw/api.ts`
-- Modify: `apps/frontend/src/test/setup.ts`
-- Test: `apps/frontend/src/lib/token-storage.test.ts`
+- Create: `frontend/src/lib/token-storage.ts`
+- Create: `frontend/src/test/msw/server.ts`
+- Create: `frontend/src/test/msw/api.ts`
+- Modify: `frontend/src/test/setup.ts`
+- Test: `frontend/src/lib/token-storage.test.ts`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -2347,7 +2347,7 @@ screen test from here on depends on.
 
 - [x] **Step 1: Write the failing storage test**
 
-`apps/frontend/src/lib/token-storage.test.ts`:
+`frontend/src/lib/token-storage.test.ts`:
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -2405,7 +2405,7 @@ the user explicitly asked not to keep.
 
 - [x] **Step 2: Implement token storage**
 
-`apps/frontend/src/lib/token-storage.ts`:
+`frontend/src/lib/token-storage.ts`:
 
 ```ts
 const KEY = 'financy.token';
@@ -2445,7 +2445,7 @@ render user-supplied HTML, and keep dependencies current.
 npm install -w @financy/frontend -D msw
 ```
 
-`apps/frontend/src/test/msw/server.ts`:
+`frontend/src/test/msw/server.ts`:
 
 ```ts
 import { setupServer } from 'msw/node';
@@ -2455,7 +2455,7 @@ import { setupServer } from 'msw/node';
 export const server = setupServer();
 ```
 
-`apps/frontend/src/test/msw/api.ts`:
+`frontend/src/test/msw/api.ts`:
 
 ```ts
 import { graphql, HttpResponse } from 'msw';
@@ -2485,7 +2485,7 @@ export const aUser = {
 
 - [x] **Step 4: Wire the server into the setup file**
 
-`apps/frontend/src/test/setup.ts`:
+`frontend/src/test/setup.ts`:
 
 ```ts
 import '@testing-library/jest-dom/vitest';
@@ -2518,7 +2518,7 @@ load in a component test.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add token storage and the MSW test harness
 
 writeToken clears both stores before writing. Otherwise signing in
@@ -2534,11 +2534,11 @@ asked not to keep."
 The single place that knows whether there is a session and who it belongs to.
 
 **Files:**
-- Create: `apps/frontend/src/features/auth/SessionContext.tsx`
-- Create: `apps/frontend/src/features/auth/useSession.ts`
-- Create: `apps/frontend/src/test/render.tsx`
-- Modify: `apps/frontend/src/App.tsx`
-- Test: `apps/frontend/src/features/auth/SessionContext.test.tsx`
+- Create: `frontend/src/features/auth/SessionContext.tsx`
+- Create: `frontend/src/features/auth/useSession.ts`
+- Create: `frontend/src/test/render.tsx`
+- Modify: `frontend/src/App.tsx`
+- Test: `frontend/src/features/auth/SessionContext.test.tsx`
 
 **Interfaces:**
 - Consumes: `readToken`/`writeToken`/`clearToken`, `setAuthToken`, `useMeQuery`.
@@ -2546,7 +2546,7 @@ The single place that knows whether there is a session and who it belongs to.
 
 - [x] **Step 1: Write the failing test**
 
-`apps/frontend/src/features/auth/SessionContext.test.tsx`:
+`frontend/src/features/auth/SessionContext.test.tsx`:
 
 ```tsx
 import { screen, waitFor } from '@testing-library/react';
@@ -2639,7 +2639,7 @@ rather than the login screen.
 
 - [x] **Step 2: Write the render helper**
 
-`apps/frontend/src/test/render.tsx`:
+`frontend/src/test/render.tsx`:
 
 ```tsx
 import type { ReactElement, ReactNode } from 'react';
@@ -2684,7 +2684,7 @@ Expected: FAIL — cannot resolve `./useSession`.
 
 - [x] **Step 4: Implement the context**
 
-`apps/frontend/src/features/auth/SessionContext.tsx`:
+`frontend/src/features/auth/SessionContext.tsx`:
 
 ```tsx
 import {
@@ -2772,7 +2772,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-`apps/frontend/src/features/auth/useSession.ts`:
+`frontend/src/features/auth/useSession.ts`:
 
 ```ts
 import { useContext } from 'react';
@@ -2793,7 +2793,7 @@ refresh genuinely does break on that.
 
 - [x] **Step 5: Wrap the application**
 
-In `apps/frontend/src/App.tsx`, put `SessionProvider` inside `BrowserRouter` and
+In `frontend/src/App.tsx`, put `SessionProvider` inside `BrowserRouter` and
 inside `QueryClientProvider` — it uses `useQueryClient`, and task 12's guards
 call `useNavigate` from within it:
 
@@ -2819,7 +2819,7 @@ it is. If it fails on an unhandled request, `enabled` is wrong.
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the session context
 
 The token is read synchronously on the first render rather than in an
@@ -2836,13 +2836,13 @@ two screens, puts the private routes behind a guard, and gives the public pages
 their own layout.
 
 **Files:**
-- Create: `apps/frontend/src/components/layout/RequireAuth.tsx`
-- Create: `apps/frontend/src/components/layout/RequireAnonymous.tsx`
-- Create: `apps/frontend/src/components/layout/AppLayout.tsx`
-- Create: `apps/frontend/src/features/auth/AuthLayout.tsx`
-- Modify: `apps/frontend/src/components/layout/TopBar.tsx`
-- Modify: `apps/frontend/src/routes.tsx`
-- Test: `apps/frontend/src/routes.test.tsx`
+- Create: `frontend/src/components/layout/RequireAuth.tsx`
+- Create: `frontend/src/components/layout/RequireAnonymous.tsx`
+- Create: `frontend/src/components/layout/AppLayout.tsx`
+- Create: `frontend/src/features/auth/AuthLayout.tsx`
+- Modify: `frontend/src/components/layout/TopBar.tsx`
+- Modify: `frontend/src/routes.tsx`
+- Test: `frontend/src/routes.test.tsx`
 
 **Interfaces:**
 - Consumes: `useSession`, `TopBar`, `PageShell`, `Card`.
@@ -2850,7 +2850,7 @@ their own layout.
 
 - [x] **Step 1: Write the failing routing test**
 
-`apps/frontend/src/routes.test.tsx`:
+`frontend/src/routes.test.tsx`:
 
 ```tsx
 import { screen } from '@testing-library/react';
@@ -2918,7 +2918,7 @@ which ones in the commit, and do not weaken them to make the run green.
 
 - [x] **Step 2: Implement the guards**
 
-`apps/frontend/src/components/layout/RequireAuth.tsx`:
+`frontend/src/components/layout/RequireAuth.tsx`:
 
 ```tsx
 import { Navigate, Outlet } from 'react-router-dom';
@@ -2931,7 +2931,7 @@ export function RequireAuth() {
 }
 ```
 
-`apps/frontend/src/components/layout/RequireAnonymous.tsx`:
+`frontend/src/components/layout/RequireAnonymous.tsx`:
 
 ```tsx
 import { Navigate, Outlet } from 'react-router-dom';
@@ -2953,7 +2953,7 @@ again.
 
 - [x] **Step 3: Implement the layouts**
 
-`apps/frontend/src/components/layout/AppLayout.tsx`:
+`frontend/src/components/layout/AppLayout.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -2976,7 +2976,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
 }
 ```
 
-`apps/frontend/src/features/auth/AuthLayout.tsx`:
+`frontend/src/features/auth/AuthLayout.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -2995,7 +2995,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 
 - [x] **Step 4: Handle the empty name in TopBar**
 
-In `apps/frontend/src/components/layout/TopBar.tsx`, the avatar link's label is
+In `frontend/src/components/layout/TopBar.tsx`, the avatar link's label is
 built by interpolation and reads "Perfil de " while `me` is in flight. Change it
 to fall back:
 
@@ -3011,7 +3011,7 @@ needed there. Add a TopBar test asserting the fallback label.
 
 - [x] **Step 5: Rewrite the routes**
 
-`apps/frontend/src/routes.tsx`:
+`frontend/src/routes.tsx`:
 
 ```tsx
 import { Navigate, Route, Routes } from 'react-router-dom';
@@ -3095,7 +3095,7 @@ assertions fail until tasks 13 and 14. Everything else in the suite stays green.
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): guard the private routes and split the root
 
 The root route decides for itself instead of being declared twice with
@@ -3111,11 +3111,11 @@ two tasks build those screens."
 ### Task 13: The login page
 
 **Files:**
-- Create: `apps/frontend/src/features/auth/LoginPage.tsx`
-- Create: `apps/frontend/src/features/auth/validation.ts`
-- Create: `apps/frontend/src/lib/graphql-errors.ts`
-- Test: `apps/frontend/src/features/auth/LoginPage.test.tsx`
-- Test: `apps/frontend/src/lib/graphql-errors.test.ts`
+- Create: `frontend/src/features/auth/LoginPage.tsx`
+- Create: `frontend/src/features/auth/validation.ts`
+- Create: `frontend/src/lib/graphql-errors.ts`
+- Test: `frontend/src/features/auth/LoginPage.test.tsx`
+- Test: `frontend/src/lib/graphql-errors.test.ts`
 
 **Interfaces:**
 - Consumes: `useSignInMutation`, `useSession`, `AuthLayout`, `Input`, `PasswordInput`, `Checkbox`, `Button`, `TextLink`.
@@ -3129,12 +3129,12 @@ npm install -w @financy/frontend react-hook-form @hookform/resolvers
 
 - [x] **Step 2: Write the error reader and its test**
 
-`apps/frontend/src/lib/graphql-errors.test.ts` covers a `ClientError` carrying a
+`frontend/src/lib/graphql-errors.test.ts` covers a `ClientError` carrying a
 code, a `ClientError` with no extensions, a plain `Error`, and `undefined` —
 each returning `null` rather than throwing. An error reader that throws while
 reading an error turns a handled failure into a blank screen.
 
-`apps/frontend/src/lib/graphql-errors.ts`:
+`frontend/src/lib/graphql-errors.ts`:
 
 ```ts
 import { ClientError } from 'graphql-request';
@@ -3158,7 +3158,7 @@ export function fieldErrorsOf(error: unknown): Record<string, string[]> {
 
 - [x] **Step 3: Write the validation schemas**
 
-`apps/frontend/src/features/auth/validation.ts`:
+`frontend/src/features/auth/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -3191,7 +3191,7 @@ Client validation is for feedback speed; the server decides what is stored.
 
 - [x] **Step 4: Write the failing page test**
 
-`apps/frontend/src/features/auth/LoginPage.test.tsx`:
+`frontend/src/features/auth/LoginPage.test.tsx`:
 
 ```tsx
 import { screen, waitFor } from '@testing-library/react';
@@ -3339,7 +3339,7 @@ Expected: FAIL — cannot resolve `./LoginPage`.
 
 - [x] **Step 6: Implement the page**
 
-`apps/frontend/src/features/auth/LoginPage.tsx` — the structure, with the
+`frontend/src/features/auth/LoginPage.tsx` — the structure, with the
 details left to the implementer's judgement against the design:
 
 ```tsx
@@ -3456,7 +3456,7 @@ green.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the login page
 
 INVALID_CREDENTIALS renders at form level, never on the email field.
@@ -3470,8 +3470,8 @@ to prevent."
 ### Task 14: The sign up page
 
 **Files:**
-- Create: `apps/frontend/src/features/auth/SignUpPage.tsx`
-- Test: `apps/frontend/src/features/auth/SignUpPage.test.tsx`
+- Create: `frontend/src/features/auth/SignUpPage.tsx`
+- Test: `frontend/src/features/auth/SignUpPage.test.tsx`
 
 **Interfaces:**
 - Consumes: `useSignUpMutation`, `useSession`, `AuthLayout`, the same primitives and `signUpSchema`.
@@ -3479,7 +3479,7 @@ to prevent."
 
 - [x] **Step 1: Write the failing test**
 
-`apps/frontend/src/features/auth/SignUpPage.test.tsx` covers:
+`frontend/src/features/auth/SignUpPage.test.tsx` covers:
 
 - Filling name, email and password and submitting lands on the dashboard, signed
   in with the returned token — `frontend.md` section 5 says the user is signed
@@ -3557,7 +3557,7 @@ first time.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the sign up page
 
 EMAIL_ALREADY_EXISTS lands on the email field, unlike login's error at
@@ -3573,8 +3573,8 @@ The only screen the design gives a sign-out control, which is why `roadmap.md`
 puts it in this slice rather than a later one.
 
 **Files:**
-- Create: `apps/frontend/src/features/profile/ProfilePage.tsx`
-- Test: `apps/frontend/src/features/profile/ProfilePage.test.tsx`
+- Create: `frontend/src/features/profile/ProfilePage.tsx`
+- Test: `frontend/src/features/profile/ProfilePage.test.tsx`
 
 **Interfaces:**
 - Consumes: `useSession`, `useUpdateProfileMutation`, `useMeQuery`, `Avatar`, `Card`, `Input`, `Button`, `PageShell`.
@@ -3582,7 +3582,7 @@ puts it in this slice rather than a later one.
 
 - [x] **Step 1: Write the failing test**
 
-`apps/frontend/src/features/profile/ProfilePage.test.tsx` covers:
+`frontend/src/features/profile/ProfilePage.test.tsx` covers:
 
 - The name field is prefilled from `me`, and the email field shows the address,
   is `disabled`, and carries the helper "O e-mail não pode ser alterado".
@@ -3666,7 +3666,7 @@ Expected: PASS.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the profile page and sign out
 
 Sign out empties the query cache rather than invalidating it. An
@@ -3684,11 +3684,11 @@ that for the `Me` query specifically. This generalizes it to every request, whic
 is what slices 2 through 5 rely on.
 
 **Files:**
-- Create: `apps/frontend/src/lib/unauthenticated.ts`
-- Modify: `apps/frontend/src/lib/graphql-client.ts`
-- Modify: `apps/frontend/src/features/auth/SessionContext.tsx`
-- Test: `apps/frontend/src/lib/unauthenticated.test.ts`
-- Test: `apps/frontend/src/features/auth/expired-session.test.tsx`
+- Create: `frontend/src/lib/unauthenticated.ts`
+- Modify: `frontend/src/lib/graphql-client.ts`
+- Modify: `frontend/src/features/auth/SessionContext.tsx`
+- Test: `frontend/src/lib/unauthenticated.test.ts`
+- Test: `frontend/src/features/auth/expired-session.test.tsx`
 
 **Interfaces:**
 - Consumes: `graphqlClient`.
@@ -3696,7 +3696,7 @@ is what slices 2 through 5 rely on.
 
 - [x] **Step 1: Write the notifier**
 
-`apps/frontend/src/lib/unauthenticated.ts`:
+`frontend/src/lib/unauthenticated.ts`:
 
 ```ts
 type Listener = () => void;
@@ -3724,7 +3724,7 @@ throw.
 
 - [x] **Step 2: Detect the code in the client**
 
-In `apps/frontend/src/lib/graphql-client.ts`, construct the client with a
+In `frontend/src/lib/graphql-client.ts`, construct the client with a
 response middleware:
 
 ```ts
@@ -3766,7 +3766,7 @@ is also a dead session.
 
 - [x] **Step 4: Write the integration test**
 
-`apps/frontend/src/features/auth/expired-session.test.tsx`:
+`frontend/src/features/auth/expired-session.test.tsx`:
 
 - Start signed in with a stored token and a working `Me`.
 - Navigate to `/profile`, then make `UpdateProfile` answer `UNAUTHENTICATED`.
@@ -3785,7 +3785,7 @@ Expected: PASS.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): return to login when a session expires
 
 Detected once in the client's response middleware rather than in each
@@ -3916,7 +3916,7 @@ Before opening the pull request, confirm every line of the definition of done in
 - [x] `npm run typecheck` passes in both workspaces.
 - [x] `npm run lint` and `npm run format:check` pass at the root.
 - [x] `npm run codegen:check` reports no diff in either workspace.
-- [x] `apps/backend/prisma/migrations/` is committed, and no `.db` file is.
+- [x] `backend/prisma/migrations/` is committed, and no `.db` file is.
 - [x] No new environment variable was introduced. If one was, it is in the
       matching `.env.example`.
 - [x] Every auth operation has a success test, a validation-failure test and an

@@ -33,7 +33,7 @@ section 4. `roadmap.md`'s slice-5 row is corrected in this PR to say so.
 
 ### Module
 
-A new `apps/backend/src/modules/summary/`, with the four files every module has:
+A new `backend/src/modules/summary/`, with the four files every module has:
 `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts`.
 
 It aggregates transactions, so folding it into `modules/transaction/` was the
@@ -377,6 +377,6 @@ The roadmap's checklist, with this slice's specifics:
 - `npm test` per workspace, `typecheck`, `lint`, `format:check`, and
   `codegen:check` for both workspaces, all run through `rtk proxy` and all
   green, with the numbers recorded in `slice-5-outcome.md`.
-- `git diff package.json apps/*/package.json` is empty, or the drift is
+- `git diff package.json backend, frontend/package.json` is empty, or the drift is
   deliberate and explained. The pinned majors (`prisma`/`@prisma/client` ^6,
   `@apollo/server` ^4, `express` ^4) do not move.

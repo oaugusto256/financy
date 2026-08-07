@@ -12,7 +12,7 @@ blocking in `slice-1-outcome.md`.
 
 ### The sixteen `CategoryIcon` names (Style Guide tab)
 
-`apps/frontend/src/lib/category-tokens.ts` maps each token to a Lucide
+`frontend/src/lib/category-tokens.ts` maps each token to a Lucide
 component. Confirm each row, or give the correct icon:
 
 | Token | Lucide component | Proposed Portuguese label (accessible name) |

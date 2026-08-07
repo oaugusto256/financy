@@ -93,7 +93,7 @@ The plan's Global Constraints line originally read "this slice adds none." It
 does not: Task 7's development seed needs a password, and the owner's ruling on
 that task (read from `process.env.SEED_PASSWORD`, no `.gitguardian.yaml`
 exemption) means a real environment variable now exists. It is in
-`apps/backend/.env.example`:
+`backend/.env.example`:
 
 ```
 SEED_PASSWORD=trocar-esta-senha

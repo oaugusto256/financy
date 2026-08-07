@@ -124,14 +124,14 @@ every later task lands clean instead of ending in a cleanup commit."
 
 **Files:**
 - Create: `package.json`
-- Create: `apps/backend/package.json`
-- Create: `apps/backend/tsconfig.json`
-- Create: `apps/backend/vitest.config.ts`
-- Create: `apps/backend/src/shared/env.ts`
-- Create: `apps/backend/.env.example`
-- Create: `apps/backend/.env`
-- Test: `apps/backend/tests/unit/env.test.ts`
-- Delete: `apps/backend/.gitkeep`
+- Create: `backend/package.json`
+- Create: `backend/tsconfig.json`
+- Create: `backend/vitest.config.ts`
+- Create: `backend/src/shared/env.ts`
+- Create: `backend/.env.example`
+- Create: `backend/.env`
+- Test: `backend/tests/unit/env.test.ts`
+- Delete: `backend/.gitkeep`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -145,11 +145,11 @@ every later task lands clean instead of ending in a cleanup commit."
 {
   "name": "financy",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": ["backend, frontend"],
   "engines": { "node": ">=20" },
   "scripts": {
-    "dev:backend": "npm run dev --workspace apps/backend",
-    "dev:frontend": "npm run dev --workspace apps/frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   }
@@ -158,7 +158,7 @@ every later task lands clean instead of ending in a cleanup commit."
 
 - [x] **Step 2: Create the backend package**
 
-`apps/backend/package.json`:
+`backend/package.json`:
 
 ```json
 {
@@ -192,7 +192,7 @@ npm install -w @financy/backend -D typescript tsx vitest @types/node
 
 - [x] **Step 3: Configure TypeScript and Vitest**
 
-`apps/backend/tsconfig.json`:
+`backend/tsconfig.json`:
 
 ```json
 {
@@ -218,7 +218,7 @@ npm install -w @financy/backend -D typescript tsx vitest @types/node
 puts the compiled entry point at `dist/src/server.js`, which is why the `start`
 script above points there.
 
-`apps/backend/vitest.config.ts`:
+`backend/vitest.config.ts`:
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -242,7 +242,7 @@ export default defineConfig({
 `fileParallelism` is off because later slices share one SQLite test database; parallel files would reset it under each other.
 
 The `env` block is required, not optional. `src/shared/env.ts` parses
-`process.env` at module load, and Vitest does not read `apps/backend/.env` into
+`process.env` at module load, and Vitest does not read `backend/.env` into
 `process.env` — so without it, importing anything that reaches `env.ts` throws
 before a single test runs. Declaring the values here rather than pointing Vitest
 at `.env` also keeps the suite green on a fresh clone, where `.env` is
@@ -251,7 +251,7 @@ integration tests of later slices never reset the development database.
 
 - [x] **Step 4: Write the failing test**
 
-`apps/backend/tests/unit/env.test.ts`:
+`backend/tests/unit/env.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -316,7 +316,7 @@ Expected: FAIL — cannot resolve `../../src/shared/env.js`.
 
 - [x] **Step 6: Implement the environment module**
 
-`apps/backend/src/shared/env.ts`:
+`backend/src/shared/env.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -360,7 +360,7 @@ Expected: PASS — 6 tests.
 
 - [x] **Step 8: Write the environment files**
 
-`apps/backend/.env.example`:
+`backend/.env.example`:
 
 ```
 DATABASE_URL="file:./dev.db"
@@ -370,7 +370,7 @@ CORS_ORIGIN=http://localhost:5173
 NODE_ENV=development
 ```
 
-`apps/backend/.env` — same keys, with `JWT_SECRET` filled in for local use:
+`backend/.env` — same keys, with `JWT_SECRET` filled in for local use:
 
 ```
 DATABASE_URL="file:./dev.db"
@@ -381,13 +381,13 @@ NODE_ENV=development
 ```
 
 `.env` is already ignored by the root `.gitignore`. Confirm with
-`git check-ignore apps/backend/.env` before committing — it must print the path.
+`git check-ignore backend/.env` before committing — it must print the path.
 
 - [x] **Step 9: Commit**
 
 ```bash
-rm apps/backend/.gitkeep
-git add package.json apps/backend
+rm backend/.gitkeep
+git add package.json backend
 git commit -m "feat(backend): bootstrap workspace with validated environment
 
 A server that boots with an empty JWT_SECRET signs tokens anyone can
@@ -400,9 +400,9 @@ turns that into a startup failure with a readable message."
 ### Task 2: Prisma over SQLite
 
 **Files:**
-- Create: `apps/backend/prisma/schema.prisma`
-- Create: `apps/backend/src/shared/prisma.ts`
-- Test: `apps/backend/tests/integration/prisma.test.ts`
+- Create: `backend/prisma/schema.prisma`
+- Create: `backend/src/shared/prisma.ts`
+- Test: `backend/tests/integration/prisma.test.ts`
 
 **Interfaces:**
 - Consumes: `env` from `src/shared/env.ts`.
@@ -421,7 +421,7 @@ adapter handed to the `PrismaClient` constructor instead.
 
 - [x] **Step 2: Write the Prisma schema**
 
-`apps/backend/prisma/schema.prisma`:
+`backend/prisma/schema.prisma`:
 
 ```prisma
 generator client {
@@ -439,10 +439,10 @@ every migration is reviewable next to the code that uses it.
 
 - [x] **Step 3: Generate the client**
 
-Run: `npx prisma generate --schema apps/backend/prisma/schema.prisma`
+Run: `npx prisma generate --schema backend/prisma/schema.prisma`
 Expected: "Generated Prisma Client".
 
-Add to `apps/backend/package.json` scripts:
+Add to `backend/package.json` scripts:
 
 ```json
 "db:generate": "prisma generate",
@@ -452,7 +452,7 @@ Add to `apps/backend/package.json` scripts:
 
 - [x] **Step 4: Write the failing test**
 
-`apps/backend/tests/integration/prisma.test.ts`:
+`backend/tests/integration/prisma.test.ts`:
 
 ```ts
 import { afterAll, expect, it } from 'vitest';
@@ -477,7 +477,7 @@ Expected: FAIL — cannot resolve `../../src/shared/prisma.js`.
 
 - [x] **Step 6: Implement the client module**
 
-`apps/backend/src/shared/prisma.ts`:
+`backend/src/shared/prisma.ts`:
 
 ```ts
 import { PrismaClient } from '@prisma/client';
@@ -499,7 +499,7 @@ Expected: PASS — the raw query returns `[{ value: 1n }]`.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): wire Prisma over SQLite
 
 Schema carries no models yet. Each feature slice adds its own model
@@ -512,10 +512,10 @@ that needs it."
 ### Task 3: Apollo Server behind Express, with CORS and a health query
 
 **Files:**
-- Create: `apps/backend/src/schema.ts`
-- Create: `apps/backend/src/app.ts`
-- Create: `apps/backend/src/server.ts`
-- Test: `apps/backend/tests/integration/health.test.ts`
+- Create: `backend/src/schema.ts`
+- Create: `backend/src/app.ts`
+- Create: `backend/src/server.ts`
+- Test: `backend/tests/integration/health.test.ts`
 
 **Interfaces:**
 - Consumes: `env` from `src/shared/env.ts`.
@@ -534,7 +534,7 @@ that, since `@apollo/server/express4` is what the pinned major ships.
 
 - [x] **Step 2: Write the failing test**
 
-`apps/backend/tests/integration/health.test.ts`:
+`backend/tests/integration/health.test.ts`:
 
 ```ts
 import request from 'supertest';
@@ -604,7 +604,7 @@ Expected: FAIL — cannot resolve `../../src/app.js`.
 
 - [x] **Step 4: Write the schema module**
 
-`apps/backend/src/schema.ts`:
+`backend/src/schema.ts`:
 
 ```ts
 export const typeDefs = /* GraphQL */ `
@@ -622,7 +622,7 @@ export const resolvers = {
 
 - [x] **Step 5: Write the application factory**
 
-`apps/backend/src/app.ts`:
+`backend/src/app.ts`:
 
 ```ts
 import { ApolloServer } from '@apollo/server';
@@ -662,7 +662,7 @@ that look like application bugs.
 
 - [x] **Step 6: Write the entry point**
 
-`apps/backend/src/server.ts`:
+`backend/src/server.ts`:
 
 ```ts
 import { createApp } from './app.js';
@@ -698,7 +698,7 @@ Expected: `{"data":{"health":"ok"}}`. Stop the server.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/backend
+git add backend
 git commit -m "feat(backend): serve GraphQL over Express with restricted CORS
 
 CORS is pinned to CORS_ORIGIN rather than '*', and a test asserts an
@@ -711,15 +711,15 @@ every other test and is easy to leave behind after debugging."
 ### Task 4: Frontend bootstrap
 
 **Files:**
-- Create: `apps/frontend/package.json`
-- Create: `apps/frontend/tsconfig.json`
-- Create: `apps/frontend/vite.config.ts`
-- Create: `apps/frontend/index.html`
-- Create: `apps/frontend/src/main.tsx`
-- Create: `apps/frontend/src/App.tsx`
-- Create: `apps/frontend/src/test/setup.ts`
-- Test: `apps/frontend/src/App.test.tsx`
-- Delete: `apps/frontend/.gitkeep`
+- Create: `frontend/package.json`
+- Create: `frontend/tsconfig.json`
+- Create: `frontend/vite.config.ts`
+- Create: `frontend/index.html`
+- Create: `frontend/src/main.tsx`
+- Create: `frontend/src/App.tsx`
+- Create: `frontend/src/test/setup.ts`
+- Test: `frontend/src/App.test.tsx`
+- Delete: `frontend/.gitkeep`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -727,7 +727,7 @@ every other test and is easy to leave behind after debugging."
 
 - [x] **Step 1: Create the frontend package**
 
-`apps/frontend/package.json`:
+`frontend/package.json`:
 
 ```json
 {
@@ -756,7 +756,7 @@ npm install -w @financy/frontend -D typescript vite @vitejs/plugin-react \
 
 - [x] **Step 2: Configure TypeScript**
 
-`apps/frontend/tsconfig.json`:
+`frontend/tsconfig.json`:
 
 ```json
 {
@@ -786,7 +786,7 @@ TypeScript 5, so it was doing nothing here anyway.
 
 - [x] **Step 3: Configure Vite and Vitest**
 
-`apps/frontend/vite.config.ts`:
+`frontend/vite.config.ts`:
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -812,7 +812,7 @@ export default defineConfig({
 
 The `env` block mirrors the backend's, for the same reason. Task 5 adds
 `src/lib/env.ts`, which parses `import.meta.env` at module load; Vite fills that
-from `apps/frontend/.env`, which is gitignored. Without this the suite passes on
+from `frontend/.env`, which is gitignored. Without this the suite passes on
 the machine that wrote `.env` and fails on every fresh clone.
 
 `defineConfig` comes from `vitest/config`, not `vite` — the one exported by
@@ -820,7 +820,7 @@ the machine that wrote `.env` and fails on every fresh clone.
 `__dirname`, which Vite 8's native config loader warns about and will stop
 supporting.
 
-`apps/frontend/src/test/setup.ts`:
+`frontend/src/test/setup.ts`:
 
 ```ts
 import '@testing-library/jest-dom/vitest';
@@ -828,7 +828,7 @@ import '@testing-library/jest-dom/vitest';
 
 - [x] **Step 4: Write the failing test**
 
-`apps/frontend/src/App.test.tsx`:
+`frontend/src/App.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -847,7 +847,7 @@ Expected: FAIL — cannot resolve `./App`.
 
 - [x] **Step 6: Implement the shell**
 
-`apps/frontend/src/App.tsx`:
+`frontend/src/App.tsx`:
 
 ```tsx
 export function App() {
@@ -855,7 +855,7 @@ export function App() {
 }
 ```
 
-`apps/frontend/src/main.tsx`:
+`frontend/src/main.tsx`:
 
 ```tsx
 import { StrictMode } from 'react';
@@ -872,7 +872,7 @@ createRoot(root).render(
 );
 ```
 
-`apps/frontend/index.html`:
+`frontend/index.html`:
 
 ```html
 <!doctype html>
@@ -900,8 +900,8 @@ Expected: PASS.
 - [x] **Step 8: Commit**
 
 ```bash
-rm apps/frontend/.gitkeep
-git add apps/frontend
+rm frontend/.gitkeep
+git add frontend
 git commit -m "feat(frontend): bootstrap Vite, React and the test harness"
 ```
 
@@ -910,12 +910,12 @@ git commit -m "feat(frontend): bootstrap Vite, React and the test harness"
 ### Task 5: Frontend environment and GraphQL client
 
 **Files:**
-- Create: `apps/frontend/src/lib/env.ts`
-- Create: `apps/frontend/src/lib/graphql-client.ts`
-- Create: `apps/frontend/.env.example`
-- Create: `apps/frontend/.env`
-- Create: `apps/frontend/src/vite-env.d.ts`
-- Test: `apps/frontend/src/lib/env.test.ts`
+- Create: `frontend/src/lib/env.ts`
+- Create: `frontend/src/lib/graphql-client.ts`
+- Create: `frontend/.env.example`
+- Create: `frontend/.env`
+- Create: `frontend/src/vite-env.d.ts`
+- Test: `frontend/src/lib/env.test.ts`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -930,7 +930,7 @@ npm install -w @financy/frontend graphql graphql-request zod \
 
 - [x] **Step 2: Write the failing test**
 
-`apps/frontend/src/lib/env.test.ts`:
+`frontend/src/lib/env.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -965,7 +965,7 @@ Expected: FAIL — cannot resolve `./env`.
 
 - [x] **Step 4: Implement the environment module**
 
-`apps/frontend/src/lib/env.ts`:
+`frontend/src/lib/env.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -996,7 +996,7 @@ zod 4 replaced the v3 `z.string({ required_error }).url()` form. `required_error
 is not an error under v4 — it is silently ignored, so a message written that way
 never reaches the user. `z.url()` is the v4 spelling.
 
-`apps/frontend/src/vite-env.d.ts`:
+`frontend/src/vite-env.d.ts`:
 
 ```ts
 /// <reference types="vite/client" />
@@ -1004,7 +1004,7 @@ never reaches the user. `z.url()` is the v4 spelling.
 
 - [x] **Step 5: Implement the GraphQL client**
 
-`apps/frontend/src/lib/graphql-client.ts`:
+`frontend/src/lib/graphql-client.ts`:
 
 ```ts
 import { GraphQLClient } from 'graphql-request';
@@ -1026,7 +1026,7 @@ not need to know about storage or routing.
 
 - [x] **Step 6: Write the environment files**
 
-`apps/frontend/.env.example` and `apps/frontend/.env`, both:
+`frontend/.env.example` and `frontend/.env`, both:
 
 ```
 VITE_BACKEND_URL=http://localhost:4000/graphql
@@ -1043,7 +1043,7 @@ Expected: PASS — 3 env tests plus the App test.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): validate environment and add the GraphQL client
 
 A missing or malformed backend URL now fails at startup with a named
@@ -1055,11 +1055,11 @@ variable, instead of surfacing as 404s from the dev server."
 ### Task 6: Tailwind theme and category tokens
 
 **Files:**
-- Create: `apps/frontend/src/index.css`
-- Create: `apps/frontend/src/lib/category-tokens.ts`
-- Modify: `apps/frontend/src/main.tsx`
-- Modify: `apps/frontend/vite.config.ts`
-- Test: `apps/frontend/src/lib/category-tokens.test.ts`
+- Create: `frontend/src/index.css`
+- Create: `frontend/src/lib/category-tokens.ts`
+- Modify: `frontend/src/main.tsx`
+- Modify: `frontend/vite.config.ts`
+- Test: `frontend/src/lib/category-tokens.test.ts`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1074,7 +1074,7 @@ npm install -w @financy/frontend tailwindcss @tailwindcss/vite \
 
 - [x] **Step 2: Register the Tailwind plugin**
 
-In `apps/frontend/vite.config.ts`, add the import and the plugin:
+In `frontend/vite.config.ts`, add the import and the plugin:
 
 ```ts
 import tailwindcss from '@tailwindcss/vite';
@@ -1088,7 +1088,7 @@ and change the plugins array to:
 
 - [x] **Step 3: Define the theme**
 
-`apps/frontend/src/index.css` — every value read from `frontend.md` section 3:
+`frontend/src/index.css` — every value read from `frontend.md` section 3:
 
 ```css
 @import 'tailwindcss';
@@ -1145,7 +1145,7 @@ body {
 }
 ```
 
-In `apps/frontend/src/main.tsx`, add these imports above the others:
+In `frontend/src/main.tsx`, add these imports above the others:
 
 ```tsx
 import '@fontsource/inter/400.css';
@@ -1157,7 +1157,7 @@ import './index.css';
 
 - [x] **Step 4: Write the failing test**
 
-`apps/frontend/src/lib/category-tokens.test.ts`:
+`frontend/src/lib/category-tokens.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -1212,7 +1212,7 @@ Expected: FAIL — cannot resolve `./category-tokens`.
 
 - [x] **Step 6: Implement the token maps**
 
-`apps/frontend/src/lib/category-tokens.ts`:
+`frontend/src/lib/category-tokens.ts`:
 
 ```ts
 import {
@@ -1330,7 +1330,7 @@ identical.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the design theme and category tokens
 
 Class names are spelled out rather than interpolated: Tailwind scans
@@ -1342,13 +1342,13 @@ for whole class names, so a computed one compiles to nothing."
 ### Task 7: Form primitives
 
 **Files:**
-- Create: `apps/frontend/src/lib/cn.ts`
-- Create: `apps/frontend/src/components/ui/Input.tsx`
-- Create: `apps/frontend/src/components/ui/PasswordInput.tsx`
-- Create: `apps/frontend/src/components/ui/Select.tsx`
-- Test: `apps/frontend/src/components/ui/Input.test.tsx`
-- Test: `apps/frontend/src/components/ui/PasswordInput.test.tsx`
-- Test: `apps/frontend/src/components/ui/Select.test.tsx`
+- Create: `frontend/src/lib/cn.ts`
+- Create: `frontend/src/components/ui/Input.tsx`
+- Create: `frontend/src/components/ui/PasswordInput.tsx`
+- Create: `frontend/src/components/ui/Select.tsx`
+- Test: `frontend/src/components/ui/Input.test.tsx`
+- Test: `frontend/src/components/ui/PasswordInput.test.tsx`
+- Test: `frontend/src/components/ui/Select.test.tsx`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1362,7 +1362,7 @@ npm install -w @financy/frontend clsx tailwind-merge
 
 - [x] **Step 2: Write the class helper**
 
-`apps/frontend/src/lib/cn.ts`:
+`frontend/src/lib/cn.ts`:
 
 ```ts
 import { clsx, type ClassValue } from 'clsx';
@@ -1375,7 +1375,7 @@ export function cn(...inputs: ClassValue[]): string {
 
 - [x] **Step 3: Write the failing Input test**
 
-`apps/frontend/src/components/ui/Input.test.tsx`:
+`frontend/src/components/ui/Input.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -1432,7 +1432,7 @@ Expected: FAIL — cannot resolve `./Input`.
 
 - [x] **Step 5: Implement Input**
 
-`apps/frontend/src/components/ui/Input.tsx`:
+`frontend/src/components/ui/Input.tsx`:
 
 ```tsx
 import { forwardRef, useId, type InputHTMLAttributes } from 'react';
@@ -1517,7 +1517,7 @@ Expected: PASS — 6 tests.
 
 - [x] **Step 7: Write the failing PasswordInput test**
 
-`apps/frontend/src/components/ui/PasswordInput.test.tsx`:
+`frontend/src/components/ui/PasswordInput.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -1544,7 +1544,7 @@ describe('PasswordInput', () => {
 
 - [x] **Step 8: Implement PasswordInput**
 
-`apps/frontend/src/components/ui/PasswordInput.tsx`:
+`frontend/src/components/ui/PasswordInput.tsx`:
 
 ```tsx
 import { forwardRef, useState } from 'react';
@@ -1583,7 +1583,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
 
 - [x] **Step 9: Write the failing Select test**
 
-`apps/frontend/src/components/ui/Select.test.tsx`:
+`frontend/src/components/ui/Select.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -1629,7 +1629,7 @@ describe('Select', () => {
 
 - [x] **Step 10: Implement Select**
 
-`apps/frontend/src/components/ui/Select.tsx`:
+`frontend/src/components/ui/Select.tsx`:
 
 ```tsx
 import { forwardRef, useId, type SelectHTMLAttributes } from 'react';
@@ -1737,7 +1737,7 @@ Expected: PASS — 6 Input, 2 PasswordInput and 5 Select tests.
 - [x] **Step 12: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add form primitives
 
 Errors are wired through aria-invalid and aria-describedby, not only
@@ -1749,13 +1749,13 @@ color: red text beside a field does not exist for a screen reader."
 ### Task 8: Action primitives
 
 **Files:**
-- Create: `apps/frontend/src/components/ui/Button.tsx`
-- Create: `apps/frontend/src/components/ui/IconButton.tsx`
-- Create: `apps/frontend/src/components/ui/TextLink.tsx`
-- Create: `apps/frontend/src/components/ui/Pagination.tsx`
-- Test: `apps/frontend/src/components/ui/Button.test.tsx`
-- Test: `apps/frontend/src/components/ui/IconButton.test.tsx`
-- Test: `apps/frontend/src/components/ui/Pagination.test.tsx`
+- Create: `frontend/src/components/ui/Button.tsx`
+- Create: `frontend/src/components/ui/IconButton.tsx`
+- Create: `frontend/src/components/ui/TextLink.tsx`
+- Create: `frontend/src/components/ui/Pagination.tsx`
+- Test: `frontend/src/components/ui/Button.test.tsx`
+- Test: `frontend/src/components/ui/IconButton.test.tsx`
+- Test: `frontend/src/components/ui/Pagination.test.tsx`
 
 **Interfaces:**
 - Consumes: `cn` from `src/lib/cn.ts`.
@@ -1769,7 +1769,7 @@ npm install -w @financy/frontend react-router-dom
 
 - [x] **Step 2: Write the failing Button test**
 
-`apps/frontend/src/components/ui/Button.test.tsx`:
+`frontend/src/components/ui/Button.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -1829,7 +1829,7 @@ Expected: FAIL — cannot resolve `./Button`.
 
 - [x] **Step 4: Implement Button**
 
-`apps/frontend/src/components/ui/Button.tsx`:
+`frontend/src/components/ui/Button.tsx`:
 
 ```tsx
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
@@ -1903,7 +1903,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
 - [x] **Step 5: Write the failing IconButton test**
 
-`apps/frontend/src/components/ui/IconButton.test.tsx`:
+`frontend/src/components/ui/IconButton.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -1940,7 +1940,7 @@ is an unlabelled button, and every row of both tables is full of them.
 
 - [x] **Step 6: Implement IconButton**
 
-`apps/frontend/src/components/ui/IconButton.tsx`:
+`frontend/src/components/ui/IconButton.tsx`:
 
 ```tsx
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
@@ -1988,7 +1988,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 
 - [x] **Step 7: Implement TextLink**
 
-`apps/frontend/src/components/ui/TextLink.tsx`:
+`frontend/src/components/ui/TextLink.tsx`:
 
 ```tsx
 import { Link, type LinkProps } from 'react-router-dom';
@@ -2010,7 +2010,7 @@ export function TextLink({ className, ...props }: LinkProps) {
 
 - [x] **Step 8: Write the failing Pagination test**
 
-`apps/frontend/src/components/ui/Pagination.test.tsx`:
+`frontend/src/components/ui/Pagination.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2054,7 +2054,7 @@ describe('Pagination', () => {
 
 - [x] **Step 9: Implement Pagination**
 
-`apps/frontend/src/components/ui/Pagination.tsx`:
+`frontend/src/components/ui/Pagination.tsx`:
 
 ```tsx
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -2132,7 +2132,7 @@ Expected: PASS — 5 Button, 3 IconButton and 5 Pagination tests.
 - [x] **Step 11: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add action primitives
 
 Button defaults to type=button so a cancel inside a form does not
@@ -2145,17 +2145,17 @@ fire a mutation twice."
 ### Task 9: Display primitives
 
 **Files:**
-- Create: `apps/frontend/src/components/ui/Card.tsx`
-- Create: `apps/frontend/src/components/ui/StatCard.tsx`
-- Create: `apps/frontend/src/components/ui/Tag.tsx`
-- Create: `apps/frontend/src/components/ui/TypeIndicator.tsx`
-- Create: `apps/frontend/src/components/ui/CategoryBadge.tsx`
-- Create: `apps/frontend/src/components/ui/Avatar.tsx`
-- Create: `apps/frontend/src/components/ui/Dialog.tsx`
-- Test: `apps/frontend/src/components/ui/Tag.test.tsx`
-- Test: `apps/frontend/src/components/ui/TypeIndicator.test.tsx`
-- Test: `apps/frontend/src/components/ui/Avatar.test.tsx`
-- Test: `apps/frontend/src/components/ui/Dialog.test.tsx`
+- Create: `frontend/src/components/ui/Card.tsx`
+- Create: `frontend/src/components/ui/StatCard.tsx`
+- Create: `frontend/src/components/ui/Tag.tsx`
+- Create: `frontend/src/components/ui/TypeIndicator.tsx`
+- Create: `frontend/src/components/ui/CategoryBadge.tsx`
+- Create: `frontend/src/components/ui/Avatar.tsx`
+- Create: `frontend/src/components/ui/Dialog.tsx`
+- Test: `frontend/src/components/ui/Tag.test.tsx`
+- Test: `frontend/src/components/ui/TypeIndicator.test.tsx`
+- Test: `frontend/src/components/ui/Avatar.test.tsx`
+- Test: `frontend/src/components/ui/Dialog.test.tsx`
 
 **Interfaces:**
 - Consumes: `cn`, `CATEGORY_COLORS`, `CATEGORY_ICONS`, `CategoryColor`, `CategoryIcon`.
@@ -2179,7 +2179,7 @@ keyboard.
 
 - [x] **Step 2: Implement Card and StatCard**
 
-`apps/frontend/src/components/ui/Card.tsx`:
+`frontend/src/components/ui/Card.tsx`:
 
 ```tsx
 import type { HTMLAttributes } from 'react';
@@ -2195,7 +2195,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 }
 ```
 
-`apps/frontend/src/components/ui/StatCard.tsx`:
+`frontend/src/components/ui/StatCard.tsx`:
 
 ```tsx
 import type { LucideIcon } from 'lucide-react';
@@ -2231,7 +2231,7 @@ export function StatCard({
 
 - [x] **Step 3: Write the failing Tag test**
 
-`apps/frontend/src/components/ui/Tag.test.tsx`:
+`frontend/src/components/ui/Tag.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2261,7 +2261,7 @@ describe('Tag', () => {
 
 - [x] **Step 4: Implement Tag and CategoryBadge**
 
-`apps/frontend/src/components/ui/Tag.tsx`:
+`frontend/src/components/ui/Tag.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -2294,7 +2294,7 @@ export function Tag({ color, children, className }: TagProps) {
 }
 ```
 
-`apps/frontend/src/components/ui/CategoryBadge.tsx`:
+`frontend/src/components/ui/CategoryBadge.tsx`:
 
 ```tsx
 import { Tag as TagIcon } from 'lucide-react';
@@ -2338,7 +2338,7 @@ under one — the design has no state for that, so this is where it is handled.
 
 - [x] **Step 5: Write the failing TypeIndicator test**
 
-`apps/frontend/src/components/ui/TypeIndicator.test.tsx`:
+`frontend/src/components/ui/TypeIndicator.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2359,7 +2359,7 @@ describe('TypeIndicator', () => {
 
 - [x] **Step 6: Implement TypeIndicator**
 
-`apps/frontend/src/components/ui/TypeIndicator.tsx`:
+`frontend/src/components/ui/TypeIndicator.tsx`:
 
 ```tsx
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
@@ -2393,7 +2393,7 @@ export function TypeIndicator({ type, className }: TypeIndicatorProps) {
 
 - [x] **Step 7: Write the failing Avatar test**
 
-`apps/frontend/src/components/ui/Avatar.test.tsx`:
+`frontend/src/components/ui/Avatar.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2428,7 +2428,7 @@ describe('Avatar', () => {
 
 - [x] **Step 8: Implement Avatar**
 
-`apps/frontend/src/components/ui/Avatar.tsx`:
+`frontend/src/components/ui/Avatar.tsx`:
 
 ```tsx
 import { cn } from '@/lib/cn';
@@ -2472,7 +2472,7 @@ export function Avatar({ name, size = 'sm', className }: AvatarProps) {
 
 - [x] **Step 9: Write the failing Dialog test**
 
-`apps/frontend/src/components/ui/Dialog.test.tsx`:
+`frontend/src/components/ui/Dialog.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2531,7 +2531,7 @@ describe('Dialog', () => {
 
 - [x] **Step 10: Implement Dialog**
 
-`apps/frontend/src/components/ui/Dialog.tsx`:
+`frontend/src/components/ui/Dialog.tsx`:
 
 ```tsx
 import * as RadixDialog from '@radix-ui/react-dialog';
@@ -2596,7 +2596,7 @@ Expected: PASS — 3 Tag, 2 TypeIndicator, 5 Avatar and 4 Dialog tests.
 - [x] **Step 12: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add display primitives
 
 Tag and CategoryBadge both fall back to neutral without a category.
@@ -2609,12 +2609,12 @@ category is deleted; the design has no state for that."
 ### Task 10: Application shell and routing
 
 **Files:**
-- Create: `apps/frontend/src/components/layout/TopBar.tsx`
-- Create: `apps/frontend/src/components/layout/PageShell.tsx`
-- Create: `apps/frontend/src/routes.tsx`
-- Modify: `apps/frontend/src/App.tsx`
-- Modify: `apps/frontend/src/App.test.tsx`
-- Test: `apps/frontend/src/components/layout/TopBar.test.tsx`
+- Create: `frontend/src/components/layout/TopBar.tsx`
+- Create: `frontend/src/components/layout/PageShell.tsx`
+- Create: `frontend/src/routes.tsx`
+- Modify: `frontend/src/App.tsx`
+- Modify: `frontend/src/App.test.tsx`
+- Test: `frontend/src/components/layout/TopBar.test.tsx`
 
 **Interfaces:**
 - Consumes: `Avatar`, `cn`.
@@ -2622,7 +2622,7 @@ category is deleted; the design has no state for that."
 
 - [x] **Step 1: Write the failing TopBar test**
 
-`apps/frontend/src/components/layout/TopBar.test.tsx`:
+`frontend/src/components/layout/TopBar.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2686,7 +2686,7 @@ Expected: FAIL — cannot resolve `./TopBar`.
 
 - [x] **Step 3: Implement TopBar**
 
-`apps/frontend/src/components/layout/TopBar.tsx`:
+`frontend/src/components/layout/TopBar.tsx`:
 
 ```tsx
 import { NavLink, Link } from 'react-router-dom';
@@ -2742,7 +2742,7 @@ export function TopBar({ userName }: TopBarProps) {
 
 - [x] **Step 4: Implement PageShell**
 
-`apps/frontend/src/components/layout/PageShell.tsx`:
+`frontend/src/components/layout/PageShell.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -2777,7 +2777,7 @@ export function PageShell({
 
 - [x] **Step 5: Implement the routes**
 
-`apps/frontend/src/routes.tsx` — placeholders that slices 1 through 5 replace,
+`frontend/src/routes.tsx` — placeholders that slices 1 through 5 replace,
 each named for the page it will become:
 
 ```tsx
@@ -2811,7 +2811,7 @@ export function AppRoutes() {
 
 - [x] **Step 6: Wire the router into App**
 
-`apps/frontend/src/App.tsx`:
+`frontend/src/App.tsx`:
 
 ```tsx
 import { BrowserRouter } from 'react-router-dom';
@@ -2840,7 +2840,7 @@ to the browser is noise for data that only changes when they change it.
 
 - [x] **Step 7: Update the App test**
 
-Replace `apps/frontend/src/App.test.tsx` with:
+Replace `frontend/src/App.test.tsx` with:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -2860,7 +2860,7 @@ Expected: PASS — 3 TopBar tests plus the updated App test.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/frontend
+git add frontend
 git commit -m "feat(frontend): add the app shell and routing skeleton
 
 Active navigation is marked with aria-current, not only green text:
@@ -2872,9 +2872,9 @@ color alone conveys nothing to a screen reader."
 ### Task 11: Style guide route and slice verification
 
 **Files:**
-- Create: `apps/frontend/src/pages/StyleGuide.tsx`
-- Test: `apps/frontend/src/pages/StyleGuide.test.tsx`
-- Modify: `apps/frontend/src/routes.tsx`
+- Create: `frontend/src/pages/StyleGuide.tsx`
+- Test: `frontend/src/pages/StyleGuide.test.tsx`
+- Modify: `frontend/src/routes.tsx`
 - Modify: `README.md`
 
 **Interfaces:**
@@ -2883,7 +2883,7 @@ color alone conveys nothing to a screen reader."
 
 - [x] **Step 1: Build the style guide page**
 
-`apps/frontend/src/pages/StyleGuide.tsx`:
+`frontend/src/pages/StyleGuide.tsx`:
 
 ```tsx
 import { useState } from 'react';
@@ -3018,7 +3018,7 @@ export function StyleGuide() {
 
 - [x] **Step 1b: Cover the page with a render test**
 
-`apps/frontend/src/pages/StyleGuide.test.tsx` asserts that every section heading
+`frontend/src/pages/StyleGuide.test.tsx` asserts that every section heading
 is present, that all seven colors and sixteen icon badges render, and that the
 dialog opens. It says nothing about appearance — that is what step 3 is for.
 What it prevents is the page silently becoming a blank screen between the later
@@ -3026,7 +3026,7 @@ slices that depend on it, which a once-off manual look would not catch.
 
 - [x] **Step 2: Register the route**
 
-In `apps/frontend/src/routes.tsx`, add the import:
+In `frontend/src/routes.tsx`, add the import:
 
 ```tsx
 import { StyleGuide } from '@/pages/StyleGuide';
@@ -3113,8 +3113,8 @@ new "Running locally" section, containing exactly this content:
   `bash` code block containing these six lines:
 
       npm install
-      cp apps/backend/.env.example apps/backend/.env   # then fill in JWT_SECRET
-      cp apps/frontend/.env.example apps/frontend/.env
+      cp backend/.env.example backend/.env   # then fill in JWT_SECRET
+      cp frontend/.env.example frontend/.env
 
       npm run dev:backend    # http://localhost:4000/graphql
       npm run dev:frontend   # http://localhost:5173
@@ -3124,7 +3124,7 @@ new "Running locally" section, containing exactly this content:
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/frontend README.md
+git add frontend README.md
 git commit -m "feat(frontend): add a style guide route for the design system
 
 Every primitive in every state on one page, so drift from the Figma
@@ -3148,7 +3148,7 @@ Before opening the pull request, confirm every line of the definition of done in
       still open: the file URL is not recorded in `frontend.md` and the agent
       has no access. Carried into slice 1.)*
 - [x] The browser can reach the API without a CORS error.
-- [x] `apps/backend/.env` and `apps/frontend/.env` are untracked; both
+- [x] `backend/.env` and `frontend/.env` are untracked; both
       `.env.example` files are committed and list every variable in use.
 - [ ] The sixteen Lucide icon names were confirmed against Figma by the
       repository owner, and `backend.md`'s `CategoryIcon` enum matches

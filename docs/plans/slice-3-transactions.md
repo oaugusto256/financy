@@ -26,7 +26,7 @@ Every task's requirements implicitly include this section.
 - **Interface language is Brazilian Portuguese. Code, comments, commit messages
   and PR descriptions are English.**
 - TypeScript `strict: true`. **No `any`** — lint rejects it outside `generated/`.
-- Colors come from the theme in `apps/frontend/src/index.css`. No color literal
+- Colors come from the theme in `frontend/src/index.css`. No color literal
   anywhere else.
 - **Tailwind never sees a class name built at runtime.** No template string, no
   `.replace()`, no interpolation — spell the class out and compose with `cn()`.
@@ -35,7 +35,7 @@ Every task's requirements implicitly include this section.
 - Icons: `lucide-react` only.
 - Conventional Commits, **one commit per task**.
 - Every new environment variable lands in the matching `.env.example` in the
-  same commit. (This slice adds `SEED_PASSWORD`, in `apps/backend/.env.example`,
+  same commit. (This slice adds `SEED_PASSWORD`, in `backend/.env.example`,
   from Task 7's development seed.)
 - **Pinned majors — do not let an install drift them.** `prisma` and
   `@prisma/client` at `^6`, `@apollo/server` at `^4`, `express` and
@@ -48,7 +48,7 @@ Every task's requirements implicitly include this section.
   comes from a local run.
 - Module SDL is a `/* GraphQL */`-tagged template literal in `schema.ts`, never
   a `.graphql` file.
-- `apps/backend/schema.graphql` is generated, committed, and listed in
+- `backend/schema.graphql` is generated, committed, and listed in
   `.prettierignore`. Never hand-edit it and never format it.
 - **zod 4**: `z.int()`, `z.coerce.date()`, `z.email()`. `required_error` is
   silently ignored — pass messages positionally, through `.min`/`.max`, or as
@@ -112,16 +112,16 @@ install can drift or drop them.
 
 | File | Responsibility |
 |---|---|
-| `apps/backend/src/shared/validation.ts` | `parseInput`, moved out of the auth module. |
-| `apps/backend/src/modules/transaction/validation.ts` | Type tokens, zod schemas for create/update, and the pagination schema. |
-| `apps/backend/src/modules/transaction/service.ts` | Business rules; `userId` as first argument. |
-| `apps/backend/src/modules/transaction/schema.ts` | Module SDL. |
-| `apps/backend/src/modules/transaction/resolvers.ts` | Transport only. |
-| `apps/backend/prisma/seed.ts` | Development data: one user, seven categories, thirty transactions. |
-| `apps/backend/tests/unit/transaction-validation.test.ts` | Pure schema tests. |
-| `apps/backend/tests/integration/transaction-service.test.ts` | Service rules including ownership. |
-| `apps/backend/tests/integration/transaction-pagination.test.ts` | Ordering, windowing, `totalCount`, the clamp. |
-| `apps/backend/tests/integration/transaction.test.ts` | Real GraphQL operations over HTTP. |
+| `backend/src/shared/validation.ts` | `parseInput`, moved out of the auth module. |
+| `backend/src/modules/transaction/validation.ts` | Type tokens, zod schemas for create/update, and the pagination schema. |
+| `backend/src/modules/transaction/service.ts` | Business rules; `userId` as first argument. |
+| `backend/src/modules/transaction/schema.ts` | Module SDL. |
+| `backend/src/modules/transaction/resolvers.ts` | Transport only. |
+| `backend/prisma/seed.ts` | Development data: one user, seven categories, thirty transactions. |
+| `backend/tests/unit/transaction-validation.test.ts` | Pure schema tests. |
+| `backend/tests/integration/transaction-service.test.ts` | Service rules including ownership. |
+| `backend/tests/integration/transaction-pagination.test.ts` | Ordering, windowing, `totalCount`, the clamp. |
+| `backend/tests/integration/transaction.test.ts` | Real GraphQL operations over HTTP. |
 
 **Backend — modify:** `src/modules/auth/validation.ts` (re-export gone),
 `src/modules/auth/service.ts` + `src/modules/category/service.ts` (import
@@ -194,19 +194,19 @@ catches it, and the caller gets `INTERNAL_SERVER_ERROR` — not the
 `BAD_USER_INPUT` that `backend.md` §7 promises.
 
 **Files:**
-- Create: `apps/backend/src/shared/validation.ts`
-- Modify: `apps/backend/src/modules/auth/validation.ts` (delete `parseInput`)
-- Modify: `apps/backend/src/modules/auth/service.ts`, `apps/backend/src/modules/category/service.ts` (import path)
-- Modify: `apps/backend/src/modules/category/service.ts` (P2002 mapping)
-- Modify: `apps/backend/tests/unit/auth-validation.test.ts`, `apps/backend/tests/unit/category-validation.test.ts` (import path)
-- Test: `apps/backend/tests/integration/category-service.test.ts` (one new case)
+- Create: `backend/src/shared/validation.ts`
+- Modify: `backend/src/modules/auth/validation.ts` (delete `parseInput`)
+- Modify: `backend/src/modules/auth/service.ts`, `backend/src/modules/category/service.ts` (import path)
+- Modify: `backend/src/modules/category/service.ts` (P2002 mapping)
+- Modify: `backend/tests/unit/auth-validation.test.ts`, `backend/tests/unit/category-validation.test.ts` (import path)
+- Test: `backend/tests/integration/category-service.test.ts` (one new case)
 
 **Interfaces:**
 - Produces: `parseInput<Schema extends z.ZodType>(schema: Schema, input: unknown): z.infer<Schema>`, now exported from `src/shared/validation.js`. Every later task imports it from there.
 
 - [x] **Step 1: Write the failing test**
 
-Append to `apps/backend/tests/integration/category-service.test.ts`, inside the
+Append to `backend/tests/integration/category-service.test.ts`, inside the
 `createCategory` describe block:
 
 ```ts
@@ -261,7 +261,7 @@ exists even where the pre-check already covers the common path.
 
 - [x] **Step 3: Create the shared module**
 
-Create `apps/backend/src/shared/validation.ts`:
+Create `backend/src/shared/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -291,21 +291,21 @@ export function parseInput<Schema extends z.ZodType>(
 
 - [x] **Step 4: Delete the old copy and re-point every importer**
 
-In `apps/backend/src/modules/auth/validation.ts`, delete the `parseInput`
+In `backend/src/modules/auth/validation.ts`, delete the `parseInput`
 function and the now-unused `badUserInput` import. The file keeps only its
 schemas and inferred types.
 
-Update the import in `apps/backend/src/modules/auth/service.ts`,
-`apps/backend/src/modules/category/service.ts`,
-`apps/backend/tests/unit/auth-validation.test.ts` and
-`apps/backend/tests/unit/category-validation.test.ts` from
+Update the import in `backend/src/modules/auth/service.ts`,
+`backend/src/modules/category/service.ts`,
+`backend/tests/unit/auth-validation.test.ts` and
+`backend/tests/unit/category-validation.test.ts` from
 `'../auth/validation.js'` / `'../../src/modules/auth/validation.js'` to
 `'../../shared/validation.js'` / `'../../src/shared/validation.js'`.
 
 Confirm nothing else imports it:
 
 ```bash
-rtk proxy "grep -rn 'parseInput' apps/backend/src apps/backend/tests"
+rtk proxy "grep -rn 'parseInput' backend/src backend/tests"
 ```
 
 Expected: every hit is either `src/shared/validation.ts` itself or an import
@@ -313,7 +313,7 @@ from `shared/validation.js`.
 
 - [x] **Step 5: Map P2002**
 
-In `apps/backend/src/modules/category/service.ts`, add the import and the guard:
+In `backend/src/modules/category/service.ts`, add the import and the guard:
 
 ```ts
 import { Prisma } from '@prisma/client';
@@ -382,7 +382,7 @@ Expected: both exit 0, with the same test count as before plus one.
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/backend/src apps/backend/tests
+git add backend/src backend/tests
 git commit -m "refactor(backend): move parseInput to shared and map P2002 to a field error
 
 parseInput knows nothing about authentication and every module needs it; the
@@ -407,8 +407,8 @@ The pagination schema lives here too rather than in `shared/`: `limit` and
 of 100) come from the transactions table in the design.
 
 **Files:**
-- Create: `apps/backend/src/modules/transaction/validation.ts`
-- Create: `apps/backend/tests/unit/transaction-validation.test.ts`
+- Create: `backend/src/modules/transaction/validation.ts`
+- Create: `backend/tests/unit/transaction-validation.test.ts`
 
 **Interfaces:**
 - Consumes: `parseInput` from `src/shared/validation.js` (task 1).
@@ -422,7 +422,7 @@ of 100) come from the transactions table in the design.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/unit/transaction-validation.test.ts`:
+Create `backend/tests/unit/transaction-validation.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -632,7 +632,7 @@ Expected: FAIL — `Cannot find module '../../src/modules/transaction/validation
 
 - [x] **Step 3: Write the implementation**
 
-Create `apps/backend/src/modules/transaction/validation.ts`:
+Create `backend/src/modules/transaction/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -734,7 +734,7 @@ Expected: both exit 0.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/backend/src/modules/transaction/validation.ts apps/backend/tests/unit/transaction-validation.test.ts
+git add backend/src/modules/transaction/validation.ts backend/tests/unit/transaction-validation.test.ts
 git commit -m "feat(backend): validate transaction input and pagination arguments
 
 The limit rejects below 1 and clamps above 100: backend.md section 5 says the
@@ -760,8 +760,8 @@ The answer is `NOT_FOUND`, never `FORBIDDEN` — `FORBIDDEN` confirms the id is
 real, which is the thing being hidden.
 
 **Files:**
-- Create: `apps/backend/src/modules/transaction/service.ts`
-- Create: `apps/backend/tests/integration/transaction-service.test.ts`
+- Create: `backend/src/modules/transaction/service.ts`
+- Create: `backend/tests/integration/transaction-service.test.ts`
 
 **Interfaces:**
 - Consumes: `parseInput` from `src/shared/validation.js`; the schemas from task 2; `notFound` from `src/shared/errors.js`.
@@ -776,7 +776,7 @@ real, which is the thing being hidden.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/integration/transaction-service.test.ts`:
+Create `backend/tests/integration/transaction-service.test.ts`:
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -1011,7 +1011,7 @@ Expected: FAIL — `Cannot find module '../../src/modules/transaction/service.js
 
 - [x] **Step 3: Write the implementation**
 
-Create `apps/backend/src/modules/transaction/service.ts`:
+Create `backend/src/modules/transaction/service.ts`:
 
 ```ts
 import type { Transaction } from '@prisma/client';
@@ -1128,7 +1128,7 @@ Expected: both exit 0.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/backend/src/modules/transaction/service.ts apps/backend/tests/integration/transaction-service.test.ts
+git add backend/src/modules/transaction/service.ts backend/tests/integration/transaction-service.test.ts
 git commit -m "feat(backend): add the transaction service
 
 Every read and write filters by userId in the where clause, and a supplied
@@ -1153,8 +1153,8 @@ without it, two transactions on the same date have no defined order, so a row
 can appear on both page 1 and page 2 across two requests, or on neither.
 
 **Files:**
-- Modify: `apps/backend/src/modules/transaction/service.ts`
-- Create: `apps/backend/tests/integration/transaction-pagination.test.ts`
+- Modify: `backend/src/modules/transaction/service.ts`
+- Create: `backend/tests/integration/transaction-pagination.test.ts`
 
 **Interfaces:**
 - Consumes: `transactionPageSchema`, `MAX_LIMIT` from task 2.
@@ -1164,7 +1164,7 @@ can appear on both page 1 and page 2 across two requests, or on neither.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/integration/transaction-pagination.test.ts`:
+Create `backend/tests/integration/transaction-pagination.test.ts`:
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -1307,7 +1307,7 @@ Expected: FAIL — `listTransactions` is not exported.
 
 - [x] **Step 3: Write the implementation**
 
-Add to `apps/backend/src/modules/transaction/service.ts`. Extend the schema
+Add to `backend/src/modules/transaction/service.ts`. Extend the schema
 import:
 
 ```ts
@@ -1375,7 +1375,7 @@ the ordering guarantee is the thing under test.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/backend/src/modules/transaction/service.ts apps/backend/tests/integration/transaction-pagination.test.ts
+git add backend/src/modules/transaction/service.ts backend/tests/integration/transaction-pagination.test.ts
 git commit -m "feat(backend): paginate the transaction list
 
 Ordered by date descending with createdAt as a tiebreaker: without it two rows
@@ -1396,16 +1396,16 @@ object, with `userId` captured in the closure so no call site can forget the
 scope.
 
 **Files:**
-- Modify: `apps/backend/src/shared/dataloaders.ts`
-- Test: `apps/backend/tests/integration/context.test.ts` (extend)
-- Create: `apps/backend/tests/integration/category-loader.test.ts`
+- Modify: `backend/src/shared/dataloaders.ts`
+- Test: `backend/tests/integration/context.test.ts` (extend)
+- Create: `backend/tests/integration/category-loader.test.ts`
 
 **Interfaces:**
 - Produces: `Loaders` gains `categoryById: DataLoader<string, Category | null>`, where `Category` is the Prisma model. Task 6's `Transaction.category` resolver is its only consumer.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/integration/category-loader.test.ts`:
+Create `backend/tests/integration/category-loader.test.ts`:
 
 ```ts
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1483,7 +1483,7 @@ describe('categoryById', () => {
 });
 ```
 
-Extend `apps/backend/tests/integration/context.test.ts` — wherever it asserts
+Extend `backend/tests/integration/context.test.ts` — wherever it asserts
 `toBeInstanceOf(DataLoader)` for `categoryTotals`, add the same for
 `categoryById`.
 
@@ -1497,7 +1497,7 @@ Expected: FAIL — `loaders.categoryById` is undefined.
 
 - [x] **Step 3: Write the implementation**
 
-In `apps/backend/src/shared/dataloaders.ts`, extend the import and the
+In `backend/src/shared/dataloaders.ts`, extend the import and the
 interface:
 
 ```ts
@@ -1553,7 +1553,7 @@ Expected: both exit 0.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/backend/src/shared/dataloaders.ts apps/backend/tests/integration
+git add backend/src/shared/dataloaders.ts backend/tests/integration
 git commit -m "feat(backend): batch category lookups for transaction rows
 
 A page of ten transactions would otherwise resolve its categories one query at
@@ -1578,11 +1578,11 @@ parent of the `category` field is a database row, which has a `categoryId` and
 no `category`.
 
 **Files:**
-- Create: `apps/backend/src/modules/transaction/schema.ts`
-- Create: `apps/backend/src/modules/transaction/resolvers.ts`
-- Modify: `apps/backend/src/schema.ts`, `apps/backend/codegen.ts`
-- Regenerate: `apps/backend/schema.graphql`, `apps/backend/src/graphql/generated/resolvers.ts`
-- Create: `apps/backend/tests/integration/transaction.test.ts`
+- Create: `backend/src/modules/transaction/schema.ts`
+- Create: `backend/src/modules/transaction/resolvers.ts`
+- Modify: `backend/src/schema.ts`, `backend/codegen.ts`
+- Regenerate: `backend/schema.graphql`, `backend/src/graphql/generated/resolvers.ts`
+- Create: `backend/tests/integration/transaction.test.ts`
 
 **Interfaces:**
 - Consumes: the service from tasks 3 and 4; `requireUser` from `src/shared/auth-guard.js`; `loaders.categoryById` from task 5.
@@ -1590,7 +1590,7 @@ no `category`.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/integration/transaction.test.ts`:
+Create `backend/tests/integration/transaction.test.ts`:
 
 ```ts
 import type { Express } from 'express';
@@ -2023,7 +2023,7 @@ on type "Query"`.
 
 - [x] **Step 3: Write the module SDL**
 
-Create `apps/backend/src/modules/transaction/schema.ts`:
+Create `backend/src/modules/transaction/schema.ts`:
 
 ```ts
 export const transactionTypeDefs = /* GraphQL */ `
@@ -2085,7 +2085,7 @@ frontend cannot compose a value the schema will refuse.
 
 - [x] **Step 4: Write the resolvers**
 
-Create `apps/backend/src/modules/transaction/resolvers.ts`:
+Create `backend/src/modules/transaction/resolvers.ts`:
 
 ```ts
 import type { Resolvers } from '../../graphql/generated/resolvers.js';
@@ -2126,7 +2126,7 @@ export const transactionResolvers: Resolvers = {
 
 - [x] **Step 5: Merge the module and add the mapper**
 
-In `apps/backend/src/schema.ts`, add the imports, extend `typeDefs`, and merge
+In `backend/src/schema.ts`, add the imports, extend `typeDefs`, and merge
 the resolvers:
 
 ```ts
@@ -2161,7 +2161,7 @@ export const typeDefs = [
   Transaction: transactionResolvers.Transaction,
 ```
 
-In `apps/backend/codegen.ts`, add the mapper beside `Category`:
+In `backend/codegen.ts`, add the mapper beside `Category`:
 
 ```ts
           // Same reason as Category: the parent of the `category` field is a
@@ -2199,7 +2199,7 @@ was not committed — stage it rather than regenerating again.
 - [x] **Step 8: Commit**
 
 ```bash
-git add apps/backend/src apps/backend/codegen.ts apps/backend/schema.graphql apps/backend/tests
+git add backend/src backend/codegen.ts backend/schema.graphql backend/tests
 git commit -m "feat(backend): expose the transaction API
 
 transactions takes limit and offset only. TransactionFilter belongs to slice 4
@@ -2224,8 +2224,8 @@ The seed user's credentials live in the seed file, not in `.env`, and the file
 says plainly that it is for development only.
 
 **Files:**
-- Create: `apps/backend/prisma/seed.ts`
-- Modify: `apps/backend/package.json` (the `prisma.seed` entry)
+- Create: `backend/prisma/seed.ts`
+- Modify: `backend/package.json` (the `prisma.seed` entry)
 - Modify: `.gitguardian.yaml` (repo root) **only if** the scanner flags the file — see step 4.
 
 **Interfaces:**
@@ -2234,7 +2234,7 @@ says plainly that it is for development only.
 
 - [x] **Step 1: Write the seed**
 
-Create `apps/backend/prisma/seed.ts`:
+Create `backend/prisma/seed.ts`:
 
 ```ts
 /**
@@ -2364,7 +2364,7 @@ main()
 
 - [x] **Step 2: Wire the script**
 
-In `apps/backend/package.json`, add the script and the Prisma entry:
+In `backend/package.json`, add the script and the Prisma entry:
 
 ```json
   "scripts": {
@@ -2395,7 +2395,7 @@ Confirm the counts:
 rtk proxy "npx --workspace @financy/backend prisma db execute --stdin <<< 'SELECT COUNT(*) FROM \"Transaction\";'"
 ```
 
-If that form is awkward, `npx prisma studio` from `apps/backend` shows the same
+If that form is awkward, `npx prisma studio` from `backend` shows the same
 thing. Twenty-seven transactions, seven categories, one user.
 
 - [x] **Step 4: Check the secret scanner**
@@ -2405,12 +2405,12 @@ thing. Twenty-seven transactions, seven categories, one user.
 scanned. `SEED_PASSWORD` is one.
 
 ```bash
-rtk proxy "git add apps/backend/prisma/seed.ts apps/backend/package.json"
+rtk proxy "git add backend/prisma/seed.ts backend/package.json"
 rtk proxy "git status --porcelain"
 ```
 
 If a pre-commit hook or a scanner run rejects the file, add
-`apps/backend/prisma/seed.ts` to the exemption list in `.gitguardian.yaml` in
+`backend/prisma/seed.ts` to the exemption list in `.gitguardian.yaml` in
 this same commit, with a comment saying it is a development-only fixture. Do
 not weaken the rule more broadly, and do not move the password into `.env` —
 `backend.md` §10 puts it in the file deliberately, so a developer can read it
@@ -2419,7 +2419,7 @@ without hunting.
 - [x] **Step 5: Verify nothing else moved**
 
 ```bash
-rtk proxy "git diff --cached apps/backend/package.json"
+rtk proxy "git diff --cached backend/package.json"
 rtk proxy "npm test -w @financy/backend"
 ```
 
@@ -2464,9 +2464,9 @@ This task also installs three dependencies. `date-fns` is the one
 declared for the first time — the installed 19.2.8 is present only transitively.
 
 **Files:**
-- Modify: `apps/frontend/package.json`, `apps/frontend/vite.config.ts`
-- Create: `apps/frontend/src/lib/currency.ts`, `apps/frontend/src/lib/currency.test.ts`
-- Create: `apps/frontend/src/lib/format.ts`, `apps/frontend/src/lib/format.test.ts`
+- Modify: `frontend/package.json`, `frontend/vite.config.ts`
+- Create: `frontend/src/lib/currency.ts`, `frontend/src/lib/currency.test.ts`
+- Create: `frontend/src/lib/format.ts`, `frontend/src/lib/format.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -2482,13 +2482,13 @@ declared for the first time — the installed 19.2.8 is present only transitivel
 
 ```bash
 rtk proxy "npm install date-fns react react-dom -w @financy/frontend"
-rtk proxy "git diff apps/frontend/package.json"
+rtk proxy "git diff frontend/package.json"
 ```
 
 Expected: three additions under `dependencies` and **no other version change**.
 If any pinned major moved, revert and install with the version pinned.
 
-In `apps/frontend/package.json`, set the timezone on both test scripts:
+In `frontend/package.json`, set the timezone on both test scripts:
 
 ```json
     "test": "TZ=America/Sao_Paulo vitest run",
@@ -2502,7 +2502,7 @@ formats as the previous day.
 
 - [x] **Step 2: Write the failing tests**
 
-Create `apps/frontend/src/lib/currency.test.ts`:
+Create `frontend/src/lib/currency.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -2588,7 +2588,7 @@ describe('formatSignedAmount', () => {
 });
 ```
 
-Create `apps/frontend/src/lib/format.test.ts`:
+Create `frontend/src/lib/format.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -2648,7 +2648,7 @@ Expected: FAIL — neither module resolves.
 
 - [x] **Step 4: Write the implementations**
 
-Create `apps/frontend/src/lib/currency.ts`:
+Create `frontend/src/lib/currency.ts`:
 
 ```ts
 /**
@@ -2704,7 +2704,7 @@ export function formatSignedAmount(
 }
 ```
 
-Create `apps/frontend/src/lib/format.ts`:
+Create `frontend/src/lib/format.ts`:
 
 ```ts
 import { format, parse, parseISO } from 'date-fns';
@@ -2747,7 +2747,7 @@ not land — fix that rather than changing the expected strings.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/frontend/package.json apps/frontend/vite.config.ts apps/frontend/src/lib package-lock.json
+git add frontend/package.json frontend/vite.config.ts frontend/src/lib package-lock.json
 git commit -m "feat(frontend): convert cents to currency and ISO to dates
 
 centsToDisplay builds the string from the integer instead of dividing by 100,
@@ -2771,17 +2771,17 @@ The lists refetch through explicit invalidation, so selecting more fields would
 produce a second copy of data nothing reads.
 
 **Files:**
-- Create: `apps/frontend/src/graphql/operations/transactions.graphql`
-- Regenerate: `apps/frontend/src/graphql/generated/graphql.ts`
-- Create: `apps/frontend/src/graphql/operations/transactions.test.ts`
+- Create: `frontend/src/graphql/operations/transactions.graphql`
+- Regenerate: `frontend/src/graphql/generated/graphql.ts`
+- Create: `frontend/src/graphql/operations/transactions.test.ts`
 
 **Interfaces:**
-- Consumes: `apps/backend/schema.graphql` as regenerated by task 6.
+- Consumes: `backend/schema.graphql` as regenerated by task 6.
 - Produces: `useTransactionsQuery` (with `.getKey`), `useCreateTransactionMutation`, `useUpdateTransactionMutation`, `useDeleteTransactionMutation`, and the `TransactionsQuery` type. Tasks 12 to 14 consume all of them.
 
 - [x] **Step 1: Write the documents**
 
-Create `apps/frontend/src/graphql/operations/transactions.graphql`:
+Create `frontend/src/graphql/operations/transactions.graphql`:
 
 ```graphql
 # createdAt and updatedAt are on the type and nothing renders them — the table
@@ -2828,7 +2828,7 @@ mutation DeleteTransaction($id: ID!) {
 
 - [x] **Step 2: Write the failing test**
 
-Create `apps/frontend/src/graphql/operations/transactions.test.ts`:
+Create `frontend/src/graphql/operations/transactions.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -2870,7 +2870,7 @@ rtk proxy "npm run codegen -w @financy/frontend"
 Then confirm the enums came through as unions rather than TypeScript enums:
 
 ```bash
-rtk proxy "grep -n \"TransactionType =\" apps/frontend/src/graphql/generated/graphql.ts"
+rtk proxy "grep -n \"TransactionType =\" frontend/src/graphql/generated/graphql.ts"
 ```
 
 Expected: a string-literal union (`'EXPENSE' | 'INCOME'`), because `codegen.ts`
@@ -2889,7 +2889,7 @@ Expected: three exit 0s.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/frontend/src/graphql
+git add frontend/src/graphql
 git commit -m "feat(frontend): generate typed transaction hooks
 
 A test asserts the query key starts with the 'Transactions' literal that
@@ -2916,10 +2916,10 @@ The consumers move from `register` to `Controller`, which is the same amount of
 code and works for any control.
 
 **Files:**
-- Create: `apps/frontend/src/components/ui/SegmentedControl.tsx`, `SegmentedControl.test.tsx`
-- Modify: `apps/frontend/src/components/ui/IconPicker.tsx`, `ColorPicker.tsx` and their tests
-- Modify: `apps/frontend/src/features/categories/CategoryDialog.tsx`
-- Modify: `apps/frontend/src/pages/StyleGuide.tsx` and its test
+- Create: `frontend/src/components/ui/SegmentedControl.tsx`, `SegmentedControl.test.tsx`
+- Modify: `frontend/src/components/ui/IconPicker.tsx`, `ColorPicker.tsx` and their tests
+- Modify: `frontend/src/features/categories/CategoryDialog.tsx`
+- Modify: `frontend/src/pages/StyleGuide.tsx` and its test
 
 **Interfaces:**
 - Produces:
@@ -2929,7 +2929,7 @@ code and works for any control.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/frontend/src/components/ui/SegmentedControl.test.tsx`:
+Create `frontend/src/components/ui/SegmentedControl.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -3018,7 +3018,7 @@ Expected: FAIL — the module does not resolve.
 
 - [x] **Step 3: Write the primitive**
 
-Create `apps/frontend/src/components/ui/SegmentedControl.tsx`:
+Create `frontend/src/components/ui/SegmentedControl.tsx`:
 
 ```tsx
 import { cn } from '@/lib/cn';
@@ -3109,7 +3109,7 @@ Expected: PASS.
 
 - [x] **Step 5: Decouple the two pickers**
 
-In `apps/frontend/src/components/ui/IconPicker.tsx`, replace the props and the
+In `frontend/src/components/ui/IconPicker.tsx`, replace the props and the
 input wiring. Delete the `UseFormRegisterReturn` import:
 
 ```tsx
@@ -3142,7 +3142,7 @@ and inside the map, the input becomes:
 Note `checked` rather than `defaultChecked`: the control is now driven by the
 `value` prop, so it has to re-render when that prop changes.
 
-Apply the same three changes to `apps/frontend/src/components/ui/ColorPicker.tsx`,
+Apply the same three changes to `frontend/src/components/ui/ColorPicker.tsx`,
 with `CategoryColor` and `CATEGORY_COLOR_LABELS`.
 
 Update both tests: replace the `registration()` helper with an `onChange` spy
@@ -3163,7 +3163,7 @@ and assert the token, not the event.
 
 - [x] **Step 6: Move `CategoryDialog` to `Controller`**
 
-In `apps/frontend/src/features/categories/CategoryDialog.tsx`, replace the
+In `frontend/src/features/categories/CategoryDialog.tsx`, replace the
 `useWatch` calls and the two picker elements. Extend the import:
 
 ```tsx
@@ -3204,7 +3204,7 @@ for.
 
 - [x] **Step 7: Update the style guide**
 
-In `apps/frontend/src/pages/StyleGuide.tsx`, the two pickers no longer need a
+In `frontend/src/pages/StyleGuide.tsx`, the two pickers no longer need a
 faked registration object. Give the page local state instead, and add the
 segmented control beside them:
 
@@ -3259,7 +3259,7 @@ those tests address.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/frontend/src
+git add frontend/src
 git commit -m "feat(frontend): add a segmented control and decouple the pickers
 
 IconPicker and ColorPicker took a UseFormRegisterReturn, coupling two
@@ -3294,10 +3294,10 @@ On a category card, delete precedes edit in DOM order, which puts the
 destructive action first for anyone tabbing through twelve cards.
 
 **Files:**
-- Create: `apps/frontend/src/components/ui/PanelError.tsx`, `PanelError.test.tsx`
-- Create: `apps/frontend/src/components/ui/Skeleton.tsx`, `Skeleton.test.tsx`
-- Modify: `apps/frontend/src/features/categories/CategoriesPage.tsx` and its test
-- Modify: `apps/frontend/src/features/categories/CategoryCard.tsx` and its test
+- Create: `frontend/src/components/ui/PanelError.tsx`, `PanelError.test.tsx`
+- Create: `frontend/src/components/ui/Skeleton.tsx`, `Skeleton.test.tsx`
+- Modify: `frontend/src/features/categories/CategoriesPage.tsx` and its test
+- Modify: `frontend/src/features/categories/CategoryCard.tsx` and its test
 
 **Interfaces:**
 - Produces:
@@ -3308,7 +3308,7 @@ destructive action first for anyone tabbing through twelve cards.
 
 - [x] **Step 1: Write the failing tests**
 
-Create `apps/frontend/src/components/ui/PanelError.test.tsx`:
+Create `frontend/src/components/ui/PanelError.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -3340,7 +3340,7 @@ describe('PanelError', () => {
 });
 ```
 
-Create `apps/frontend/src/components/ui/Skeleton.test.tsx`:
+Create `frontend/src/components/ui/Skeleton.test.tsx`:
 
 ```tsx
 import { describe, expect, it } from 'vitest';
@@ -3382,7 +3382,7 @@ Expected: FAIL — neither module resolves.
 
 - [x] **Step 3: Write the two primitives**
 
-Create `apps/frontend/src/components/ui/PanelError.tsx`:
+Create `frontend/src/components/ui/PanelError.tsx`:
 
 ```tsx
 import { Button } from '@/components/ui/Button';
@@ -3415,7 +3415,7 @@ export function PanelError({ message, onRetry }: PanelErrorProps) {
 }
 ```
 
-Create `apps/frontend/src/components/ui/Skeleton.tsx`:
+Create `frontend/src/components/ui/Skeleton.tsx`:
 
 ```tsx
 import { Card } from '@/components/ui/Card';
@@ -3465,7 +3465,7 @@ export function Skeleton({
 - [x] **Step 4: Adopt them in `CategoriesPage`**
 
 Delete the local `PanelError` and `GridSkeleton` definitions from
-`apps/frontend/src/features/categories/CategoriesPage.tsx` and import the
+`frontend/src/features/categories/CategoriesPage.tsx` and import the
 primitives. The three call sites become:
 
 ```tsx
@@ -3499,7 +3499,7 @@ nothing.
 
 - [x] **Step 5: Fix the card's DOM order and heading**
 
-In `apps/frontend/src/features/categories/CategoryCard.tsx`, swap the two
+In `frontend/src/features/categories/CategoryCard.tsx`, swap the two
 `IconButton`s so edit comes first, and promote the name:
 
 ```tsx
@@ -3558,7 +3558,7 @@ Expected: four exit 0s.
 - [x] **Step 7: Commit**
 
 ```bash
-git add apps/frontend/src
+git add frontend/src
 git commit -m "feat(frontend): extract the panel states and fix what they hid
 
 PanelError and the loading skeleton lived inside CategoriesPage, and the
@@ -3586,8 +3586,8 @@ The amount field is where task 8's mask meets the form. The field holds an
 integer for its whole life; `centsToDisplay` is only ever called to render it.
 
 **Files:**
-- Create: `apps/frontend/src/features/transactions/validation.ts`
-- Create: `apps/frontend/src/features/transactions/TransactionDialog.tsx`, `TransactionDialog.test.tsx`
+- Create: `frontend/src/features/transactions/validation.ts`
+- Create: `frontend/src/features/transactions/TransactionDialog.tsx`, `TransactionDialog.test.tsx`
 
 **Interfaces:**
 - Consumes: `SegmentedControl` (task 10); `centsToDisplay`, `digitsToCents`, `toDateInputValue`, `fromDateInputValue` (task 8); the generated hooks (task 9).
@@ -3601,7 +3601,7 @@ integer for its whole life; `centsToDisplay` is only ever called to render it.
 
 - [x] **Step 1: Write the form schema**
 
-Create `apps/frontend/src/features/transactions/validation.ts`:
+Create `frontend/src/features/transactions/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -3635,7 +3635,7 @@ export type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 
 - [x] **Step 2: Write the failing test**
 
-Create `apps/frontend/src/features/transactions/TransactionDialog.test.tsx`:
+Create `frontend/src/features/transactions/TransactionDialog.test.tsx`:
 
 ```tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -3902,7 +3902,7 @@ Expected: FAIL — the module does not resolve.
 
 - [x] **Step 4: Write the dialog**
 
-Create `apps/frontend/src/features/transactions/TransactionDialog.tsx`:
+Create `frontend/src/features/transactions/TransactionDialog.tsx`:
 
 ```tsx
 import { useState } from 'react';
@@ -4198,7 +4198,7 @@ accept keystrokes the way a browser does.
 - [x] **Step 6: Commit**
 
 ```bash
-git add apps/frontend/src/features/transactions
+git add frontend/src/features/transactions
 git commit -m "feat(frontend): add the transaction dialog
 
 Create and edit from one form. The amount field holds integer cents for its
@@ -4222,7 +4222,7 @@ Unlike the category confirmation, there is no consequence to explain: deleting a
 transaction deletes exactly that transaction.
 
 **Files:**
-- Create: `apps/frontend/src/features/transactions/DeleteTransactionDialog.tsx`, `DeleteTransactionDialog.test.tsx`
+- Create: `frontend/src/features/transactions/DeleteTransactionDialog.tsx`, `DeleteTransactionDialog.test.tsx`
 
 **Interfaces:**
 - Consumes: `useDeleteTransactionMutation` (task 9).
@@ -4232,7 +4232,7 @@ transaction deletes exactly that transaction.
 
 - [x] **Step 1: Write the failing test**
 
-Create `apps/frontend/src/features/transactions/DeleteTransactionDialog.test.tsx`:
+Create `frontend/src/features/transactions/DeleteTransactionDialog.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -4345,7 +4345,7 @@ Expected: FAIL — the module does not resolve.
 
 - [x] **Step 3: Write the dialog**
 
-Create `apps/frontend/src/features/transactions/DeleteTransactionDialog.tsx`:
+Create `frontend/src/features/transactions/DeleteTransactionDialog.tsx`:
 
 ```tsx
 import { useState } from 'react';
@@ -4452,7 +4452,7 @@ Expected: both exit 0.
 - [x] **Step 5: Commit**
 
 ```bash
-git add apps/frontend/src/features/transactions/DeleteTransactionDialog.tsx apps/frontend/src/features/transactions/DeleteTransactionDialog.test.tsx
+git add frontend/src/features/transactions/DeleteTransactionDialog.tsx frontend/src/features/transactions/DeleteTransactionDialog.test.tsx
 git commit -m "feat(frontend): confirm before deleting a transaction
 
 Names the transaction, because a bare 'Excluir?' over twenty-seven rows does
@@ -4478,10 +4478,10 @@ slice 4's "changing a filter resets to page 1" needs something to reset.
 The filter bar is **not** part of this task.
 
 **Files:**
-- Create: `apps/frontend/src/features/transactions/TransactionRow.tsx`
-- Create: `apps/frontend/src/features/transactions/TransactionsTable.tsx`, `TransactionsTable.test.tsx`
-- Create: `apps/frontend/src/features/transactions/TransactionsPage.tsx`, `TransactionsPage.test.tsx`
-- Modify: `apps/frontend/src/routes.tsx`, `apps/frontend/src/routes.test.tsx`
+- Create: `frontend/src/features/transactions/TransactionRow.tsx`
+- Create: `frontend/src/features/transactions/TransactionsTable.tsx`, `TransactionsTable.test.tsx`
+- Create: `frontend/src/features/transactions/TransactionsPage.tsx`, `TransactionsPage.test.tsx`
+- Modify: `frontend/src/routes.tsx`, `frontend/src/routes.test.tsx`
 
 **Interfaces:**
 - Consumes: `useTransactionsQuery` (task 9); `TransactionDialog` (task 12); `DeleteTransactionDialog` (task 13); `Skeleton`, `PanelError` (task 11); `formatSignedAmount`, `formatShortDate` (task 8); `CategoryBadge`, `Tag`, `TypeIndicator`, `Pagination`, `IconButton` (existing).
@@ -4493,7 +4493,7 @@ The filter bar is **not** part of this task.
 
 - [x] **Step 1: Write the failing tests**
 
-Create `apps/frontend/src/features/transactions/TransactionsTable.test.tsx`:
+Create `frontend/src/features/transactions/TransactionsTable.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -4623,7 +4623,7 @@ describe('TransactionsTable', () => {
 });
 ```
 
-Create `apps/frontend/src/features/transactions/TransactionsPage.test.tsx`:
+Create `frontend/src/features/transactions/TransactionsPage.test.tsx`:
 
 ```tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -4837,7 +4837,7 @@ Expected: FAIL — neither module resolves.
 
 - [x] **Step 3: Write the row**
 
-Create `apps/frontend/src/features/transactions/TransactionRow.tsx`:
+Create `frontend/src/features/transactions/TransactionRow.tsx`:
 
 ```tsx
 import { Pencil, Trash2 } from 'lucide-react';
@@ -4935,7 +4935,7 @@ export function TransactionRow({
 
 - [x] **Step 4: Write the table**
 
-Create `apps/frontend/src/features/transactions/TransactionsTable.tsx`:
+Create `frontend/src/features/transactions/TransactionsTable.tsx`:
 
 ```tsx
 import { TransactionRow, type TransactionRowData } from './TransactionRow';
@@ -5006,7 +5006,7 @@ export function TransactionsTable({
 
 - [x] **Step 5: Write the page**
 
-Create `apps/frontend/src/features/transactions/TransactionsPage.tsx`:
+Create `frontend/src/features/transactions/TransactionsPage.tsx`:
 
 ```tsx
 import { useState } from 'react';
@@ -5160,7 +5160,7 @@ setting is what changed — do not add a cast.
 
 - [x] **Step 6: Route to it**
 
-In `apps/frontend/src/routes.tsx`, import the page and replace the placeholder:
+In `frontend/src/routes.tsx`, import the page and replace the placeholder:
 
 ```tsx
 import { TransactionsPage } from '@/features/transactions/TransactionsPage';
@@ -5211,7 +5211,7 @@ it and nothing else in the plan looks at the screen.
 - [x] **Step 9: Commit**
 
 ```bash
-git add apps/frontend/src
+git add frontend/src
 git commit -m "feat(frontend): add the transactions page
 
 The page owns the query and the dialogs, the table owns the columns and the
@@ -5266,7 +5266,7 @@ Walk `roadmap.md`'s checklist against the diff, not against memory:
 
 ```bash
 rtk proxy "git diff --stat origin/main"
-rtk proxy "grep -rn 'where: {' apps/backend/src/modules/transaction/"
+rtk proxy "grep -rn 'where: {' backend/src/modules/transaction/"
 ```
 
 Confirm every `where` clause in the transaction module carries `userId`, and
@@ -5407,8 +5407,8 @@ request is reviewed with.
 - [x] Lint passes. `format:check` passes.
 - [x] `codegen:check` reports no diff in either workspace.
 - [x] One new environment variable appeared (`SEED_PASSWORD`, Task 7's
-      development seed), and it is in the matching `apps/backend/.env.example`.
-- [x] No pinned major drifted. `git diff origin/main -- package.json apps/*/package.json`
+      development seed), and it is in the matching `backend/.env.example`.
+- [x] No pinned major drifted. `git diff origin/main -- package.json backend, frontend/package.json`
       shows only `date-fns`, `react`, `react-dom` and the two script changes.
 - [x] The specs describe what was built, corrected in this same branch where
       they did not.

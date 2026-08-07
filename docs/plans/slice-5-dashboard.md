@@ -48,7 +48,7 @@ Every task's requirements implicitly include this section.
   `{ error: '…' }`.
 - **Pinned majors — do not let an install drift them.** `prisma` and
   `@prisma/client` `^6`; `@apollo/server` `^4`; `express` and `@types/express`
-  `^4`. Check `git diff package.json apps/*/package.json` before every commit.
+  `^4`. Check `git diff package.json backend, frontend/package.json` before every commit.
   No task in this slice installs anything.
 - **Run anything you cite as evidence through `rtk proxy "<cmd>"`.** The RTK hook
   filters output and has reported a pass for a command that failed. A claim from
@@ -59,7 +59,7 @@ Every task's requirements implicitly include this section.
   run `codegen:check`.
 - **`format:check` is part of the gate**, alongside `test`, `typecheck`, `lint`
   and `codegen:check`. Two slice-2 tasks were sent back for skipping it.
-- **`apps/backend/schema.graphql` is generated, committed, and in
+- **`backend/schema.graphql` is generated, committed, and in
   `.prettierignore`.** Never hand-edit it and never run Prettier on it.
 - **No CI.** Nothing runs the checks on push. Every claim about a green suite
   comes from a local run.
@@ -81,47 +81,47 @@ Every task's requirements implicitly include this section.
 
 | File | Responsibility |
 |---|---|
-| `apps/backend/src/modules/summary/validation.ts` | `summaryArgsSchema` — `month` 1–12, `year` 1970–9999. |
-| `apps/backend/src/modules/summary/service.ts` | `getSummary(userId, args)` — the UTC window and the two `groupBy` calls. |
-| `apps/backend/src/modules/summary/schema.ts` | `summaryTypeDefs` — `type Summary` and `extend type Query`. |
-| `apps/backend/src/modules/summary/resolvers.ts` | `summaryResolvers` — `requireUser` then the service. |
-| `apps/backend/prisma/seed-dates.ts` | `monthsBack(monthsAgo, day, now?)` — the seed's relative-date arithmetic, extracted so it is testable. |
-| `apps/backend/tests/unit/summary-validation.test.ts` | `summaryArgsSchema` in isolation. |
-| `apps/backend/tests/unit/seed-dates.test.ts` | `monthsBack` rollover arithmetic. |
-| `apps/backend/tests/integration/summary.test.ts` | `summary` through the real HTTP stack. |
+| `backend/src/modules/summary/validation.ts` | `summaryArgsSchema` — `month` 1–12, `year` 1970–9999. |
+| `backend/src/modules/summary/service.ts` | `getSummary(userId, args)` — the UTC window and the two `groupBy` calls. |
+| `backend/src/modules/summary/schema.ts` | `summaryTypeDefs` — `type Summary` and `extend type Query`. |
+| `backend/src/modules/summary/resolvers.ts` | `summaryResolvers` — `requireUser` then the service. |
+| `backend/prisma/seed-dates.ts` | `monthsBack(monthsAgo, day, now?)` — the seed's relative-date arithmetic, extracted so it is testable. |
+| `backend/tests/unit/summary-validation.test.ts` | `summaryArgsSchema` in isolation. |
+| `backend/tests/unit/seed-dates.test.ts` | `monthsBack` rollover arithmetic. |
+| `backend/tests/integration/summary.test.ts` | `summary` through the real HTTP stack. |
 
 **Backend — modified**
 
 | File | Change |
 |---|---|
-| `apps/backend/src/schema.ts` | Register `summaryTypeDefs` and `summaryResolvers.Query`. |
-| `apps/backend/schema.graphql` | Regenerated (never hand-edited). |
-| `apps/backend/src/graphql/generated/resolvers.ts` | Regenerated. |
-| `apps/backend/prisma/seed.ts` | Fixed 2026 dates → `monthsAgo`/`day` pairs across twelve months. |
+| `backend/src/schema.ts` | Register `summaryTypeDefs` and `summaryResolvers.Query`. |
+| `backend/schema.graphql` | Regenerated (never hand-edited). |
+| `backend/src/graphql/generated/resolvers.ts` | Regenerated. |
+| `backend/prisma/seed.ts` | Fixed 2026 dates → `monthsAgo`/`day` pairs across twelve months. |
 
 **Frontend — created**
 
 | File | Responsibility |
 |---|---|
-| `apps/frontend/src/graphql/operations/summary.graphql` | The `Summary` query document. |
-| `apps/frontend/src/features/dashboard/DashboardPage.tsx` | The screen: three stat cards, the two-panel row, the create dialog. Owns the `Summary` query. |
-| `apps/frontend/src/features/dashboard/RecentTransactionsPanel.tsx` | "Transações recentes". Owns its `Transactions` query and its own states. |
-| `apps/frontend/src/features/dashboard/CategoriesPanel.tsx` | "Categorias". Owns its `Categories` query, the sort and the cap. |
-| `apps/frontend/src/features/dashboard/DashboardPage.test.tsx` | Stat cards, composition, cross-section invalidation, navigation. |
-| `apps/frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx` | The recent panel's four states and its `limit: 5`. |
-| `apps/frontend/src/features/dashboard/CategoriesPanel.test.tsx` | The categories panel's four states, its sort and its cap. |
+| `frontend/src/graphql/operations/summary.graphql` | The `Summary` query document. |
+| `frontend/src/features/dashboard/DashboardPage.tsx` | The screen: three stat cards, the two-panel row, the create dialog. Owns the `Summary` query. |
+| `frontend/src/features/dashboard/RecentTransactionsPanel.tsx` | "Transações recentes". Owns its `Transactions` query and its own states. |
+| `frontend/src/features/dashboard/CategoriesPanel.tsx` | "Categorias". Owns its `Categories` query, the sort and the cap. |
+| `frontend/src/features/dashboard/DashboardPage.test.tsx` | Stat cards, composition, cross-section invalidation, navigation. |
+| `frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx` | The recent panel's four states and its `limit: 5`. |
+| `frontend/src/features/dashboard/CategoriesPanel.test.tsx` | The categories panel's four states, its sort and its cap. |
 
 **Frontend — modified**
 
 | File | Change |
 |---|---|
-| `apps/frontend/src/lib/period.ts` | Add `currentPeriod(now?)`. |
-| `apps/frontend/src/lib/period.test.ts` | Cover it. |
-| `apps/frontend/src/graphql/operations/categories.graphql` | Add `totalAmount` to the `Categories` query — the panel renders it and nothing selects it today. |
-| `apps/frontend/src/graphql/generated/graphql.ts` | Regenerated. |
-| `apps/frontend/src/graphql/generated/query-keys.test.ts` | Assert the `Summary` key literal the two mutation dialogs invalidate by. |
-| `apps/frontend/src/routes.tsx` | `<Placeholder title="Dashboard" />` → `<DashboardPage />`; delete `Placeholder`. |
-| `apps/frontend/src/routes.test.tsx` | Its two dashboard tests must now mock three more queries — MSW is strict. |
+| `frontend/src/lib/period.ts` | Add `currentPeriod(now?)`. |
+| `frontend/src/lib/period.test.ts` | Cover it. |
+| `frontend/src/graphql/operations/categories.graphql` | Add `totalAmount` to the `Categories` query — the panel renders it and nothing selects it today. |
+| `frontend/src/graphql/generated/graphql.ts` | Regenerated. |
+| `frontend/src/graphql/generated/query-keys.test.ts` | Assert the `Summary` key literal the two mutation dialogs invalidate by. |
+| `frontend/src/routes.tsx` | `<Placeholder title="Dashboard" />` → `<DashboardPage />`; delete `Placeholder`. |
+| `frontend/src/routes.test.tsx` | Its two dashboard tests must now mock three more queries — MSW is strict. |
 
 **Docs — modified in Task 10**
 
@@ -131,7 +131,7 @@ new `docs/plans/slice-5-figma-handoff.md` and `docs/plans/slice-5-outcome.md`.
 ## Task order and why
 
 1–3 are the backend, innermost first (validation → service → wiring), because
-the frontend's codegen reads `apps/backend/schema.graphql`, which does not carry
+the frontend's codegen reads `backend/schema.graphql`, which does not carry
 `summary` until Task 3 commits. 4 regenerates the frontend client and proves the
 query key. 5–7 build the three sections in isolation. 8 composes them, mounts the
 route, and runs the one test that has to be seen to fail first. 9 re-bases the
@@ -142,8 +142,8 @@ seed. 10 is the documentation the definition of done requires.
 ### Task 1: `summary` argument validation
 
 **Files:**
-- Create: `apps/backend/src/modules/summary/validation.ts`
-- Test: `apps/backend/tests/unit/summary-validation.test.ts`
+- Create: `backend/src/modules/summary/validation.ts`
+- Test: `backend/tests/unit/summary-validation.test.ts`
 
 **Interfaces:**
 - Consumes: `parseInput` from `src/shared/validation.ts` (existing).
@@ -160,7 +160,7 @@ every other schema in the codebase; `SummaryArgs` is the inferred type, matching
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/unit/summary-validation.test.ts`:
+Create `backend/tests/unit/summary-validation.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -249,7 +249,7 @@ Expected: FAIL — `Cannot find module '.../modules/summary/validation.js'`.
 
 - [ ] **Step 3: Write the schema**
 
-Create `apps/backend/src/modules/summary/validation.ts`:
+Create `backend/src/modules/summary/validation.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -293,7 +293,7 @@ Expected: PASS, 8 tests.
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/backend/src/modules/summary/validation.ts apps/backend/tests/unit/summary-validation.test.ts
+git add backend/src/modules/summary/validation.ts backend/tests/unit/summary-validation.test.ts
 git commit -m "feat(backend): validate summary month and year with zod"
 ```
 
@@ -302,8 +302,8 @@ git commit -m "feat(backend): validate summary month and year with zod"
 ### Task 2: `getSummary` — the UTC window and the two aggregates
 
 **Files:**
-- Create: `apps/backend/src/modules/summary/service.ts`
-- Test: `apps/backend/tests/integration/summary.test.ts` (service-level cases;
+- Create: `backend/src/modules/summary/service.ts`
+- Test: `backend/tests/integration/summary.test.ts` (service-level cases;
   Task 3 appends the HTTP-level ones to the same file)
 
 **Interfaces:**
@@ -336,7 +336,7 @@ git commit -m "feat(backend): validate summary month and year with zod"
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/integration/summary.test.ts`:
+Create `backend/tests/integration/summary.test.ts`:
 
 ```ts
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -537,7 +537,7 @@ Expected: FAIL — `Cannot find module '.../modules/summary/service.js'`.
 
 - [ ] **Step 3: Write the service**
 
-Create `apps/backend/src/modules/summary/service.ts`:
+Create `backend/src/modules/summary/service.ts`:
 
 ```ts
 import { prisma } from '../../shared/prisma.js';
@@ -634,7 +634,7 @@ rtk proxy "npm test -w @financy/backend"
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/backend/src/modules/summary/service.ts apps/backend/tests/integration/summary.test.ts
+git add backend/src/modules/summary/service.ts backend/tests/integration/summary.test.ts
 git commit -m "feat(backend): aggregate the summary figures over a UTC month window"
 ```
 
@@ -643,12 +643,12 @@ git commit -m "feat(backend): aggregate the summary figures over a UTC month win
 ### Task 3: Expose `summary` on the graph
 
 **Files:**
-- Create: `apps/backend/src/modules/summary/schema.ts`
-- Create: `apps/backend/src/modules/summary/resolvers.ts`
-- Modify: `apps/backend/src/schema.ts`
-- Regenerate: `apps/backend/schema.graphql`,
-  `apps/backend/src/graphql/generated/resolvers.ts`
-- Test: `apps/backend/tests/integration/summary.test.ts` (append)
+- Create: `backend/src/modules/summary/schema.ts`
+- Create: `backend/src/modules/summary/resolvers.ts`
+- Modify: `backend/src/schema.ts`
+- Regenerate: `backend/schema.graphql`,
+  `backend/src/graphql/generated/resolvers.ts`
+- Test: `backend/tests/integration/summary.test.ts` (append)
 
 **Interfaces:**
 - Consumes: `getSummary` from Task 2; `requireUser` from
@@ -664,7 +664,7 @@ the build to copy non-TypeScript files into `dist/`.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `apps/backend/tests/integration/summary.test.ts`. First add the imports
+Append to `backend/tests/integration/summary.test.ts`. First add the imports
 at the top of the file — **merge `beforeAll` into the existing
 `from 'vitest'` line** rather than adding a second import from the same module:
 
@@ -832,7 +832,7 @@ stale.
 
 - [ ] **Step 3: Write the module SDL and the resolver**
 
-Create `apps/backend/src/modules/summary/schema.ts`:
+Create `backend/src/modules/summary/schema.ts`:
 
 ```ts
 export const summaryTypeDefs = /* GraphQL */ `
@@ -852,7 +852,7 @@ export const summaryTypeDefs = /* GraphQL */ `
 `;
 ```
 
-Create `apps/backend/src/modules/summary/resolvers.ts`:
+Create `backend/src/modules/summary/resolvers.ts`:
 
 ```ts
 import type { Resolvers } from '../../graphql/generated/resolvers.js';
@@ -866,7 +866,7 @@ export const summaryResolvers: Resolvers = {
 };
 ```
 
-Modify `apps/backend/src/schema.ts` — add the two imports beside the existing
+Modify `backend/src/schema.ts` — add the two imports beside the existing
 module imports:
 
 ```ts
@@ -909,7 +909,7 @@ five) and the schema-artifact test green again. `git status` should show `schema
 working tree.
 
 ```bash
-git add apps/backend/src/modules/summary apps/backend/src/schema.ts apps/backend/schema.graphql apps/backend/src/graphql/generated apps/backend/tests/integration/summary.test.ts
+git add backend/src/modules/summary backend/src/schema.ts backend/schema.graphql backend/src/graphql/generated backend/tests/integration/summary.test.ts
 rtk proxy "npm run codegen:check -w @financy/backend"
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
@@ -926,15 +926,15 @@ formatting the file.
 ### Task 4: The `Summary` operation and the query key that makes two dead invalidations live
 
 **Files:**
-- Create: `apps/frontend/src/graphql/operations/summary.graphql`
-- Modify: `apps/frontend/src/graphql/operations/categories.graphql`
-- Modify: `apps/frontend/src/lib/period.ts`
-- Regenerate: `apps/frontend/src/graphql/generated/graphql.ts`
-- Test: `apps/frontend/src/graphql/generated/query-keys.test.ts` (append),
-  `apps/frontend/src/lib/period.test.ts` (append)
+- Create: `frontend/src/graphql/operations/summary.graphql`
+- Modify: `frontend/src/graphql/operations/categories.graphql`
+- Modify: `frontend/src/lib/period.ts`
+- Regenerate: `frontend/src/graphql/generated/graphql.ts`
+- Test: `frontend/src/graphql/generated/query-keys.test.ts` (append),
+  `frontend/src/lib/period.test.ts` (append)
 
 **Interfaces:**
-- Consumes: `apps/backend/schema.graphql` as committed by Task 3.
+- Consumes: `backend/schema.graphql` as committed by Task 3.
 - Produces, for Tasks 5–8:
   - `useSummaryQuery(variables: SummaryQueryVariables)` and
     `useSummaryQuery.getKey(variables)` from `@/graphql/generated/graphql`,
@@ -961,7 +961,7 @@ by operation name.
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `apps/frontend/src/graphql/generated/query-keys.test.ts` — and extend
+Append to `frontend/src/graphql/generated/query-keys.test.ts` — and extend
 its import:
 
 ```ts
@@ -987,7 +987,7 @@ describe('the summary query key', () => {
 });
 ```
 
-Append to `apps/frontend/src/lib/period.test.ts`:
+Append to `frontend/src/lib/period.test.ts`:
 
 ```ts
 describe('currentPeriod', () => {
@@ -1037,7 +1037,7 @@ Expected: FAIL — `useSummaryQuery` and `currentPeriod` are not exported.
 
 - [ ] **Step 3: Write the operation, the field and the helper**
 
-Create `apps/frontend/src/graphql/operations/summary.graphql`:
+Create `frontend/src/graphql/operations/summary.graphql`:
 
 ```graphql
 # Named `Summary` deliberately: TransactionDialog.tsx and
@@ -1053,7 +1053,7 @@ query Summary($month: Int!, $year: Int!) {
 }
 ```
 
-Modify `apps/frontend/src/graphql/operations/categories.graphql` — replace the
+Modify `frontend/src/graphql/operations/categories.graphql` — replace the
 leading comment and add the field:
 
 ```graphql
@@ -1075,7 +1075,7 @@ query Categories {
 }
 ```
 
-Append to `apps/frontend/src/lib/period.ts`:
+Append to `frontend/src/lib/period.ts`:
 
 ```ts
 /**
@@ -1117,7 +1117,7 @@ name is what is wrong.
 - [ ] **Step 5: Gate and commit**
 
 ```bash
-git add apps/frontend/src/graphql apps/frontend/src/lib/period.ts apps/frontend/src/lib/period.test.ts
+git add frontend/src/graphql frontend/src/lib/period.ts frontend/src/lib/period.test.ts
 rtk proxy "npm run codegen:check -w @financy/frontend"
 rtk proxy "npm test -w @financy/frontend"
 rtk proxy "npm run typecheck -w @financy/frontend"
@@ -1134,8 +1134,8 @@ The full frontend suite is run here because adding `totalAmount` to the shared
 ### Task 5: The dashboard screen and its three stat cards
 
 **Files:**
-- Create: `apps/frontend/src/features/dashboard/DashboardPage.tsx`
-- Test: `apps/frontend/src/features/dashboard/DashboardPage.test.tsx`
+- Create: `frontend/src/features/dashboard/DashboardPage.tsx`
+- Test: `frontend/src/features/dashboard/DashboardPage.test.tsx`
 
 **Interfaces:**
 - Consumes: `useSummaryQuery`, `currentPeriod`, `centsToDisplay`,
@@ -1163,7 +1163,7 @@ expense; zero renders as plain `R$ 0,00`, which is what the table asks for.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/frontend/src/features/dashboard/DashboardPage.test.tsx`:
+Create `frontend/src/features/dashboard/DashboardPage.test.tsx`:
 
 ```tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1292,7 +1292,7 @@ Expected: FAIL — `Failed to resolve import "./DashboardPage"`.
 
 - [ ] **Step 3: Write the screen**
 
-Create `apps/frontend/src/features/dashboard/DashboardPage.tsx`:
+Create `frontend/src/features/dashboard/DashboardPage.tsx`:
 
 ```tsx
 import { useState } from 'react';
@@ -1377,7 +1377,7 @@ Expected: PASS, 6 tests.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/dashboard
+git add frontend/src/features/dashboard
 git commit -m "feat(frontend): render the dashboard stat cards from the summary query"
 ```
 
@@ -1386,8 +1386,8 @@ git commit -m "feat(frontend): render the dashboard stat cards from the summary 
 ### Task 6: The "Transações recentes" panel
 
 **Files:**
-- Create: `apps/frontend/src/features/dashboard/RecentTransactionsPanel.tsx`
-- Test: `apps/frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx`
+- Create: `frontend/src/features/dashboard/RecentTransactionsPanel.tsx`
+- Test: `frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx`
 
 **Interfaces:**
 - Consumes: `useTransactionsQuery` (existing operation, unchanged),
@@ -1421,7 +1421,7 @@ already records that deviation.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx`:
+Create `frontend/src/features/dashboard/RecentTransactionsPanel.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -1596,7 +1596,7 @@ Expected: FAIL — `Failed to resolve import "./RecentTransactionsPanel"`.
 
 - [ ] **Step 3: Write the panel**
 
-Create `apps/frontend/src/features/dashboard/RecentTransactionsPanel.tsx`:
+Create `frontend/src/features/dashboard/RecentTransactionsPanel.tsx`:
 
 ```tsx
 import { Button } from '@/components/ui/Button';
@@ -1740,7 +1740,7 @@ Expected: PASS, 10 tests.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/dashboard
+git add frontend/src/features/dashboard
 git commit -m "feat(frontend): add the recent transactions dashboard panel"
 ```
 
@@ -1749,8 +1749,8 @@ git commit -m "feat(frontend): add the recent transactions dashboard panel"
 ### Task 7: The "Categorias" panel
 
 **Files:**
-- Create: `apps/frontend/src/features/dashboard/CategoriesPanel.tsx`
-- Test: `apps/frontend/src/features/dashboard/CategoriesPanel.test.tsx`
+- Create: `frontend/src/features/dashboard/CategoriesPanel.tsx`
+- Test: `frontend/src/features/dashboard/CategoriesPanel.test.tsx`
 
 **Interfaces:**
 - Consumes: `useCategoriesQuery` (now selecting `totalAmount`, from Task 4),
@@ -1773,7 +1773,7 @@ The item count copy is `1 item` / `N itens`, matching `CategoryCard.tsx:65`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/frontend/src/features/dashboard/CategoriesPanel.test.tsx`:
+Create `frontend/src/features/dashboard/CategoriesPanel.test.tsx`:
 
 ```tsx
 import { describe, expect, it } from 'vitest';
@@ -1913,7 +1913,7 @@ Expected: FAIL — `Failed to resolve import "./CategoriesPanel"`.
 
 - [ ] **Step 3: Write the panel**
 
-Create `apps/frontend/src/features/dashboard/CategoriesPanel.tsx`:
+Create `frontend/src/features/dashboard/CategoriesPanel.tsx`:
 
 ```tsx
 import { Card } from '@/components/ui/Card';
@@ -2028,7 +2028,7 @@ Expected: PASS, 7 tests.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/dashboard
+git add frontend/src/features/dashboard
 git commit -m "feat(frontend): add the categories dashboard panel"
 ```
 
@@ -2037,10 +2037,10 @@ git commit -m "feat(frontend): add the categories dashboard panel"
 ### Task 8: Compose the screen, mount the route, and prove the invalidation
 
 **Files:**
-- Modify: `apps/frontend/src/features/dashboard/DashboardPage.tsx`
-- Modify: `apps/frontend/src/routes.tsx`
-- Modify: `apps/frontend/src/routes.test.tsx`
-- Test: `apps/frontend/src/features/dashboard/DashboardPage.test.tsx` (append)
+- Modify: `frontend/src/features/dashboard/DashboardPage.tsx`
+- Modify: `frontend/src/routes.tsx`
+- Modify: `frontend/src/routes.test.tsx`
+- Test: `frontend/src/features/dashboard/DashboardPage.test.tsx` (append)
 
 **Interfaces:**
 - Consumes: `RecentTransactionsPanel` (Task 6), `CategoriesPanel` (Task 7),
@@ -2063,7 +2063,7 @@ inside `signedIn()` are still overridden by any later `server.use` in the
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `apps/frontend/src/features/dashboard/DashboardPage.test.tsx`. Extend
+Append to `frontend/src/features/dashboard/DashboardPage.test.tsx`. Extend
 its `beforeEach` so all three sections are mocked for the composition tests:
 
 ```tsx
@@ -2200,7 +2200,7 @@ field labels and the submit button's text**, and use those. The names above
 differ, the test uses the dialog's real labels — `TransactionDialog.test.tsx`
 already drives this form and is the reference.
 
-Modify `apps/frontend/src/routes.test.tsx` — extend `signedIn()`:
+Modify `frontend/src/routes.test.tsx` — extend `signedIn()`:
 
 ```tsx
 function signedIn() {
@@ -2238,7 +2238,7 @@ Record what the fourth test's failure actually says: it is the RED for the
 
 - [ ] **Step 3: Compose the screen and mount the route**
 
-In `apps/frontend/src/features/dashboard/DashboardPage.tsx`, add the imports:
+In `frontend/src/features/dashboard/DashboardPage.tsx`, add the imports:
 
 ```tsx
 import { TransactionDialog } from '@/features/transactions/TransactionDialog';
@@ -2273,7 +2273,7 @@ and insert, between the stat-card block and `</PageShell>`:
       )}
 ```
 
-In `apps/frontend/src/routes.tsx`: delete the `Placeholder` component and the
+In `frontend/src/routes.tsx`: delete the `Placeholder` component and the
 now-unused `PageShell` import, add
 `import { DashboardPage } from '@/features/dashboard/DashboardPage';`, and
 replace the placeholder in `RootRoute`:
@@ -2302,7 +2302,7 @@ the right reason (it counted calls going up, not a mock that never fired).
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/dashboard apps/frontend/src/routes.tsx apps/frontend/src/routes.test.tsx
+git add frontend/src/features/dashboard frontend/src/routes.tsx frontend/src/routes.test.tsx
 git commit -m "feat(frontend): serve the dashboard at the root route"
 ```
 
@@ -2311,9 +2311,9 @@ git commit -m "feat(frontend): serve the dashboard at the root route"
 ### Task 9: Re-base the seed onto relative dates
 
 **Files:**
-- Create: `apps/backend/prisma/seed-dates.ts`
-- Create: `apps/backend/tests/unit/seed-dates.test.ts`
-- Modify: `apps/backend/prisma/seed.ts`
+- Create: `backend/prisma/seed-dates.ts`
+- Create: `backend/tests/unit/seed-dates.test.ts`
+- Modify: `backend/prisma/seed.ts`
 
 **Interfaces:**
 - Produces: `export function monthsBack(monthsAgo: number, day: number, now?: Date): Date`
@@ -2345,7 +2345,7 @@ for the seed's local midnight to fall outside the UTC window `summary` uses.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `apps/backend/tests/unit/seed-dates.test.ts`:
+Create `backend/tests/unit/seed-dates.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -2409,7 +2409,7 @@ Expected: FAIL — `Cannot find module '.../prisma/seed-dates.js'`.
 
 - [ ] **Step 3: Write the helper and re-base the table**
 
-Create `apps/backend/prisma/seed-dates.ts`:
+Create `backend/prisma/seed-dates.ts`:
 
 ```ts
 /**
@@ -2433,7 +2433,7 @@ export function monthsBack(
 }
 ```
 
-Modify `apps/backend/prisma/seed.ts`:
+Modify `backend/prisma/seed.ts`:
 
 Replace the `TRANSACTIONS` comment and table. Every row keeps its description,
 amount, type and category; `day: 'YYYY-MM-DD'` becomes `monthsAgo` + `day`. The
@@ -2526,7 +2526,7 @@ Verify the spread lands where it should — this is the check that the table abo
 is right, and it is not something a unit test on `monthsBack` can make:
 
 ```bash
-rtk proxy "cd apps/backend && npx tsx -e \"import { prisma } from './src/shared/prisma.js'; const rows = await prisma.transaction.findMany({ select: { date: true } }); const months = new Map(); for (const r of rows) { const k = r.date.getFullYear() + '-' + String(r.date.getMonth() + 1).padStart(2, '0'); months.set(k, (months.get(k) ?? 0) + 1); } console.log([...months].sort()); console.log('distinct months', months.size, 'rows', rows.length); await prisma.\\\$disconnect();\""
+rtk proxy "cd backend && npx tsx -e \"import { prisma } from './src/shared/prisma.js'; const rows = await prisma.transaction.findMany({ select: { date: true } }); const months = new Map(); for (const r of rows) { const k = r.date.getFullYear() + '-' + String(r.date.getMonth() + 1).padStart(2, '0'); months.set(k, (months.get(k) ?? 0) + 1); } console.log([...months].sort()); console.log('distinct months', months.size, 'rows', rows.length); await prisma.\\\$disconnect();\""
 ```
 
 Expected: `distinct months 12 rows 27`, with the newest month carrying 6 rows.
@@ -2541,7 +2541,7 @@ rtk proxy "npm test -w @financy/backend"
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/backend/prisma/seed.ts apps/backend/prisma/seed-dates.ts apps/backend/tests/unit/seed-dates.test.ts
+git add backend/prisma/seed.ts backend/prisma/seed-dates.ts backend/tests/unit/seed-dates.test.ts
 git commit -m "fix(backend): seed twelve months of transactions relative to the run date"
 ```
 
@@ -2676,7 +2676,7 @@ rtk proxy "npm run format:check"
 git add -A
 rtk proxy "npm run codegen:check -w @financy/backend"
 rtk proxy "npm run codegen:check -w @financy/frontend"
-rtk proxy "git diff package.json apps/backend/package.json apps/frontend/package.json"
+rtk proxy "git diff package.json backend/package.json frontend/package.json"
 git commit -m "docs: correct the specs and record the slice 5 outcome"
 ```
 
@@ -2707,7 +2707,7 @@ Check every line before opening the pull request.
 - [ ] `npm test` per workspace, `typecheck`, `lint`, `format:check` and
       `codegen:check` for both workspaces, all run through `rtk proxy` and all
       green, with the numbers recorded in `slice-5-outcome.md`.
-- [ ] `git diff package.json apps/*/package.json` is empty.
+- [ ] `git diff package.json backend, frontend/package.json` is empty.
 - [ ] The specs describe what was built (Task 10).
 
 ## Out of scope

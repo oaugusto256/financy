@@ -10,5 +10,5 @@ version: 2
 # SQLite file on the backend and against mocked responses on the frontend.
 secret:
   ignored-paths:
-    - apps/backend/tests/helpers/credentials.ts
-    - apps/frontend/src/test/credentials.ts
+    - backend/tests/helpers/credentials.ts
+    - frontend/src/test/credentials.ts

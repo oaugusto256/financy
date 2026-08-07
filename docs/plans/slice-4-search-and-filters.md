@@ -26,7 +26,7 @@ Every task's requirements implicitly include this section.
 - **Interface language is Brazilian Portuguese. Code, comments, commit messages
   and PR descriptions are English.**
 - TypeScript `strict: true`. **No `any`** — lint rejects it outside `generated/`.
-- Colors come from the theme in `apps/frontend/src/index.css`. No color literal
+- Colors come from the theme in `frontend/src/index.css`. No color literal
   anywhere else.
 - **Tailwind never sees a class name built at runtime.** No template string, no
   `.replace()`, no interpolation — spell the class out and compose with `cn()`.
@@ -51,7 +51,7 @@ Every task's requirements implicitly include this section.
   comes from a local run.
 - Module SDL is a `/* GraphQL */`-tagged template literal in `schema.ts`, never
   a `.graphql` file.
-- `apps/backend/schema.graphql` is generated, committed, and listed in
+- `backend/schema.graphql` is generated, committed, and listed in
   `.prettierignore`. Never hand-edit it and never format it.
 - **zod 4**: `z.int()`, `z.coerce.date()`, `z.email()`. `required_error` is
   silently ignored — pass messages positionally, through `.min`/`.max`, or as
@@ -119,30 +119,30 @@ else stays on `slice-3-outcome.md`'s list for slice 5.
 
 | File | Change |
 |---|---|
-| `apps/backend/src/modules/transaction/validation.ts` | `transactionFilterSchema`; `filter` added to `transactionPageSchema`. |
-| `apps/backend/src/modules/transaction/service.ts` | `transactionWhere()`; `listTransactions` uses it for both queries. |
-| `apps/backend/src/modules/transaction/schema.ts` | `input TransactionFilter`, `filter` argument on `transactions`. |
-| `apps/backend/schema.graphql` | Regenerated (never hand-edited). |
-| `apps/backend/src/graphql/generated/resolvers.ts` | Regenerated. |
-| `apps/backend/tests/unit/transaction-validation.test.ts` | Filter schema cases + the trim carry-over. |
-| `apps/backend/tests/integration/transaction.test.ts` | Filter over real HTTP. |
+| `backend/src/modules/transaction/validation.ts` | `transactionFilterSchema`; `filter` added to `transactionPageSchema`. |
+| `backend/src/modules/transaction/service.ts` | `transactionWhere()`; `listTransactions` uses it for both queries. |
+| `backend/src/modules/transaction/schema.ts` | `input TransactionFilter`, `filter` argument on `transactions`. |
+| `backend/schema.graphql` | Regenerated (never hand-edited). |
+| `backend/src/graphql/generated/resolvers.ts` | Regenerated. |
+| `backend/tests/unit/transaction-validation.test.ts` | Filter schema cases + the trim carry-over. |
+| `backend/tests/integration/transaction.test.ts` | Filter over real HTTP. |
 
 **Backend — create**
 
 | File | Responsibility |
 |---|---|
-| `apps/backend/tests/integration/transaction-filter.test.ts` | Every filter through `listTransactions`, including ownership and the count/page agreement. |
+| `backend/tests/integration/transaction-filter.test.ts` | Every filter through `listTransactions`, including ownership and the count/page agreement. |
 
 **Frontend — create**
 
 | File | Responsibility |
 |---|---|
-| `apps/frontend/src/lib/period.ts` | The thirteen period options and `yyyy-MM` → local month range. |
-| `apps/frontend/src/lib/period.test.ts` | Its unit tests. |
-| `apps/frontend/src/features/transactions/useTransactionFilters.ts` | The query string is the state: read, write, debounce, reset, clear. |
-| `apps/frontend/src/features/transactions/useTransactionFilters.test.tsx` | Its tests, through a probe component. |
-| `apps/frontend/src/features/transactions/TransactionFilters.tsx` | The bar. Presentational: props in, `onChange` out. |
-| `apps/frontend/src/features/transactions/TransactionFilters.test.tsx` | Its tests. |
+| `frontend/src/lib/period.ts` | The thirteen period options and `yyyy-MM` → local month range. |
+| `frontend/src/lib/period.test.ts` | Its unit tests. |
+| `frontend/src/features/transactions/useTransactionFilters.ts` | The query string is the state: read, write, debounce, reset, clear. |
+| `frontend/src/features/transactions/useTransactionFilters.test.tsx` | Its tests, through a probe component. |
+| `frontend/src/features/transactions/TransactionFilters.tsx` | The bar. Presentational: props in, `onChange` out. |
+| `frontend/src/features/transactions/TransactionFilters.test.tsx` | Its tests. |
 
 **Frontend — modify:** `src/graphql/operations/transactions.graphql` (the
 `$filter` variable), `src/graphql/generated/graphql.ts` (regenerated),
@@ -160,8 +160,8 @@ period option, §12 the deviation). **Create:** `docs/plans/slice-4-outcome.md`,
 ## Task 1: The filter's validation schema
 
 **Files:**
-- Modify: `apps/backend/src/modules/transaction/validation.ts`
-- Test: `apps/backend/tests/unit/transaction-validation.test.ts`
+- Modify: `backend/src/modules/transaction/validation.ts`
+- Test: `backend/tests/unit/transaction-validation.test.ts`
 
 **Interfaces:**
 - Consumes: nothing from this slice.
@@ -172,7 +172,7 @@ period option, §12 the deviation). **Create:** `docs/plans/slice-4-outcome.md`,
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `apps/backend/tests/unit/transaction-validation.test.ts`:
+Append to `backend/tests/unit/transaction-validation.test.ts`:
 
 ```ts
 import {
@@ -327,7 +327,7 @@ Expected: FAIL — `transactionFilterSchema` is not exported.
 
 - [ ] **Step 3: Implement the schema**
 
-In `apps/backend/src/modules/transaction/validation.ts`, above
+In `backend/src/modules/transaction/validation.ts`, above
 `transactionPageSchema`:
 
 ```ts
@@ -418,7 +418,7 @@ Temporarily replace `dateBound` with a bare
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/backend/src/modules/transaction/validation.ts apps/backend/tests/unit/transaction-validation.test.ts
+git add backend/src/modules/transaction/validation.ts backend/tests/unit/transaction-validation.test.ts
 git commit -m "feat(backend): validate the transaction filter before it reaches Prisma"
 ```
 
@@ -427,8 +427,8 @@ git commit -m "feat(backend): validate the transaction filter before it reaches 
 ## Task 2: The filter in the where clause
 
 **Files:**
-- Modify: `apps/backend/src/modules/transaction/service.ts`
-- Create: `apps/backend/tests/integration/transaction-filter.test.ts`
+- Modify: `backend/src/modules/transaction/service.ts`
+- Create: `backend/tests/integration/transaction-filter.test.ts`
 
 **Interfaces:**
 - Consumes: `transactionPageSchema`, `TransactionFilterArgs` (Task 1).
@@ -437,7 +437,7 @@ git commit -m "feat(backend): validate the transaction filter before it reaches 
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `apps/backend/tests/integration/transaction-filter.test.ts`:
+Create `backend/tests/integration/transaction-filter.test.ts`:
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -711,7 +711,7 @@ Expected: FAIL — every filtered case returns the unfiltered set.
 
 - [ ] **Step 3: Implement the where clause**
 
-In `apps/backend/src/modules/transaction/service.ts`, add the import and the
+In `backend/src/modules/transaction/service.ts`, add the import and the
 builder, then use it in `listTransactions`:
 
 ```ts
@@ -805,7 +805,7 @@ the filtered set, not the whole one" must fail. Revert.
 rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/backend/src/modules/transaction/service.ts apps/backend/tests/integration/transaction-filter.test.ts
+git add backend/src/modules/transaction/service.ts backend/tests/integration/transaction-filter.test.ts
 git commit -m "feat(backend): filter the transaction list in the where clause"
 ```
 
@@ -814,10 +814,10 @@ git commit -m "feat(backend): filter the transaction list in the where clause"
 ## Task 3: `TransactionFilter` in the schema
 
 **Files:**
-- Modify: `apps/backend/src/modules/transaction/schema.ts`
-- Modify (generated, by running codegen): `apps/backend/schema.graphql`,
-  `apps/backend/src/graphql/generated/resolvers.ts`
-- Test: `apps/backend/tests/integration/transaction.test.ts`
+- Modify: `backend/src/modules/transaction/schema.ts`
+- Modify (generated, by running codegen): `backend/schema.graphql`,
+  `backend/src/graphql/generated/resolvers.ts`
+- Test: `backend/tests/integration/transaction.test.ts`
 
 **Interfaces:**
 - Consumes: `listTransactions` honouring `args.filter` (Task 2).
@@ -829,7 +829,7 @@ The resolver is not modified: it already forwards its whole `args` object.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `apps/backend/tests/integration/transaction.test.ts`, add a second query
+In `backend/tests/integration/transaction.test.ts`, add a second query
 document beside the existing `TRANSACTIONS` constant:
 
 ```ts
@@ -954,7 +954,7 @@ Expected: FAIL — `Unknown type "TransactionFilter"`.
 
 - [ ] **Step 3: Add the input to the module SDL**
 
-In `apps/backend/src/modules/transaction/schema.ts`, add the input after
+In `backend/src/modules/transaction/schema.ts`, add the input after
 `UpdateTransactionInput` and replace the `extend type Query` block, deleting the
 "No filter argument" comment slice 3 left there:
 
@@ -1003,7 +1003,7 @@ rtk proxy "npm run typecheck -w @financy/backend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
 rtk proxy "npm run codegen:check -w @financy/backend"
-git add apps/backend/src/modules/transaction/schema.ts apps/backend/schema.graphql apps/backend/src/graphql/generated apps/backend/tests/integration/transaction.test.ts
+git add backend/src/modules/transaction/schema.ts backend/schema.graphql backend/src/graphql/generated backend/tests/integration/transaction.test.ts
 git commit -m "feat(backend): expose TransactionFilter on the transactions query"
 ```
 
@@ -1012,8 +1012,8 @@ git commit -m "feat(backend): expose TransactionFilter on the transactions query
 ## Task 4: The period list
 
 **Files:**
-- Create: `apps/frontend/src/lib/period.ts`
-- Test: `apps/frontend/src/lib/period.test.ts`
+- Create: `frontend/src/lib/period.ts`
+- Test: `frontend/src/lib/period.test.ts`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1029,7 +1029,7 @@ git commit -m "feat(backend): expose TransactionFilter on the transactions query
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `apps/frontend/src/lib/period.test.ts`:
+Create `frontend/src/lib/period.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -1115,7 +1115,7 @@ Expected: FAIL — cannot resolve `@/lib/period`.
 
 - [ ] **Step 3: Implement it**
 
-Create `apps/frontend/src/lib/period.ts`:
+Create `frontend/src/lib/period.ts`:
 
 ```ts
 import {
@@ -1211,7 +1211,7 @@ fail. Revert.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/lib/period.ts apps/frontend/src/lib/period.test.ts
+git add frontend/src/lib/period.ts frontend/src/lib/period.test.ts
 git commit -m "feat(frontend): add the period list and its month range"
 ```
 
@@ -1220,19 +1220,19 @@ git commit -m "feat(frontend): add the period list and its month range"
 ## Task 5: The filter variable on the operation
 
 **Files:**
-- Modify: `apps/frontend/src/graphql/operations/transactions.graphql`
-- Modify (generated): `apps/frontend/src/graphql/generated/graphql.ts`
-- Test: `apps/frontend/src/graphql/operations/transactions.test.ts`
+- Modify: `frontend/src/graphql/operations/transactions.graphql`
+- Modify (generated): `frontend/src/graphql/generated/graphql.ts`
+- Test: `frontend/src/graphql/operations/transactions.test.ts`
 
 **Interfaces:**
-- Consumes: the committed `apps/backend/schema.graphql` from Task 3.
+- Consumes: the committed `backend/schema.graphql` from Task 3.
 - Produces: `useTransactionsQuery({ filter, limit, offset })` and the generated
   `TransactionFilter` input type, imported by Tasks 6 and 8 as
   `import type { TransactionFilter } from '@/graphql/generated/graphql'`.
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `apps/frontend/src/graphql/operations/transactions.test.ts`:
+Append to `frontend/src/graphql/operations/transactions.test.ts`:
 
 ```ts
   it('still starts with the bare literal when a filter is present', () => {
@@ -1275,7 +1275,7 @@ call does not typecheck and vitest reports the transform error.
 
 - [ ] **Step 3: Add the variable to the document**
 
-In `apps/frontend/src/graphql/operations/transactions.graphql`, replace the
+In `frontend/src/graphql/operations/transactions.graphql`, replace the
 query's signature, leaving the selection set and the leading comment as they
 are:
 
@@ -1302,7 +1302,7 @@ rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
 rtk proxy "npm run codegen:check -w @financy/frontend"
-git add apps/frontend/src/graphql/operations apps/frontend/src/graphql/generated
+git add frontend/src/graphql/operations frontend/src/graphql/generated
 git commit -m "feat(frontend): send a filter with the transactions query"
 ```
 
@@ -1311,8 +1311,8 @@ git commit -m "feat(frontend): send a filter with the transactions query"
 ## Task 6: The query string is the filter state
 
 **Files:**
-- Create: `apps/frontend/src/features/transactions/useTransactionFilters.ts`
-- Test: `apps/frontend/src/features/transactions/useTransactionFilters.test.tsx`
+- Create: `frontend/src/features/transactions/useTransactionFilters.ts`
+- Test: `frontend/src/features/transactions/useTransactionFilters.test.tsx`
 
 **Interfaces:**
 - Consumes: `ALL_PERIODS`, `periodRange` (Task 4); `TransactionFilter` (Task 5).
@@ -1346,7 +1346,7 @@ git commit -m "feat(frontend): send a filter with the transactions query"
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `apps/frontend/src/features/transactions/useTransactionFilters.test.tsx`:
+Create `frontend/src/features/transactions/useTransactionFilters.test.tsx`:
 
 ```tsx
 import { describe, expect, it } from 'vitest';
@@ -1532,7 +1532,7 @@ Expected: FAIL — the module does not exist.
 
 - [ ] **Step 3: Implement the hook**
 
-Create `apps/frontend/src/features/transactions/useTransactionFilters.ts`:
+Create `frontend/src/features/transactions/useTransactionFilters.ts`:
 
 ```ts
 import { useEffect, useState } from 'react';
@@ -1702,7 +1702,7 @@ Expected: PASS, all twelve cases.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/transactions/useTransactionFilters.ts apps/frontend/src/features/transactions/useTransactionFilters.test.tsx
+git add frontend/src/features/transactions/useTransactionFilters.ts frontend/src/features/transactions/useTransactionFilters.test.tsx
 git commit -m "feat(frontend): keep the transaction filters in the query string"
 ```
 
@@ -1711,8 +1711,8 @@ git commit -m "feat(frontend): keep the transaction filters in the query string"
 ## Task 7: The filter bar
 
 **Files:**
-- Create: `apps/frontend/src/features/transactions/TransactionFilters.tsx`
-- Test: `apps/frontend/src/features/transactions/TransactionFilters.test.tsx`
+- Create: `frontend/src/features/transactions/TransactionFilters.tsx`
+- Test: `frontend/src/features/transactions/TransactionFilters.test.tsx`
 
 **Interfaces:**
 - Consumes: `FilterValues` (Task 6), `periodOptions` (Task 4), the existing
@@ -1740,7 +1740,7 @@ git commit -m "feat(frontend): keep the transaction filters in the query string"
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `apps/frontend/src/features/transactions/TransactionFilters.test.tsx`:
+Create `frontend/src/features/transactions/TransactionFilters.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -1885,7 +1885,7 @@ Expected: FAIL — the module does not exist.
 
 - [ ] **Step 3: Implement the bar**
 
-Create `apps/frontend/src/features/transactions/TransactionFilters.tsx`:
+Create `frontend/src/features/transactions/TransactionFilters.tsx`:
 
 ```tsx
 import { useMemo } from 'react';
@@ -2008,7 +2008,7 @@ fail with the select reading `''`. Restore.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/transactions/TransactionFilters.tsx apps/frontend/src/features/transactions/TransactionFilters.test.tsx
+git add frontend/src/features/transactions/TransactionFilters.tsx frontend/src/features/transactions/TransactionFilters.test.tsx
 git commit -m "feat(frontend): add the transactions filter bar"
 ```
 
@@ -2017,8 +2017,8 @@ git commit -m "feat(frontend): add the transactions filter bar"
 ## Task 8: The filtered transactions page
 
 **Files:**
-- Modify: `apps/frontend/src/features/transactions/TransactionsPage.tsx`
-- Test: `apps/frontend/src/features/transactions/TransactionsPage.test.tsx`
+- Modify: `frontend/src/features/transactions/TransactionsPage.tsx`
+- Test: `frontend/src/features/transactions/TransactionsPage.test.tsx`
 
 **Interfaces:**
 - Consumes: `useTransactionFilters` (Task 6), `TransactionFilters` (Task 7),
@@ -2028,7 +2028,7 @@ git commit -m "feat(frontend): add the transactions filter bar"
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `apps/frontend/src/features/transactions/TransactionsPage.test.tsx`. The
+Add to `frontend/src/features/transactions/TransactionsPage.test.tsx`. The
 file's existing `beforeEach` already mocks `Me` and `Categories`; the
 `Categories` mock now matters, because the bar queries it unconditionally.
 
@@ -2297,7 +2297,7 @@ Expected: FAIL — no `Buscar` field on the page.
 
 - [ ] **Step 3: Wire the page**
 
-In `apps/frontend/src/features/transactions/TransactionsPage.tsx`:
+In `frontend/src/features/transactions/TransactionsPage.tsx`:
 
 Replace the `useSearchParams` block and the page derivation at the top of the
 component with the hook, and add the categories query:
@@ -2412,7 +2412,7 @@ must fail. Revert.
 rtk proxy "npm run typecheck -w @financy/frontend"
 rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
-git add apps/frontend/src/features/transactions/TransactionsPage.tsx apps/frontend/src/features/transactions/TransactionsPage.test.tsx
+git add frontend/src/features/transactions/TransactionsPage.tsx frontend/src/features/transactions/TransactionsPage.test.tsx
 git commit -m "feat(frontend): filter the transactions page from the URL"
 ```
 
@@ -2486,7 +2486,7 @@ rtk proxy "npm run lint"
 rtk proxy "npm run format:check"
 rtk proxy "npm run codegen:check -w @financy/backend"
 rtk proxy "npm run codegen:check -w @financy/frontend"
-rtk proxy "git diff package.json apps/backend/package.json apps/frontend/package.json"
+rtk proxy "git diff package.json backend/package.json frontend/package.json"
 ```
 
 Run the two suites per workspace, not as one `npm test`: on a loaded machine a
