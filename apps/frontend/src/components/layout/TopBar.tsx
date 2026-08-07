@@ -1,6 +1,7 @@
 import { NavLink, Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { Avatar } from '@/components/ui/Avatar';
+import { Logo } from '@/components/ui/Logo';
 
 const SECTIONS = [
   { to: '/', label: 'Dashboard' },
@@ -16,8 +17,9 @@ export function TopBar({ userName }: TopBarProps) {
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" className="text-lg font-bold text-brand-base">
-          Financy
+        {/* The logo names itself, so the link needs no label of its own. */}
+        <Link to="/">
+          <Logo className="h-7" />
         </Link>
 
         <nav aria-label="Principal" className="flex items-center gap-6">

@@ -48,6 +48,12 @@ export function digitsToCents(raw: string): number {
 export function formatSignedAmount(
   cents: number,
   type: 'INCOME' | 'EXPENSE',
+  // The dashboard panel sets the sign off from the figure; the ledger table
+  // keeps it tight. An option here rather than string surgery at the call site,
+  // so there is still one place that decides what a signed amount looks like.
+  { spaced = false }: { spaced?: boolean } = {},
 ): string {
-  return `${type === 'INCOME' ? '+' : '-'}${centsToDisplay(cents)}`;
+  const sign = type === 'INCOME' ? '+' : '-';
+
+  return `${sign}${spaced ? ' ' : ''}${centsToDisplay(cents)}`;
 }

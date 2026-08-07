@@ -25,7 +25,7 @@ the backend's schema, so the schema has to exist first.
 | 2 | Categories | `Category`, full CRUD, ownership enforcement | Categories page, card grid, category dialog, delete confirmation |
 | 3 | Transactions | `Transaction`, full CRUD, offset pagination, category unlink on delete | Transactions page, table, pagination, transaction dialog, delete confirmation |
 | 4 | Search and filters | `TransactionFilter` | Filter bar, URL-backed filter state |
-| 5 | Dashboard | `summary`, `categoryStats`, per-category aggregates, DataLoader | Dashboard stat cards and panels |
+| 5 | Dashboard | `summary` (`categoryStats`, the per-category aggregates and the DataLoaders shipped in slices 2 and 3) | Dashboard stat cards and panels |
 
 ### What each slice delivers
 

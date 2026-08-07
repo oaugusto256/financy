@@ -121,7 +121,7 @@ export type UpdateProfileMutation = { updateProfile: { id: string, name: string,
 export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CategoriesQuery = { categories: Array<{ id: string, name: string, description: string | null, icon: CategoryIcon, color: CategoryColor, transactionCount: number }> };
+export type CategoriesQuery = { categories: Array<{ id: string, name: string, description: string | null, icon: CategoryIcon, color: CategoryColor, transactionCount: number, totalAmount: number }> };
 
 export type CategoryStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -149,6 +149,14 @@ export type DeleteCategoryMutationVariables = Exact<{
 
 
 export type DeleteCategoryMutation = { deleteCategory: boolean };
+
+export type SummaryQueryVariables = Exact<{
+  month: number;
+  year: number;
+}>;
+
+
+export type SummaryQuery = { summary: { totalBalance: number, monthIncome: number, monthExpense: number } };
 
 export type TransactionsQueryVariables = Exact<{
   filter?: TransactionFilter | null | undefined;
@@ -329,6 +337,7 @@ export const CategoriesDocument = new TypedDocumentString(`
     icon
     color
     transactionCount
+    totalAmount
   }
 }
     `);
@@ -459,6 +468,37 @@ export const useDeleteCategoryMutation = <
 
 
 useDeleteCategoryMutation.fetcher = (variables: DeleteCategoryMutationVariables, options?: RequestInit['headers']) => fetcher<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument, variables, options);
+
+export const SummaryDocument = new TypedDocumentString(`
+    query Summary($month: Int!, $year: Int!) {
+  summary(month: $month, year: $year) {
+    totalBalance
+    monthIncome
+    monthExpense
+  }
+}
+    `);
+
+export const useSummaryQuery = <
+      TData = SummaryQuery,
+      TError = unknown
+    >(
+      variables: SummaryQueryVariables,
+      options?: Omit<UseQueryOptions<SummaryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SummaryQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<SummaryQuery, TError, TData>(
+      {
+    queryKey: ['Summary', variables],
+    queryFn: fetcher<SummaryQuery, SummaryQueryVariables>(SummaryDocument, variables),
+    ...options
+  }
+    )};
+
+useSummaryQuery.getKey = (variables: SummaryQueryVariables) => ['Summary', variables];
+
+
+useSummaryQuery.fetcher = (variables: SummaryQueryVariables, options?: RequestInit['headers']) => fetcher<SummaryQuery, SummaryQueryVariables>(SummaryDocument, variables, options);
 
 export const TransactionsDocument = new TypedDocumentString(`
     query Transactions($filter: TransactionFilter, $limit: Int, $offset: Int) {

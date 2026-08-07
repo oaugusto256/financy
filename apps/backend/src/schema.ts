@@ -6,6 +6,8 @@ import { categoryTypeDefs } from './modules/category/schema.js';
 import { categoryResolvers } from './modules/category/resolvers.js';
 import { transactionTypeDefs } from './modules/transaction/schema.js';
 import { transactionResolvers } from './modules/transaction/resolvers.js';
+import { summaryTypeDefs } from './modules/summary/schema.js';
+import { summaryResolvers } from './modules/summary/resolvers.js';
 
 // `Mutation` no longer needs a placeholder field: the category and
 // transaction modules each extend it with real fields.
@@ -24,6 +26,7 @@ export const typeDefs = [
   authTypeDefs,
   categoryTypeDefs,
   transactionTypeDefs,
+  summaryTypeDefs,
 ];
 
 // Explicitly typed: an inferred object type keeps `Category`'s `| undefined`
@@ -38,6 +41,7 @@ export const resolvers: Resolvers = {
     ...(authResolvers.Query ?? {}),
     ...(categoryResolvers.Query ?? {}),
     ...(transactionResolvers.Query ?? {}),
+    ...(summaryResolvers.Query ?? {}),
   },
 
   Mutation: {

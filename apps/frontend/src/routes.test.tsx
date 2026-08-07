@@ -9,6 +9,20 @@ import { AppRoutes } from './routes';
 function signedIn() {
   writeToken('token', true);
   server.use(api.query('Me', () => ok({ me: aUser })));
+  // The root route now renders the real dashboard, whose three sections all
+  // fetch. MSW is strict, so every one of them needs a handler; `server.use`
+  // prepends, so a later, more specific handler in a single test still wins.
+  server.use(
+    api.query('Summary', () =>
+      ok({ summary: { totalBalance: 0, monthIncome: 0, monthExpense: 0 } }),
+    ),
+  );
+  server.use(
+    api.query('Transactions', () =>
+      ok({ transactions: { items: [], totalCount: 0 } }),
+    ),
+  );
+  server.use(api.query('Categories', () => ok({ categories: [] })));
 }
 
 describe('routing', () => {
@@ -22,8 +36,14 @@ describe('routing', () => {
   it('serves the dashboard at / when signed in', async () => {
     signedIn();
     renderWithProviders(<AppRoutes />, { route: '/' });
+    // The dashboard has no page heading of its own, and the deleted
+    // placeholder rendered one, so the panels are what identifies the real
+    // DashboardPage.
     expect(
-      await screen.findByRole('heading', { name: 'Dashboard' }),
+      await screen.findByRole('region', { name: 'Transações recentes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Categorias' }),
     ).toBeInTheDocument();
   });
 
@@ -61,7 +81,7 @@ describe('routing', () => {
     signedIn();
     renderWithProviders(<AppRoutes />, { route: '/signup' });
     expect(
-      await screen.findByRole('heading', { name: 'Dashboard' }),
+      await screen.findByRole('region', { name: 'Transações recentes' }),
     ).toBeInTheDocument();
   });
 

@@ -84,6 +84,9 @@ type Query {
   categoryStats: CategoryStats!
   health: String!
   me: User!
+
+  """The month window is built in UTC. backend.md section 5."""
+  summary(month: Int!, year: Int!): Summary!
   transactions(filter: TransactionFilter, limit: Int = 10, offset: Int = 0): TransactionPage!
 }
 
@@ -96,6 +99,17 @@ input SignUpInput {
   email: String!
   name: String!
   password: String!
+}
+
+type Summary {
+  """Expense within the requested month, in cents, unsigned."""
+  monthExpense: Int!
+
+  """Income within the requested month, in cents."""
+  monthIncome: Int!
+
+  """All-time income minus expense, in cents. Can be negative."""
+  totalBalance: Int!
 }
 
 type Transaction {

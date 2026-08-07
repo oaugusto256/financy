@@ -2,25 +2,14 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RequireAnonymous } from '@/components/layout/RequireAnonymous';
 import { RequireAuth } from '@/components/layout/RequireAuth';
-import { PageShell } from '@/components/layout/PageShell';
 import { StyleGuide } from '@/pages/StyleGuide';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
 import { CategoriesPage } from '@/features/categories/CategoriesPage';
+import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { TransactionsPage } from '@/features/transactions/TransactionsPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { useSession } from '@/features/auth/useSession';
-
-// The dashboard placeholder, which slice 5 replaces.
-function Placeholder({ title }: { title: string }) {
-  return (
-    <PageShell title={title} subtitle="Em construção">
-      <p className="text-sm text-gray-500">
-        Esta página chega em uma fatia futura.
-      </p>
-    </PageShell>
-  );
-}
 
 /**
  * One path, two screens, as the requirements specify. This is the only route
@@ -35,7 +24,7 @@ function RootRoute() {
 
   return (
     <AppLayout>
-      <Placeholder title="Dashboard" />
+      <DashboardPage />
     </AppLayout>
   );
 }

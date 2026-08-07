@@ -1,10 +1,14 @@
 # Frontend Spec
 
-Status: approved, implemented through slice 4
-Last updated: 2026-08-06 (slice 4: section 5 states the period select's
-thirteen options and its "all" default, and section 12 gains two more
-entries — the thirteenth period option and the short filter-state parameter
-names)
+Status: approved, implemented through slice 5
+Last updated: 2026-08-07 (slice 5: section 5's Dashboard section states the
+per-section states, the query reuse for "Transações recentes" and the
+client-side sort and cap for "Categorias", and section 12 gains the UTC-vs-
+local month window entry; then the dashboard layout pass: no page heading, the
+two-thirds/one-third panel split, uppercase panel titles with chevron links,
+divided transaction rows, the recent-transaction row's columns and neutral
+amount, the footer button's green label, and the brand wordmark rendered as the
+`Logo` primitive)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
@@ -190,18 +194,43 @@ On success the user is signed in immediately with the returned token.
 
 ### Dashboard (`/`, signed in)
 
+No page title or subtitle: the stat cards and the two panel headers already say
+what the screen is.
+
 Three stat cards across the top: Saldo total, Receitas do mês, Despesas do mês —
 from `summary(month, year)` for the current month.
 
-Below, two panels side by side:
+Below, two panels side by side — "Transações recentes" over two thirds of the
+width and "Categorias" over the remaining third, stacking below `lg`. Both panel
+headers set their title in small uppercase, with the link to the full page
+alongside it carrying a trailing chevron. "Categorias" sits at its content
+height rather than stretching to match the taller panel beside it.
+
+Each of the three sections — the stat card row
+and the two panels — owns its own query, and its own loading, empty and error
+states, so a failure in one does not blank the others. The stat cards' empty
+state is `R$ 0,00` on all three cards rather than a separate branch: a new
+user's balance genuinely is zero, and a "no data yet" card could not be told
+apart from a real one.
 
 - **Transações recentes** — the five most recent transactions, each with its
   category icon badge, description, date, category tag, and signed amount with a
-  type arrow. A "Ver todas" link to `/transactions` and a "+ Nova transação"
-  footer button that opens the transaction dialog.
+  type arrow. It reuses the paginated `transactions` query at `limit: 5` rather
+  than a dedicated field: that query's default ordering is already
+  `date DESC, createdAt DESC`. Rows are separated by a divider running the full
+  width of the card, and the tag and the amount each sit in a fixed column so
+  they share an axis down the panel. The amount is rendered in the neutral text
+  colour with its sign set off from the figure ("+ R$ 4.250,00"); direction is
+  carried by the coloured arrow beside it, whose "Entrada"/"Saída" label is
+  present for screen readers but not drawn. A "Ver todas" link to
+  `/transactions` and a "Nova transação" footer button that opens the
+  transaction dialog, both present in every state. The footer button is
+  borderless and transparent with a plus icon and a green label — the card's own
+  divider already separates it from the rows.
 - **Categorias** — each category with its tag, item count and total amount, plus
-  a "Gerenciar" link to `/categories`. Sorted by total amount descending, capped
-  at five, because the panel is a summary and the full list has its own page.
+  a "Gerenciar" link to `/categories`. Sorted by total amount descending and
+  capped at five on the client, because the panel is a summary, the full list has
+  its own page, and `categories` returns the whole list anyway.
 
 ### Transactions (`/transactions`)
 
@@ -412,6 +441,28 @@ badge, using the existing tag component.
 shows a category tag on some rows and a type tag ("Receita") on one. This spec
 uses the category tag consistently, since the type is already conveyed by the
 colored arrow and the sign on the amount.
+
+**The summary month window is UTC; the dashboard asks for the local month.**
+The server builds `summary(month, year)`'s window with `Date.UTC`
+(`backend.md` section 5), while the stat cards read the browser's local clock.
+For a user at UTC-3, a transaction recorded at 21:00 on 31 August local time is
+stored as 1 September 00:00 UTC and counts toward September's figures. The
+alternative — `dateFrom`/`dateTo` arguments on `summary`, the most correct
+option per user — contradicts the `summary(month, year)` signature both specs
+and the stat cards are written against, for an application with one user in one
+timezone. A server-local window was rejected outright: it makes every figure
+depend on the `TZ` the process happens to run under.
+
+**The dashboard's month is read once, at mount, not on every render.**
+`DashboardPage.tsx` stores `currentPeriod` in `useState` rather than computing
+it fresh each render, because the period is part of `useSummaryQuery`'s query
+key: recomputing it on every render would mint a new key the instant the
+clock crosses a month boundary, refetching mid-session for no user action.
+The alternative — reading the clock on every render — was rejected because it
+makes the query key, and therefore what is on screen, depend on exactly when
+a render happens to occur. The consequence is a tab left open across midnight
+on the last day of a month keeps showing that month's figures until the page
+is reloaded, and nothing in the dashboard names which month is displayed.
 
 **`Select` has no checkmark on the selected option.** Section 3 describes one,
 which a native `<select>` cannot draw — the browser owns the dropdown. The

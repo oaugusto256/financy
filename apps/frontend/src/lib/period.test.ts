@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_PERIODS, periodOptions, periodRange } from '@/lib/period';
+import {
+  ALL_PERIODS,
+  currentPeriod,
+  periodOptions,
+  periodRange,
+} from '@/lib/period';
 
 // TZ is pinned to America/Sao_Paulo (UTC−3, no DST) by the test script and by
 // vite.config.ts. Every instant below is written against that offset.
@@ -93,5 +98,37 @@ describe('periodRange', () => {
     for (const value of values) {
       expect(periodRange(value)).not.toBeUndefined();
     }
+  });
+});
+
+describe('currentPeriod', () => {
+  // `now` is a parameter for the same reason periodOptions takes one: the
+  // tests must not be written against the wall clock.
+  it('reads the month as 1-12, not as the zero-based index', () => {
+    expect(currentPeriod(new Date(2026, 7, 15))).toEqual({
+      month: 8,
+      year: 2026,
+    });
+  });
+
+  it('reports December as 12 and January as 1', () => {
+    expect(currentPeriod(new Date(2026, 11, 31))).toEqual({
+      month: 12,
+      year: 2026,
+    });
+    expect(currentPeriod(new Date(2027, 0, 1))).toEqual({
+      month: 1,
+      year: 2027,
+    });
+  });
+
+  it('reads the browser’s local time, which is what the cards ask for', () => {
+    // TZ is pinned to America/Sao_Paulo, so this instant is 31 December
+    // locally and 1 January in UTC. The dashboard asks for the local month;
+    // the server windows it in UTC. frontend.md section 12 records the gap.
+    expect(currentPeriod(new Date('2027-01-01T02:00:00.000Z'))).toEqual({
+      month: 12,
+      year: 2026,
+    });
   });
 });
