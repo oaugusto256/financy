@@ -117,13 +117,13 @@ slice 6" below.
 
 ## Process note: lost agent sessions
 
-Five agent sessions were lost to API connection errors mid-task during this
-slice — Task 7 lost two (the implementer's fix-round session, then the first
-re-review session), and Task 8 lost four across its RED-writing and
-implementation phases (recorded together as one entry in the ledger for that
-task). This is a gap in the self-reported evidence chain for those two tasks,
-not a doubt about the shipped code, which was reviewed clean in both cases
-after the sessions recovered:
+Four agent sessions were lost to API connection errors mid-task during this
+slice — two on Task 7 (the implementer's fix-round session, then the first
+re-review session) and two on Task 8 (the original implementer dispatch, then
+that same agent again after being resumed). This is a gap in the
+self-reported evidence chain for those two tasks, not a doubt about the
+shipped code, which was reviewed clean in both cases after the sessions
+recovered:
 
 - **Task 7**: the implementer's session died with the `<Tag>`-coverage fix
   already committed but its fix report unwritten; the first re-review agent
@@ -132,11 +132,11 @@ after the sessions recovered:
   restoring it passed 7/7, gate green — and wrote that evidence into
   `task-7-report.md` explicitly labelled as controller-produced, then
   re-dispatched a fresh re-review agent to close the task normally.
-- **Task 8**: four consecutive sessions died to connection errors across the
-  RED-writing and implementation work. The failing tests survived in the
-  working tree between deaths; a fresh implementer, on a different model,
-  finished the task from the preserved RED state rather than restarting from
-  scratch.
+- **Task 8**: the original implementer dispatch died to a connection error,
+  and the same agent died again once resumed. The failing tests it had
+  written survived in the working tree across both deaths; a fresh
+  implementer, on a different model, finished the task from the preserved RED
+  state rather than restarting from scratch.
 
 `slice-4-outcome.md` recorded the identical failure mode for its own Task 8.
 This is the second slice in a row it has happened, now against two different
