@@ -141,7 +141,7 @@ export function ProfilePage() {
   const { user, isLoadingUser } = useSession();
 
   return (
-    <PageShell title="Perfil" subtitle="Sua conta">
+    <PageShell>
       {isLoadingUser || !user ? (
         <ProfileSkeleton />
       ) : (
