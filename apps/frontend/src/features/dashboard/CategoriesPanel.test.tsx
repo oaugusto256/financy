@@ -39,10 +39,13 @@ describe('CategoriesPanel', () => {
     // The category name renders twice per row by design (heading + Tag), so
     // `findByText` would match two elements. `findByRole('heading', ...)`
     // pins the row's <h3> specifically, which is strictly more specific than
-    // the brief's original `findByText('Mercado')`.
+    // the brief's original `findByText('Mercado')`. The `getAllByText` count
+    // below is what actually covers the Tag: without it, deleting the Tag
+    // from the component would leave every assertion here still passing.
     expect(
       await screen.findByRole('heading', { name: 'Mercado' }),
     ).toBeInTheDocument();
+    expect(screen.getAllByText('Mercado')).toHaveLength(2);
     expect(screen.getByText('7 itens')).toBeInTheDocument();
     expect(screen.getByText('R$ 1.234,56')).toBeInTheDocument();
   });
