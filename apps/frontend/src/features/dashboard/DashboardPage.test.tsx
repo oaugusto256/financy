@@ -18,6 +18,16 @@ function mockSummary(summary: {
 beforeEach(() => {
   // MSW is strict, so the shell's own query has to be mocked on every render.
   server.use(api.query('Me', () => ok({ me: aUser })));
+  // The page composes two panels that fetch on mount, so every render needs a
+  // handler for them too, even in the stat-card tests that ignore them.
+  // `server.use` prepends, so a later, more specific handler in a single test
+  // still wins over these defaults.
+  server.use(
+    api.query('Transactions', () =>
+      ok({ transactions: { items: [], totalCount: 0 } }),
+    ),
+  );
+  server.use(api.query('Categories', () => ok({ categories: [] })));
 });
 
 describe('DashboardPage stat cards', () => {
@@ -122,5 +132,131 @@ describe('DashboardPage stat cards', () => {
     // (both totalBalance and monthIncome are 100), so both the Saldo total
     // and Receitas do mês cards render it.
     expect(await screen.findAllByText('R$ 1,00')).toHaveLength(2);
+  });
+});
+
+const EMPTY_SUMMARY = { totalBalance: 0, monthIncome: 0, monthExpense: 0 };
+
+function mockAllSections() {
+  server.use(api.query('Summary', () => ok({ summary: EMPTY_SUMMARY })));
+  server.use(
+    api.query('Transactions', () =>
+      ok({ transactions: { items: [], totalCount: 0 } }),
+    ),
+  );
+  server.use(api.query('Categories', () => ok({ categories: [] })));
+}
+
+describe('DashboardPage composition', () => {
+  it('renders all three sections', async () => {
+    mockAllSections();
+    renderWithProviders(<DashboardPage />);
+
+    expect(
+      await screen.findByRole('region', { name: 'Transações recentes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Categorias' }),
+    ).toBeInTheDocument();
+    // The panels' <section> wrappers mount synchronously, so the region above
+    // resolves on the first poll while the summary is still pending. The stat
+    // cards need their own await rather than a synchronous get.
+    expect(await screen.findByText('Saldo total')).toBeInTheDocument();
+  });
+
+  it('keeps the other two sections alive when one fails', async () => {
+    server.use(api.query('Summary', () => graphqlError('NOT_FOUND')));
+    server.use(
+      api.query('Transactions', () =>
+        ok({ transactions: { items: [], totalCount: 0 } }),
+      ),
+    );
+    server.use(api.query('Categories', () => ok({ categories: [] })));
+    renderWithProviders(<DashboardPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível carregar o resumo',
+    );
+    expect(
+      screen.getByRole('region', { name: 'Transações recentes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Categorias' }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the transaction dialog from the panel footer', async () => {
+    mockAllSections();
+    renderWithProviders(<DashboardPage />);
+    await screen.findByText('Nenhuma transação ainda');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova transação' }),
+    );
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('refetches all three sections after a transaction is created', async () => {
+    // The test this slice exists to make possible. TransactionDialog has
+    // invalidated ['Summary'] since slice 3 with nothing listening; if the
+    // generated key were anything but ['Summary', variables], the stat cards
+    // would keep showing pre-create figures and nothing would say so.
+    const summaryCalls = vi.fn();
+    const transactionCalls = vi.fn();
+    const categoryCalls = vi.fn();
+
+    server.use(
+      api.query('Summary', () => {
+        summaryCalls();
+        return ok({ summary: EMPTY_SUMMARY });
+      }),
+      api.query('Transactions', () => {
+        transactionCalls();
+        return ok({ transactions: { items: [], totalCount: 0 } });
+      }),
+      api.query('Categories', () => {
+        categoryCalls();
+        return ok({ categories: [] });
+      }),
+      api.query('CategoryStats', () =>
+        ok({
+          categoryStats: {
+            totalCategories: 0,
+            totalTransactions: 0,
+            mostUsed: null,
+          },
+        }),
+      ),
+      api.mutation('CreateTransaction', () =>
+        ok({ createTransaction: { id: 'transaction-1' } }),
+      ),
+    );
+
+    renderWithProviders(<DashboardPage />);
+    await screen.findByText('Nenhuma transação ainda');
+    await waitFor(() => expect(summaryCalls).toHaveBeenCalledTimes(1));
+    const before = {
+      summary: summaryCalls.mock.calls.length,
+      transactions: transactionCalls.mock.calls.length,
+      categories: categoryCalls.mock.calls.length,
+    };
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova transação' }),
+    );
+    await userEvent.type(await screen.findByLabelText('Descrição'), 'Café');
+    await userEvent.type(screen.getByLabelText('Valor'), '500');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => {
+      expect(summaryCalls.mock.calls.length).toBeGreaterThan(before.summary);
+      expect(transactionCalls.mock.calls.length).toBeGreaterThan(
+        before.transactions,
+      );
+      expect(categoryCalls.mock.calls.length).toBeGreaterThan(
+        before.categories,
+      );
+    });
   });
 });

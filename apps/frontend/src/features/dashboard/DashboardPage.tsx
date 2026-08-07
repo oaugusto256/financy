@@ -7,12 +7,16 @@ import { StatCard } from '@/components/ui/StatCard';
 import { useSummaryQuery } from '@/graphql/generated/graphql';
 import { centsToDisplay, formatSignedAmount } from '@/lib/currency';
 import { currentPeriod } from '@/lib/period';
+import { TransactionDialog } from '@/features/transactions/TransactionDialog';
+import { CategoriesPanel } from './CategoriesPanel';
+import { RecentTransactionsPanel } from './RecentTransactionsPanel';
 
 export function DashboardPage() {
   // Read once per mount, not per render. The period is part of a query key, and
   // recomputing it every render would mint a new key the moment the clock rolls
   // past midnight on the last day of a month with the tab still open.
   const [period] = useState(currentPeriod);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const summary = useSummaryQuery(period);
   const figures = summary.data?.summary;
 
@@ -60,6 +64,23 @@ export function DashboardPage() {
             iconClassName="text-danger"
           />
         </div>
+      )}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Each panel owns its query and its own states, so a failure in one
+            does not blank the other or the cards above. */}
+        <RecentTransactionsPanel onCreate={() => setDialogOpen(true)} />
+        <CategoriesPanel />
+      </div>
+
+      {/* Mounted only while open, as on the transactions page: a permanently
+          mounted dialog reopens holding the previous values. */}
+      {dialogOpen && (
+        <TransactionDialog
+          open
+          onClose={() => setDialogOpen(false)}
+          transaction={null}
+        />
       )}
     </PageShell>
   );
