@@ -75,18 +75,20 @@ describe('RecentTransactionsPanel', () => {
     mockRecent([aTransaction(4, { amount: 244_215, type: 'EXPENSE' })]);
     renderWithProviders(<RecentTransactionsPanel onCreate={noop} />);
 
-    expect(await screen.findByText('-R$ 2.442,15')).toBeInTheDocument();
+    // The sign is set off from the figure here, unlike the ledger table.
+    expect(await screen.findByText('- R$ 2.442,15')).toBeInTheDocument();
     expect(screen.getByText('04/08/26')).toBeInTheDocument();
     expect(screen.getByText('Mercado')).toBeInTheDocument();
-    expect(screen.getByText('Saída')).toBeInTheDocument();
+    // Only the arrow is drawn; the label is there for screen readers alone.
+    expect(screen.getByText('Saída')).toHaveClass('sr-only');
   });
 
   it('renders an income row with a plus sign', async () => {
     mockRecent([aTransaction(1, { amount: 780_000, type: 'INCOME' })]);
     renderWithProviders(<RecentTransactionsPanel onCreate={noop} />);
 
-    expect(await screen.findByText('+R$ 7.800,00')).toBeInTheDocument();
-    expect(screen.getByText('Entrada')).toBeInTheDocument();
+    expect(await screen.findByText('+ R$ 7.800,00')).toBeInTheDocument();
+    expect(screen.getByText('Entrada')).toHaveClass('sr-only');
   });
 
   it('renders an uncategorized row with the neutral tag', async () => {
@@ -104,7 +106,7 @@ describe('RecentTransactionsPanel', () => {
       await screen.findByText('Nenhuma transação ainda'),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: '+ Nova transação' }),
+      screen.getByRole('button', { name: 'Nova transação' }),
     ).toBeInTheDocument();
   });
 
@@ -139,7 +141,7 @@ describe('RecentTransactionsPanel', () => {
     await screen.findByText('Nenhuma transação ainda');
 
     await userEvent.click(
-      screen.getByRole('button', { name: '+ Nova transação' }),
+      screen.getByRole('button', { name: 'Nova transação' }),
     );
 
     expect(onCreate).toHaveBeenCalledTimes(1);

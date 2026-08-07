@@ -5,12 +5,23 @@ export type TransactionType = 'INCOME' | 'EXPENSE';
 
 export interface TypeIndicatorProps {
   type: TransactionType;
+  /**
+   * Keeps the label in the accessibility tree but off the screen, leaving the
+   * arrow alone visible. The dashboard panel draws it that way; colour and an
+   * arrow on their own would say nothing to a screen reader.
+   */
+  labelHidden?: boolean;
   className?: string;
 }
 
-export function TypeIndicator({ type, className }: TypeIndicatorProps) {
+export function TypeIndicator({
+  type,
+  labelHidden = false,
+  className,
+}: TypeIndicatorProps) {
   const isIncome = type === 'INCOME';
   const Icon = isIncome ? ArrowUpCircle : ArrowDownCircle;
+  const label = isIncome ? 'Entrada' : 'Saída';
 
   return (
     <span
@@ -21,7 +32,7 @@ export function TypeIndicator({ type, className }: TypeIndicatorProps) {
       )}
     >
       <Icon aria-hidden="true" className="size-4" />
-      {isIncome ? 'Entrada' : 'Saída'}
+      {labelHidden ? <span className="sr-only">{label}</span> : label}
     </span>
   );
 }

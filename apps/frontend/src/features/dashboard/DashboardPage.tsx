@@ -21,7 +21,9 @@ export function DashboardPage() {
   const figures = summary.data?.summary;
 
   return (
-    <PageShell title="Dashboard" subtitle="Sua visão geral do mês">
+    // No title or subtitle: the stat cards and the two panel headers already
+    // say what the screen is, and a page heading above them only added height.
+    <PageShell>
       {summary.isPending ? (
         <Skeleton
           label="Carregando resumo"
@@ -66,10 +68,14 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      {/* Two thirds / one third from lg up; stacked below it, where side by
+          side would squeeze both panels' rows. */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* Each panel owns its query and its own states, so a failure in one
             does not blank the other or the cards above. */}
-        <RecentTransactionsPanel onCreate={() => setDialogOpen(true)} />
+        <div className="lg:col-span-2">
+          <RecentTransactionsPanel onCreate={() => setDialogOpen(true)} />
+        </div>
         <CategoriesPanel />
       </div>
 

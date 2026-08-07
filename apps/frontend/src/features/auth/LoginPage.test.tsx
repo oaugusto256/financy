@@ -33,7 +33,7 @@ describe('LoginPage', () => {
     await fillAndSubmit();
 
     expect(
-      await screen.findByRole('heading', { name: 'Dashboard' }),
+      await screen.findByRole('region', { name: 'Transações recentes' }),
     ).toBeInTheDocument();
   });
 
@@ -120,7 +120,7 @@ describe('LoginPage', () => {
     // resolves after this test ends and writes its token after the global
     // afterEach has cleared storage — a session leaking into the next test.
     release();
-    await screen.findByRole('heading', { name: 'Dashboard' });
+    await screen.findByRole('region', { name: 'Transações recentes' });
   });
 
   it('gives both fields a placeholder', () => {

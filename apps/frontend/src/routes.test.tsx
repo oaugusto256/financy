@@ -36,14 +36,14 @@ describe('routing', () => {
   it('serves the dashboard at / when signed in', async () => {
     signedIn();
     renderWithProviders(<AppRoutes />, { route: '/' });
-    expect(
-      await screen.findByRole('heading', { name: 'Dashboard' }),
-    ).toBeInTheDocument();
-    // The deleted placeholder also rendered a "Dashboard" heading, so that
-    // assertion alone would still pass with the route reverted to it. This
-    // one is satisfiable only by the real DashboardPage.
+    // The dashboard has no page heading of its own, and the deleted
+    // placeholder rendered one, so the panels are what identifies the real
+    // DashboardPage.
     expect(
       await screen.findByRole('region', { name: 'Transações recentes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Categorias' }),
     ).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe('routing', () => {
     signedIn();
     renderWithProviders(<AppRoutes />, { route: '/signup' });
     expect(
-      await screen.findByRole('heading', { name: 'Dashboard' }),
+      await screen.findByRole('region', { name: 'Transações recentes' }),
     ).toBeInTheDocument();
   });
 

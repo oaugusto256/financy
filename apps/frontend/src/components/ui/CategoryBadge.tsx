@@ -11,13 +11,20 @@ export interface CategoryBadgeProps {
   icon?: CategoryIcon;
   color?: CategoryColor;
   className?: string;
+  /** Sized separately from the badge, which callers scale with `className`. */
+  iconClassName?: string;
 }
 
 // Falls back to neutral when the category is absent, as Tag does. A transaction
 // can have no category from the day it is created, and any category can be
 // deleted out from under one — the design has no state for that, so this is
 // where it is handled.
-export function CategoryBadge({ icon, color, className }: CategoryBadgeProps) {
+export function CategoryBadge({
+  icon,
+  color,
+  className,
+  iconClassName,
+}: CategoryBadgeProps) {
   const palette = color
     ? CATEGORY_COLORS[color]
     : { bg: 'bg-gray-200', icon: 'text-gray-500' };
@@ -31,7 +38,10 @@ export function CategoryBadge({ icon, color, className }: CategoryBadgeProps) {
         className,
       )}
     >
-      <Icon aria-hidden="true" className={cn('size-4', palette.icon)} />
+      <Icon
+        aria-hidden="true"
+        className={cn('size-4', palette.icon, iconClassName)}
+      />
     </span>
   );
 }

@@ -1,5 +1,4 @@
 import { Card } from '@/components/ui/Card';
-import { CategoryBadge } from '@/components/ui/CategoryBadge';
 import { PanelError } from '@/components/ui/PanelError';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tag } from '@/components/ui/Tag';
@@ -30,19 +29,24 @@ export function CategoriesPanel() {
     <Card
       as="section"
       aria-labelledby="dashboard-categories-title"
-      className="flex flex-col"
+      // `self-start` keeps the card at its content height. Without it the grid
+      // stretches it to the taller transactions panel beside it, leaving a
+      // block of empty card below the last row.
+      className="flex flex-col self-start"
     >
-      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <h2
           id="dashboard-categories-title"
-          className="font-semibold text-gray-800"
+          className="text-xs font-semibold uppercase tracking-wider text-gray-500"
         >
           Categorias
         </h2>
-        <TextLink to="/categories">Gerenciar</TextLink>
+        <TextLink to="/categories" arrow>
+          Gerenciar
+        </TextLink>
       </div>
 
-      <div className="flex-1 p-5">
+      <div className="flex-1 p-6">
         {categories.isPending ? (
           <Skeleton
             label="Carregando categorias"
@@ -62,25 +66,28 @@ export function CategoriesPanel() {
             Nenhuma categoria ainda
           </p>
         ) : (
-          <ul className="flex flex-col gap-4">
+          // The name is carried by the Tag alone — no icon badge and no
+          // separate heading. frontend.md section 5.
+          <ul className="flex flex-col gap-5">
             {top.map((category) => (
               <li key={category.id} className="flex items-center gap-3">
-                <CategoryBadge icon={category.icon} color={category.color} />
+                <Tag
+                  color={category.color}
+                  className="min-w-0 truncate px-3 py-1.5 text-sm"
+                >
+                  {category.name}
+                </Tag>
 
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-medium text-gray-800">
-                    {category.name}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {category.transactionCount === 1
-                      ? '1 item'
-                      : `${category.transactionCount} itens`}
-                  </p>
-                </div>
+                {/* Both columns are right-aligned at a fixed width so the
+                    counts and the totals line up down the panel rather than
+                    drifting with the width of the figure beside them. */}
+                <span className="ml-auto w-16 shrink-0 text-right text-sm text-gray-500">
+                  {category.transactionCount === 1
+                    ? '1 item'
+                    : `${category.transactionCount} itens`}
+                </span>
 
-                <Tag color={category.color}>{category.name}</Tag>
-
-                <span className="text-sm font-semibold text-gray-800">
+                <span className="min-w-28 shrink-0 text-right text-sm font-semibold text-gray-800">
                   {centsToDisplay(category.totalAmount)}
                 </span>
               </li>

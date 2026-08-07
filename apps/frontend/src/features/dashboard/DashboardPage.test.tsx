@@ -191,7 +191,7 @@ describe('DashboardPage composition', () => {
     await screen.findByText('Nenhuma transação ainda');
 
     await userEvent.click(
-      screen.getByRole('button', { name: '+ Nova transação' }),
+      screen.getByRole('button', { name: 'Nova transação' }),
     );
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -238,7 +238,7 @@ describe('DashboardPage composition', () => {
     await waitFor(() => expect(summaryCalls).toHaveBeenCalledTimes(1));
 
     await userEvent.click(
-      screen.getByRole('button', { name: '+ Nova transação' }),
+      screen.getByRole('button', { name: 'Nova transação' }),
     );
     await screen.findByRole('dialog');
     // The baseline is taken only once the dialog's own categories fetch has

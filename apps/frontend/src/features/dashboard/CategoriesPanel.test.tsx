@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/render';
 import { server } from '@/test/msw/server';
@@ -36,16 +36,9 @@ describe('CategoriesPanel', () => {
     mockCategories([aCategory('Mercado', 123_456, 7)]);
     renderWithProviders(<CategoriesPanel />);
 
-    // The category name renders twice per row by design (heading + Tag), so
-    // `findByText` would match two elements. `findByRole('heading', ...)`
-    // pins the row's <h3> specifically, which is strictly more specific than
-    // the brief's original `findByText('Mercado')`. The `getAllByText` count
-    // below is what actually covers the Tag: without it, deleting the Tag
-    // from the component would leave every assertion here still passing.
-    expect(
-      await screen.findByRole('heading', { name: 'Mercado' }),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText('Mercado')).toHaveLength(2);
+    // The name is carried by the Tag alone — the row has no icon badge and no
+    // heading, so the name appears exactly once. frontend.md section 5.
+    expect(await screen.findAllByText('Mercado')).toHaveLength(1);
     expect(screen.getByText('7 itens')).toBeInTheDocument();
     expect(screen.getByText('R$ 1.234,56')).toBeInTheDocument();
   });
@@ -71,12 +64,17 @@ describe('CategoriesPanel', () => {
     ]);
     renderWithProviders(<CategoriesPanel />);
 
-    await screen.findByRole('heading', { name: 'Primeira' });
+    await screen.findByText('Primeira');
     const rows = screen.getAllByRole('listitem');
     expect(rows).toHaveLength(5);
-    expect(
-      rows.map((row) => within(row).getByRole('heading').textContent),
-    ).toEqual(['Primeira', 'Segunda', 'Terceira', 'Quarta', 'Quinta']);
+    // The tag is the row's first element, so its text is the category name.
+    expect(rows.map((row) => row.firstElementChild?.textContent)).toEqual([
+      'Primeira',
+      'Segunda',
+      'Terceira',
+      'Quarta',
+      'Quinta',
+    ]);
     expect(screen.queryByText('Sexta')).not.toBeInTheDocument();
   });
 
@@ -112,12 +110,7 @@ describe('CategoriesPanel', () => {
       screen.getByRole('button', { name: 'Tentar novamente' }),
     );
 
-    // Same collision as above: two "Mercado" text nodes once the retry
-    // resolves (heading + Tag), so scope to the heading rather than
-    // `findByText`.
-    expect(
-      await screen.findByRole('heading', { name: 'Mercado' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Mercado')).toBeInTheDocument();
   });
 
   it('is a section a screen reader can address by name', async () => {
