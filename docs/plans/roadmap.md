@@ -47,8 +47,8 @@ building the referencing entity first means seeding fake categories to test it.
 
 **Slice 3 — Transactions.** Full transaction management, including the currency
 conversion to and from integer cents, offset pagination, and the uncategorized
-state. At the end of this slice the application does everything the
-requirements literally ask for.
+state. At the end of this slice the application covers the core scope both
+specs open with.
 
 **Slice 4 — Search and filters.** The transactions page becomes usable with real
 volumes of data, on top of the pagination slice 3 already built. Filter state

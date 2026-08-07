@@ -12,7 +12,7 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
 import { useSession } from '@/features/auth/useSession';
 
 /**
- * One path, two screens, as the requirements specify. This is the only route
+ * One path, two screens, as the design specifies. This is the only route
  * that decides for itself rather than sitting behind a guard: declaring `/`
  * twice with opposite guards would make each redirect to the other, and the
  * loop only appears once somebody is actually signed in.

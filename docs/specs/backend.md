@@ -38,7 +38,7 @@ marked in place below.
 
 ## 2. Stack
 
-Mandatory, imposed by the project requirements:
+Settled before this spec was written, and not revisited:
 
 | Concern | Choice |
 |---|---|
@@ -109,26 +109,30 @@ Code is organized by module, not by file type. Each module keeps its SDL,
 resolvers, service and validation together.
 
 ```
-apps/backend/
+backend/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
-│   └── seed.ts
+│   ├── seed.ts
+│   └── seed-dates.ts
 ├── src/
 │   ├── modules/
 │   │   ├── auth/          schema.ts, resolvers.ts, service.ts, validation.ts
 │   │   ├── category/      same
-│   │   └── transaction/   same
+│   │   ├── transaction/   same
+│   │   └── summary/       same — the dashboard aggregates
 │   ├── shared/            errors.ts, auth-guard.ts, dataloaders.ts, env.ts,
-│   │                      password.ts, jwt.ts, prisma.ts
+│   │                      password.ts, jwt.ts, prisma.ts, validation.ts
 │   ├── graphql/generated/ resolver types, written by codegen
 │   ├── context.ts
 │   ├── schema.ts          merges module SDL
-│   └── server.ts
-├── tests/
+│   ├── app.ts             builds the Express app; what the tests mount
+│   └── server.ts          listens; the only file that opens a port
+├── tests/                 integration/, unit/, helpers/, setup/
 ├── schema.graphql         the printed schema, committed for the frontend
 ├── .env.example
-└── codegen.ts
+├── codegen.ts
+└── vitest.config.ts
 ```
 
 A module's SDL is a template literal tagged with the `/* GraphQL */` comment in
@@ -446,7 +450,7 @@ Every aggregate is scoped to the calling user, like every other read.
 ### Authentication
 
 Stateless JWT signed with `JWT_SECRET`, sent as `Authorization: Bearer <token>`,
-expiring in 7 days. There is no refresh token: the requirements define a single
+expiring in 7 days. There is no refresh token: the system has a single signing
 secret, and session rotation is scope nobody asked for.
 
 Passwords are hashed with argon2id. The hash never leaves the auth service.

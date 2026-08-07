@@ -1,7 +1,7 @@
 # Financy
 
-Personal finance manager. npm workspaces monorepo: `apps/backend` (Express +
-Apollo Server 4 + Prisma + SQLite) and `apps/frontend` (React 19 + Vite +
+Personal finance manager. npm workspaces monorepo: `backend` (Express +
+Apollo Server 4 + Prisma + SQLite) and `frontend` (React 19 + Vite +
 TanStack Query + Tailwind 4).
 
 ## Where things are
@@ -11,10 +11,14 @@ TanStack Query + Tailwind 4).
 | `docs/specs/backend.md`, `frontend.md` | Source of truth for behavior. Section 12 of `frontend.md` records deliberate deviations from the design. |
 | `docs/plans/roadmap.md` | The five slices and the definition of done. |
 | `docs/plans/slice-N-*.md` | Per-slice implementation plans. **Large** — `slice-3` is 184 KB, `slice-2` 153 KB, `slice-1` 129 KB, `slice-4` and `slice-0` 92 KB each. Read the matching `slice-N-outcome.md` instead; they exist so none of the plans has to be read whole. |
-| `apps/backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. `auth/`, `category/` and `transaction/` exist. |
-| `apps/backend/src/shared/` | `errors.ts`, `auth-guard.ts`, `env.ts`, `prisma.ts`, `password.ts`, `jwt.ts`, `dataloaders.ts`. |
-| `apps/frontend/src/features/<name>/` | Screens and their feature-local logic. |
-| `apps/frontend/src/components/ui/` | Design-system primitives. Browsable at `/style-guide`. |
+| `backend/src/modules/<name>/` | `schema.ts`, `resolvers.ts`, `service.ts`, `validation.ts` — organized by module, not by file type. `auth/`, `category/`, `transaction/` and `summary/` exist. |
+| `backend/src/shared/` | `errors.ts`, `auth-guard.ts`, `env.ts`, `prisma.ts`, `password.ts`, `jwt.ts`, `dataloaders.ts`, `validation.ts`. |
+| `backend/src/app.ts`, `server.ts` | `app.ts` builds the Express app and is what the tests mount; `server.ts` is the only file that binds a port. |
+| `frontend/src/features/<name>/` | Screens and their feature-local logic. `auth/`, `categories/`, `dashboard/`, `profile/`, `transactions/`. |
+| `frontend/src/pages/` | Screens belonging to no feature. Only `StyleGuide` — the `/style-guide` route. |
+| `frontend/src/components/ui/` | Design-system primitives. Browsable at `/style-guide`. |
+| `frontend/src/components/layout/` | `AppLayout`, `PageShell`, `TopBar`, and the `RequireAuth` / `RequireAnonymous` route guards. |
+| `frontend/src/lib/` | Cross-feature helpers: GraphQL client, currency, formatting, category tokens, token storage. |
 
 ## Commands
 
@@ -70,7 +74,7 @@ The full checklist is in `roadmap.md`. The lines most often missed:
 - **Module SDL is a `/* GraphQL */`-tagged template literal in `schema.ts`**, not
   a `.graphql` file — a runtime read would force the build to copy
   non-TypeScript files into `dist/`. Codegen plucks it out of the magic comment.
-- **`apps/backend/schema.graphql` is generated and committed**, and is in
+- **`backend/schema.graphql` is generated and committed**, and is in
   `.prettierignore` — formatting it makes `format:check` and `codegen:check`
   undo each other. A test compares it against the served SDL.
 - **Frontend codegen uses `typescript-operations` without the schema-wide
