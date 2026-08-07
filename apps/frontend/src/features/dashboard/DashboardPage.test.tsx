@@ -236,15 +236,25 @@ describe('DashboardPage composition', () => {
     renderWithProviders(<DashboardPage />);
     await screen.findByText('Nenhuma transação ainda');
     await waitFor(() => expect(summaryCalls).toHaveBeenCalledTimes(1));
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '+ Nova transação' }),
+    );
+    await screen.findByRole('dialog');
+    // The baseline is taken only once the dialog's own categories fetch has
+    // landed. TransactionDialog calls useCategoriesQuery() unconditionally for
+    // its picker, and a fresh observer on an already-fetched key refetches on
+    // mount, so a baseline captured before the dialog opened would make the
+    // categories assertion below rise on the picker alone — it would stay green
+    // with the mutation's category invalidation deleted. Two calls: the
+    // CategoriesPanel's mount, then the picker's.
+    await waitFor(() => expect(categoryCalls).toHaveBeenCalledTimes(2));
     const before = {
       summary: summaryCalls.mock.calls.length,
       transactions: transactionCalls.mock.calls.length,
       categories: categoryCalls.mock.calls.length,
     };
 
-    await userEvent.click(
-      screen.getByRole('button', { name: '+ Nova transação' }),
-    );
     await userEvent.type(await screen.findByLabelText('Descrição'), 'Café');
     await userEvent.type(screen.getByLabelText('Valor'), '500');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
