@@ -3,7 +3,7 @@ import { parseEnv } from '../../src/shared/env.js';
 
 const valid = {
   DATABASE_URL: 'file:./dev.db',
-  JWT_SECRET: 'a-secret-long-enough',
+  JWT_SECRET: 'a-secret-that-is-long-enough-for-hs256',
   PORT: '4000',
   CORS_ORIGIN: 'http://localhost:5173',
   NODE_ENV: 'development',
@@ -13,7 +13,7 @@ describe('parseEnv', () => {
   it('parses a valid environment', () => {
     expect(parseEnv(valid)).toEqual({
       DATABASE_URL: 'file:./dev.db',
-      JWT_SECRET: 'a-secret-long-enough',
+      JWT_SECRET: 'a-secret-that-is-long-enough-for-hs256',
       PORT: 4000,
       CORS_ORIGIN: 'http://localhost:5173',
       NODE_ENV: 'development',
@@ -39,6 +39,12 @@ describe('parseEnv', () => {
 
   it('throws when JWT_SECRET is empty', () => {
     expect(() => parseEnv({ ...valid, JWT_SECRET: '' })).toThrow(/JWT_SECRET/);
+  });
+
+  it('throws when JWT_SECRET is shorter than 32 characters', () => {
+    expect(() => parseEnv({ ...valid, JWT_SECRET: 'a'.repeat(31) })).toThrow(
+      /JWT_SECRET/,
+    );
   });
 
   it('throws when DATABASE_URL is missing', () => {
