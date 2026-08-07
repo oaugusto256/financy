@@ -1,12 +1,9 @@
 # Backend Spec
 
-Status: approved, implemented through slice 4
-Last updated: 2026-08-06 (slice 4: section 2 notes that `%` and `_` in a
-search term are unescaped `LIKE` wildcards, section 5 states `TransactionFilter`'s
-optionality, AND-combination, inclusive date bounds and the empty-page
-behavior for another user's `categoryId`, and section 7 notes that an empty
-string and `null` both mean "no filter" in a filter, unlike `categoryId` in
-`UpdateTransactionInput`)
+Status: approved, implemented through slice 5
+Last updated: 2026-08-07 (slice 5: section 5's aggregate semantics state the
+UTC month window for `monthIncome`/`monthExpense`, that `monthExpense` is
+unsigned, and the `year` bound on `summary`'s validation)
 
 The Financy API manages a user's personal finances: authentication, transactions
 and categories. This document is the source of truth for what the backend does
@@ -419,9 +416,18 @@ notices if they drift:
 
 - `totalBalance` is all-time, not month-scoped: the sum of every `INCOME` minus
   the sum of every `EXPENSE`, across the user's whole history.
-- `monthIncome` and `monthExpense` cover the requested calendar month only,
-  from the first instant of day 1 to the last instant of the final day.
-- `month` is 1–12. Out-of-range values are `BAD_USER_INPUT`.
+- `monthIncome` and `monthExpense` cover the requested calendar month only. The
+  window is built in **UTC** — `Date.UTC(year, month - 1, 1)` inclusive to
+  `Date.UTC(year, month, 1)` exclusive — which is what makes "the last instant of
+  the final day" exact without picking a millisecond. UTC rather than
+  server-local, so the same data does not produce different figures on a
+  developer's machine and a deployed one; the cost is recorded as a deviation in
+  `frontend.md` section 12.
+- `monthExpense` is unsigned, like `Category.totalAmount`: a positive number of
+  cents spent. The client renders the sign.
+- `month` is 1–12 and `year` is 1970–9999. Anything outside either range is
+  `BAD_USER_INPUT` naming the failing field. Both bounds exist so a nonsense
+  year is an error rather than a scan returning zeros, which reads as "no data".
 - `Category.totalAmount` is the unsigned sum of that category's transactions.
   Since a category may hold both income and expense, it is a volume figure, not
   a net one — the design labels it as a plain amount next to an item count.
