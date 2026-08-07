@@ -3,13 +3,14 @@
  * rows on every run and its password comes from the SEED_PASSWORD environment
  * variable, falling back to a non-secret placeholder when unset.
  *
- * Twenty-seven transactions across two months, because that is what the
- * transactions table in the design shows ("1 a 10 | 27 resultados") and because
- * pagination and the dashboard's month figures both need more than a handful of
- * rows to be worth looking at.
+ * Twenty-seven transactions across the current month and the eleven before it,
+ * because that is what the transactions table in the design shows ("1 a 10 | 27
+ * resultados") and because pagination and the dashboard's month figures both
+ * need more than a handful of rows to be worth looking at.
  */
 import { prisma } from '../src/shared/prisma.js';
 import { hashPassword } from '../src/shared/password.js';
+import { monthsBack } from './seed-dates.js';
 
 const SEED_EMAIL = 'ana@financy.dev';
 const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'trocar-esta-senha';
@@ -50,207 +51,245 @@ const CATEGORIES = [
 ] as const;
 
 /**
- * Fixed rows rather than random ones: a screenshot taken today and one taken
- * next week should show the same numbers. Amounts are integer cents throughout —
- * 150_000 is R$ 1.500,00.
+ * Fixed rows with dates relative to the run: descriptions, amounts, types and
+ * category assignments are literals, so two runs a week apart produce the same
+ * data — but the dates are computed from the run time, so the dashboard's
+ * current-month figures are never zero and slice 4's period select has
+ * something to select in every one of its twelve month options.
+ *
+ * `monthsAgo: 0` is the current month. Every `day` is between 3 and 28: no
+ * month is too short for any of them, and none sits close enough to a boundary
+ * for local midnight to fall outside the UTC window `summary` builds.
+ *
+ * Amounts are integer cents throughout — 150_000 is R$ 1.500,00.
  */
 const TRANSACTIONS = [
+  // The current month: a salary, the fixed bills, and enough rows for the
+  // dashboard's five-row recent panel to be full.
   {
-    day: '2026-07-05',
-    description: 'Salário de julho',
+    monthsAgo: 0,
+    day: 5,
+    description: 'Salário',
     amount: 780_000,
     type: 'INCOME',
     category: 'Salário',
   },
   {
-    day: '2026-07-05',
+    monthsAgo: 0,
+    day: 5,
     description: 'Aluguel',
     amount: 210_000,
     type: 'EXPENSE',
     category: 'Moradia',
   },
   {
-    day: '2026-07-06',
-    description: 'Conta de luz',
-    amount: 18_740,
-    type: 'EXPENSE',
-    category: 'Moradia',
-  },
-  {
-    day: '2026-07-07',
-    description: 'Compras da semana',
-    amount: 34_215,
-    type: 'EXPENSE',
-    category: 'Mercado',
-  },
-  {
-    day: '2026-07-09',
-    description: 'Recarga do bilhete único',
-    amount: 10_000,
-    type: 'EXPENSE',
-    category: 'Transporte',
-  },
-  {
-    day: '2026-07-11',
-    description: 'Cinema',
-    amount: 6_400,
-    type: 'EXPENSE',
-    category: 'Lazer',
-  },
-  {
-    day: '2026-07-13',
-    description: 'Farmácia',
-    amount: 8_930,
-    type: 'EXPENSE',
-    category: 'Saúde',
-  },
-  {
-    day: '2026-07-14',
-    description: 'Compras da semana',
-    amount: 29_880,
-    type: 'EXPENSE',
-    category: 'Mercado',
-  },
-  {
-    day: '2026-07-16',
-    description: 'Curso de inglês',
-    amount: 32_000,
-    type: 'EXPENSE',
-    category: 'Educação',
-  },
-  {
-    day: '2026-07-18',
-    description: 'Freelance de design',
-    amount: 120_000,
-    type: 'INCOME',
-    category: null,
-  },
-  {
-    day: '2026-07-19',
-    description: 'Jantar fora',
-    amount: 11_250,
-    type: 'EXPENSE',
-    category: 'Lazer',
-  },
-  {
-    day: '2026-07-21',
-    description: 'Compras da semana',
-    amount: 31_470,
-    type: 'EXPENSE',
-    category: 'Mercado',
-  },
-  {
-    day: '2026-07-23',
-    description: 'Consulta médica',
-    amount: 25_000,
-    type: 'EXPENSE',
-    category: 'Saúde',
-  },
-  {
-    day: '2026-07-26',
-    description: 'Internet',
-    amount: 12_990,
-    type: 'EXPENSE',
-    category: 'Moradia',
-  },
-  {
-    day: '2026-07-28',
-    description: 'Compras da semana',
-    amount: 27_640,
-    type: 'EXPENSE',
-    category: 'Mercado',
-  },
-  {
-    day: '2026-08-03',
-    description: 'Reembolso de passagem',
-    amount: 8_500,
-    type: 'INCOME',
-    category: 'Transporte',
-  },
-  {
-    day: '2026-08-05',
-    description: 'Salário de agosto',
-    amount: 780_000,
-    type: 'INCOME',
-    category: 'Salário',
-  },
-  {
-    day: '2026-08-05',
-    description: 'Aluguel',
-    amount: 210_000,
-    type: 'EXPENSE',
-    category: 'Moradia',
-  },
-  {
-    day: '2026-08-06',
+    monthsAgo: 0,
+    day: 6,
     description: 'Conta de água',
     amount: 9_120,
     type: 'EXPENSE',
     category: 'Moradia',
   },
   {
-    day: '2026-08-08',
+    monthsAgo: 0,
+    day: 8,
     description: 'Compras da semana',
     amount: 35_910,
     type: 'EXPENSE',
     category: 'Mercado',
   },
   {
-    day: '2026-08-10',
+    monthsAgo: 0,
+    day: 10,
     description: 'Uber para o aeroporto',
     amount: 7_830,
     type: 'EXPENSE',
     category: 'Transporte',
   },
   {
-    day: '2026-08-12',
+    monthsAgo: 0,
+    day: 17,
+    description: 'Plano de saúde',
+    amount: 48_700,
+    type: 'EXPENSE',
+    category: 'Saúde',
+  },
+
+  {
+    monthsAgo: 1,
+    day: 5,
+    description: 'Salário',
+    amount: 780_000,
+    type: 'INCOME',
+    category: 'Salário',
+  },
+  {
+    monthsAgo: 1,
+    day: 5,
+    description: 'Aluguel',
+    amount: 210_000,
+    type: 'EXPENSE',
+    category: 'Moradia',
+  },
+  {
+    monthsAgo: 1,
+    day: 6,
+    description: 'Conta de luz',
+    amount: 18_740,
+    type: 'EXPENSE',
+    category: 'Moradia',
+  },
+  {
+    monthsAgo: 1,
+    day: 7,
+    description: 'Compras da semana',
+    amount: 34_215,
+    type: 'EXPENSE',
+    category: 'Mercado',
+  },
+  {
+    monthsAgo: 1,
+    day: 18,
+    description: 'Freelance de design',
+    amount: 120_000,
+    type: 'INCOME',
+    category: null,
+  },
+  {
+    monthsAgo: 1,
+    day: 28,
+    description: 'Compras da semana',
+    amount: 27_640,
+    type: 'EXPENSE',
+    category: 'Mercado',
+  },
+
+  {
+    monthsAgo: 2,
+    day: 9,
+    description: 'Recarga do bilhete único',
+    amount: 10_000,
+    type: 'EXPENSE',
+    category: 'Transporte',
+  },
+  {
+    monthsAgo: 2,
+    day: 11,
+    description: 'Cinema',
+    amount: 6_400,
+    type: 'EXPENSE',
+    category: 'Lazer',
+  },
+
+  {
+    monthsAgo: 3,
+    day: 13,
+    description: 'Farmácia',
+    amount: 8_930,
+    type: 'EXPENSE',
+    category: 'Saúde',
+  },
+  {
+    monthsAgo: 3,
+    day: 14,
+    description: 'Compras da semana',
+    amount: 29_880,
+    type: 'EXPENSE',
+    category: 'Mercado',
+  },
+
+  {
+    monthsAgo: 4,
+    day: 16,
+    description: 'Curso de inglês',
+    amount: 32_000,
+    type: 'EXPENSE',
+    category: 'Educação',
+  },
+  {
+    monthsAgo: 4,
+    day: 19,
+    description: 'Jantar fora',
+    amount: 11_250,
+    type: 'EXPENSE',
+    category: 'Lazer',
+  },
+
+  {
+    monthsAgo: 5,
+    day: 21,
+    description: 'Compras da semana',
+    amount: 31_470,
+    type: 'EXPENSE',
+    category: 'Mercado',
+  },
+  {
+    monthsAgo: 5,
+    day: 23,
+    description: 'Consulta médica',
+    amount: 25_000,
+    type: 'EXPENSE',
+    category: 'Saúde',
+  },
+
+  {
+    monthsAgo: 6,
+    day: 26,
+    description: 'Internet',
+    amount: 12_990,
+    type: 'EXPENSE',
+    category: 'Moradia',
+  },
+  {
+    monthsAgo: 7,
+    day: 3,
+    description: 'Reembolso de passagem',
+    amount: 8_500,
+    type: 'INCOME',
+    category: 'Transporte',
+  },
+  {
+    monthsAgo: 8,
+    day: 12,
     description: 'Livro de arquitetura',
     amount: 14_900,
     type: 'EXPENSE',
     category: 'Educação',
   },
   {
-    day: '2026-08-14',
+    monthsAgo: 9,
+    day: 14,
     description: 'Show',
     amount: 22_000,
     type: 'EXPENSE',
     category: 'Lazer',
   },
   {
-    day: '2026-08-15',
+    monthsAgo: 10,
+    day: 15,
     description: 'Compras da semana',
     amount: 30_050,
     type: 'EXPENSE',
     category: 'Mercado',
   },
+
   {
-    day: '2026-08-17',
-    description: 'Plano de saúde',
-    amount: 48_700,
-    type: 'EXPENSE',
-    category: 'Saúde',
-  },
-  {
-    day: '2026-08-19',
+    monthsAgo: 11,
+    day: 19,
     description: 'Presente de aniversário',
     amount: 15_000,
     type: 'EXPENSE',
     category: null,
   },
   {
-    day: '2026-08-21',
+    monthsAgo: 11,
+    day: 21,
     description: 'Venda de bicicleta usada',
     amount: 65_000,
     type: 'INCOME',
     category: null,
   },
 ] as const;
-
-/** Local midnight, matching what the date field in the app submits. */
-function atLocalMidnight(day: string): Date {
-  const [year, month, date] = day.split('-').map(Number);
-  return new Date(year!, month! - 1, date!);
-}
 
 async function main() {
   // `prisma migrate dev` and `prisma migrate reset` both invoke this file
@@ -301,7 +340,7 @@ async function main() {
       description: transaction.description,
       amount: transaction.amount,
       type: transaction.type,
-      date: atLocalMidnight(transaction.day),
+      date: monthsBack(transaction.monthsAgo, transaction.day),
       categoryId: transaction.category
         ? (categoriesByName.get(transaction.category) ?? null)
         : null,
