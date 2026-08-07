@@ -3,137 +3,189 @@
 A personal finance application for organizing, managing and categorizing income
 and expenses.
 
-## Overview
+Two applications sharing one domain model: a GraphQL API ([`backend/`](backend))
+and a React client ([`frontend/`](frontend)). The interface is in Brazilian
+Portuguese; the code, comments and documentation are in English.
 
-Most people know roughly how much they earn and spend, but not *where* the money
-goes. Financy exists to close that gap: record every inflow and outflow, attach a
-meaningful category to each one, and turn the resulting history into a picture
-that is actually useful for making decisions.
+## Running it locally
 
-The product is built as two applications — a backend API and a frontend client —
-that share a single domain model.
+Requires **Node 20 or newer**. Nothing else — the database is SQLite, so there
+is no Docker, no service to start and no credentials to obtain.
 
-## Goals
+```bash
+# 1. Install every workspace from the repository root
+npm install
 
-- Let a user sign up and sign in, and see only their own data.
-- Record income and expenses with amount, date, description and category.
-- Organize transactions into user-defined categories, each with its own icon and
-  color, so spending can be grouped in whatever way makes sense to the person
-  using it.
-- Search and filter transactions by description, category, type and period.
-- Show where the money went: balance, income and expenses for the month, and
-  totals per category.
+# 2. Configure both applications
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
-## Non-goals
+# 3. Set a signing secret — the API refuses to boot without one
+#    (macOS/Linux; on Windows use any random 64-character hex string)
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env
 
-These are deliberately out of scope. Some may become goals later; none of them
-shape the current design.
+# 4. Create the database and load demo data
+npm run db:migrate -w backend
+npm run db:seed -w backend
 
-- **Accounts.** Transactions are not grouped under checking, savings or credit
-  card accounts.
-- **Budgets.** No per-category spending limits or planned-versus-actual tracking.
-- **Investment portfolio tracking.** No holdings, quotes, average price or
-  returns. Financy tracks cash flow, not assets under management.
-- **Bank integration.** No Open Finance, no scraping, no automatic import from
-  financial institutions.
-- **Multi-currency.** A single currency per user.
-- **Shared access.** Each user sees only their own data.
-- **Tax reporting.** No fiscal calculations or statement generation.
+# 5. Start both applications
+npm run dev
+```
+
+| | |
+|---|---|
+| Frontend | http://localhost:5173 |
+| GraphQL API and Apollo Sandbox | http://localhost:4000/graphql |
+| Health check | http://localhost:4000/health |
+
+`npm run dev` runs both processes in one terminal, prefixing each line with the
+process it came from. Ctrl-C stops both. To run one alone: `npm run dev:backend`
+or `npm run dev:frontend`.
+
+### Signing in
+
+Step 4 seeds one user with 7 categories and 27 transactions spread across twelve
+months, so the dashboard, the filters and the pagination all have something real
+to show on the first load.
+
+```
+E-mail:  ana@financy.dev
+Senha:   trocar-esta-senha
+```
+
+The password comes from `SEED_PASSWORD` in `backend/.env`; the value above is
+the development placeholder shipped in `.env.example`. Creating a fresh account
+through the sign-up screen works too — it just starts empty.
+
+### A short tour
+
+| Route | What to look at |
+|---|---|
+| `/` | Signed out, the login screen. Signed in, the dashboard: total balance, income and expenses for the current month, recent transactions and the categories with the largest totals. |
+| `/transactions` | The full table, paginated. Search by description, filter by type, category and period; the filter state lives in the URL, so a filtered view can be reloaded or shared. Create, edit and delete from the same screen. |
+| `/categories` | Category cards with their icon, color and total. Create, edit and delete. Deleting a category keeps its transactions and leaves them uncategorized. |
+| `/profile` | Edit the display name and sign out. The e-mail is immutable. |
+| `/style-guide` | Every design-system primitive in every state — buttons, inputs, dialogs, the color and icon galleries. |
+
+Deleting anything asks for confirmation first. Every screen implements its
+loading, empty, error and populated states.
+
+## What is implemented
+
+| Capability | Where |
+|---|---|
+| Sign up and sign in | `signUp` / `signIn` mutations, JWT; `/` and `/signup` |
+| Own profile, viewable and editable | `me` / `updateProfile`; `/profile` |
+| Create, edit, delete and list transactions | `transactions` query with offset pagination, `createTransaction`, `updateTransaction`, `deleteTransaction`; `/transactions` |
+| Create, edit, delete and list categories | `categories`, `createCategory`, `updateCategory`, `deleteCategory`; `/categories` |
+| Search and filtering | `TransactionFilter` — description search, type, category, date range; the filter bar on `/transactions` |
+| Aggregates for the dashboard | `summary` and `categoryStats`; `/` |
+| A user only ever sees their own data | Every query and mutation filters by the authenticated user **in the `where` clause**, with a test per operation asserting `NOT_FOUND` for a cross-user access |
+
+Deliberately out of scope: accounts, budgets, investment tracking, bank
+integration, multi-currency, shared access and tax reporting. Password recovery
+is deferred; both specs document what implementing it would require.
+
+## Verifying it
+
+```bash
+npm test                            # 600 tests: 276 backend, 324 frontend
+npm run typecheck                   # tsc --noEmit, strict, no `any` outside generated/
+npm run lint
+npm run format:check
+npm run codegen:check -w backend    # the committed SDL matches the served schema
+npm run codegen:check -w frontend   # the generated hooks match the operations
+```
+
+The test suites need no `.env` and no running server: each workspace's vitest
+config declares its own environment, and the backend applies migrations to a
+separate `test.db` before the suite runs, so running the tests never touches the
+development database.
+
+The weight is on integration tests. The backend executes real GraphQL operations
+against a real SQLite file; the frontend renders real screens against a mocked
+network layer (MSW, configured to fail on any unmocked request).
+
+## Stack
+
+| | Backend | Frontend |
+|---|---|---|
+| Language | TypeScript, `strict` | TypeScript, `strict` |
+| Core | GraphQL (Apollo Server 4), Express | React 19, Vite |
+| Data | Prisma, SQLite | TanStack Query, generated typed hooks |
+| Auth | JWT (`jose`), argon2id password hashing | Session context, route guards |
+| Validation | zod | zod + react-hook-form |
+| Styling | — | Tailwind CSS 4, `lucide-react` icons |
+| Tests | Vitest + supertest | Vitest + Testing Library + MSW |
+
+TypeScript, GraphQL, Prisma and SQLite were fixed up front; every other choice,
+and the reasoning behind it, is in [`docs/specs/backend.md`](docs/specs/backend.md)
+and [`docs/specs/frontend.md`](docs/specs/frontend.md).
 
 ## Domain model
-
-Three entities. See [`docs/specs/backend.md`](docs/specs/backend.md) for the
-precise schema.
 
 ```
 User
  └── Transaction   type: INCOME | EXPENSE
       ├── amount, date, description
-      └── Category (optional)   e.g. "Groceries", "Salary"
+      └── Category (optional)   e.g. "Mercado", "Salário"
 ```
 
 - **User** — owns everything. All data is scoped to its owner.
 - **Transaction** — a single movement of money, either `INCOME` or `EXPENSE`.
-  The central entity of the system.
-- **Category** — a user-defined label for grouping transactions. Categories are
-  what make the history readable. A transaction may have none, and deleting a
-  category leaves its transactions in place, uncategorized.
+  Amounts are stored as integer cents and converted at the edges, so no rounding
+  error can accumulate.
+- **Category** — a user-defined label with an icon and a color. A transaction may
+  have none, and deleting a category leaves its transactions in place,
+  uncategorized.
 
 ## Repository structure
 
 ```
 financy/
-├── README.md
-├── docs/
-│   └── specs/            # backend.md, frontend.md — the source of truth
-├── apps/
-│   ├── backend/          # API
-│   └── frontend/         # client
-└── packages/             # reserved for code shared between the two apps
+├── backend/                      # GraphQL API
+│   ├── prisma/                   # schema, migrations, seed
+│   ├── src/modules/              # auth, category, transaction, summary — one folder each,
+│   │                             #   holding its schema, resolvers, service and validation
+│   ├── src/shared/               # errors, auth guard, env validation, JWT, password
+│   │                             #   hashing, Prisma client, DataLoaders
+│   ├── src/app.ts, server.ts     # app.ts builds the Express app; server.ts binds the port
+│   ├── tests/                    # integration/, unit/, helpers/, setup/
+│   └── schema.graphql            # printed from the module SDL by codegen, committed
+├── frontend/
+│   └── src/
+│       ├── components/ui/        # design-system primitives, browsable at /style-guide
+│       ├── components/layout/    # app shell, top bar, route guards
+│       ├── features/             # auth, categories, dashboard, profile, transactions —
+│       │                         #   each screen with its own dialogs, hooks and validation
+│       ├── pages/                # screens belonging to no feature (the style guide)
+│       ├── graphql/              # .graphql operations and the generated typed hooks
+│       ├── lib/                  # client, currency, formatting, category tokens
+│       ├── test/                 # render helper, MSW handlers, vitest setup
+│       └── index.css             # the theme; no color literal exists outside this file
+└── docs/
+    ├── specs/                    # backend.md, frontend.md — the source of truth for behavior
+    └── plans/                    # the roadmap and the per-slice implementation plans
 ```
 
-`packages/` is a placeholder. It only gets used if the two specs agree on
-something genuinely worth sharing, such as domain types.
+Both applications are organized **by feature, not by file type**: a change to one
+screen means opening one directory.
 
-## Stack
+## How it was built
 
-- **Backend** — TypeScript, GraphQL (Apollo Server), Prisma, SQLite, JWT auth.
-  See [`docs/specs/backend.md`](docs/specs/backend.md).
-- **Frontend** — TypeScript, React, Vite, GraphQL, TanStack Query, Tailwind CSS.
-  See [`docs/specs/frontend.md`](docs/specs/frontend.md).
+Five vertical slices, each one delivering a working feature across both
+applications rather than a layer across the whole app, each merged through its
+own pull request. [`docs/plans/roadmap.md`](docs/plans/roadmap.md) has the
+order and the definition of done that every slice was reviewed against; the
+`slice-N-outcome.md` files record what actually shipped and where it diverged
+from the plan.
 
-The specs are the source of truth for stack, features and constraints. This
-README stays a high-level overview.
-
-## Status
-
-Slices 0 through 4 of 5 complete: a person can create an account, sign in,
-edit their profile, manage categories, and manage transactions in a paginated
-table they can search and filter. Only the dashboard remains.
-See [`docs/plans/roadmap.md`](docs/plans/roadmap.md) for the plan.
-
-- [x] Backend spec
-- [x] Frontend spec
 - [x] Slice 0 — Foundations
 - [x] Slice 1 — Auth and profile
 - [x] Slice 2 — Categories
 - [x] Slice 3 — Transactions
 - [x] Slice 4 — Search and filters
-- [ ] Slice 5 — Dashboard
+- [x] Slice 5 — Dashboard
 
-Password recovery is deferred to phase 2 and is documented in both specs.
-
-## Running locally
-
-Requires Node 20 or newer.
-
-```bash
-npm install
-cp apps/backend/.env.example apps/backend/.env   # then fill in JWT_SECRET
-cp apps/frontend/.env.example apps/frontend/.env
-npm run db:migrate -w @financy/backend
-
-npm run dev            # both, in one terminal
-```
-
-`npm run dev` runs the backend on `http://localhost:4000/graphql` and the
-frontend on `http://localhost:5173`, prefixing each line with the process it
-came from. Ctrl-C stops both. To run one alone, `npm run dev:backend` or
-`npm run dev:frontend`.
-
-The design system is browsable at `/style-guide`.
-
-## Checks
-
-```bash
-npm test          # both workspaces
-npm run typecheck
-npm run lint
-npm run format:check
-npm run codegen:check -w @financy/backend    # must report no diff
-npm run codegen:check -w @financy/frontend
-```
-
-The test suites need no `.env` and no running server: each workspace's vitest
-config declares its own environment, and the backend applies migrations to a
-separate `test.db` before the suite runs.
+`main` holds the complete solution. The `feat/slice-*` branches are kept as the
+history of how it got there.
