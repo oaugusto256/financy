@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRoutes } from './routes';
 import { SessionProvider } from './features/auth/SessionContext';
 import { ToastProvider } from './components/ui/Toast';
+import { ErrorBoundary } from './components/layout/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,9 @@ export function App() {
       <ToastProvider>
         <BrowserRouter>
           <SessionProvider>
-            <AppRoutes />
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
           </SessionProvider>
         </BrowserRouter>
       </ToastProvider>
