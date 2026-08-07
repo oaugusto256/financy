@@ -4,7 +4,11 @@ Status: approved, implemented through slice 5
 Last updated: 2026-08-07 (slice 5: section 5's Dashboard section states the
 per-section states, the query reuse for "Transações recentes" and the
 client-side sort and cap for "Categorias", and section 12 gains the UTC-vs-
-local month window entry)
+local month window entry; then the dashboard layout pass: no page heading, the
+two-thirds/one-third panel split, uppercase panel titles with chevron links,
+divided transaction rows, the recent-transaction row's columns and neutral
+amount, the footer button's green label, and the brand wordmark rendered as the
+`Logo` primitive)
 
 A React application that consumes the Financy GraphQL API, letting a user manage
 their transactions and categories. This document is the source of truth for the
@@ -190,10 +194,19 @@ On success the user is signed in immediately with the returned token.
 
 ### Dashboard (`/`, signed in)
 
+No page title or subtitle: the stat cards and the two panel headers already say
+what the screen is.
+
 Three stat cards across the top: Saldo total, Receitas do mês, Despesas do mês —
 from `summary(month, year)` for the current month.
 
-Below, two panels side by side. Each of the three sections — the stat card row
+Below, two panels side by side — "Transações recentes" over two thirds of the
+width and "Categorias" over the remaining third, stacking below `lg`. Both panel
+headers set their title in small uppercase, with the link to the full page
+alongside it carrying a trailing chevron. "Categorias" sits at its content
+height rather than stretching to match the taller panel beside it.
+
+Each of the three sections — the stat card row
 and the two panels — owns its own query, and its own loading, empty and error
 states, so a failure in one does not blank the others. The stat cards' empty
 state is `R$ 0,00` on all three cards rather than a separate branch: a new
@@ -204,9 +217,16 @@ apart from a real one.
   category icon badge, description, date, category tag, and signed amount with a
   type arrow. It reuses the paginated `transactions` query at `limit: 5` rather
   than a dedicated field: that query's default ordering is already
-  `date DESC, createdAt DESC`. A "Ver todas" link to `/transactions` and a
-  "+ Nova transação" footer button that opens the transaction dialog, both
-  present in every state.
+  `date DESC, createdAt DESC`. Rows are separated by a divider running the full
+  width of the card, and the tag and the amount each sit in a fixed column so
+  they share an axis down the panel. The amount is rendered in the neutral text
+  colour with its sign set off from the figure ("+ R$ 4.250,00"); direction is
+  carried by the coloured arrow beside it, whose "Entrada"/"Saída" label is
+  present for screen readers but not drawn. A "Ver todas" link to
+  `/transactions` and a "Nova transação" footer button that opens the
+  transaction dialog, both present in every state. The footer button is
+  borderless and transparent with a plus icon and a green label — the card's own
+  divider already separates it from the rows.
 - **Categorias** — each category with its tag, item count and total amount, plus
   a "Gerenciar" link to `/categories`. Sorted by total amount descending and
   capped at five on the client, because the panel is a summary, the full list has
