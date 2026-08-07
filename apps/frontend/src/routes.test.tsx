@@ -39,6 +39,12 @@ describe('routing', () => {
     expect(
       await screen.findByRole('heading', { name: 'Dashboard' }),
     ).toBeInTheDocument();
+    // The deleted placeholder also rendered a "Dashboard" heading, so that
+    // assertion alone would still pass with the route reverted to it. This
+    // one is satisfiable only by the real DashboardPage.
+    expect(
+      await screen.findByRole('region', { name: 'Transações recentes' }),
+    ).toBeInTheDocument();
   });
 
   it('redirects a private route to / when signed out', () => {

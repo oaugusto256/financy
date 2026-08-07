@@ -433,6 +433,17 @@ and the stat cards are written against, for an application with one user in one
 timezone. A server-local window was rejected outright: it makes every figure
 depend on the `TZ` the process happens to run under.
 
+**The dashboard's month is read once, at mount, not on every render.**
+`DashboardPage.tsx` stores `currentPeriod` in `useState` rather than computing
+it fresh each render, because the period is part of `useSummaryQuery`'s query
+key: recomputing it on every render would mint a new key the instant the
+clock crosses a month boundary, refetching mid-session for no user action.
+The alternative — reading the clock on every render — was rejected because it
+makes the query key, and therefore what is on screen, depend on exactly when
+a render happens to occur. The consequence is a tab left open across midnight
+on the last day of a month keeps showing that month's figures until the page
+is reloaded, and nothing in the dashboard names which month is displayed.
+
 **`Select` has no checkmark on the selected option.** Section 3 describes one,
 which a native `<select>` cannot draw — the browser owns the dropdown. The
 alternative is a custom listbox, which means rebuilding keyboard navigation,

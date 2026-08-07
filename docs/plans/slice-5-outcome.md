@@ -31,8 +31,9 @@ on the client from the existing `categories` query. Each of the three
 sections — stat card row, recent-transactions panel, categories panel — owns
 its own query and its own loading/empty/error states, so one section's
 failure does not blank the others. The dashboard mounts the same
-`TransactionDialog` and `DeleteTransactionDialog` the transactions page uses,
-unmodified.
+`TransactionDialog` the transactions page uses, unmodified.
+`RecentTransactionsPanel` renders read-only rows — the dashboard has no
+edit or delete affordance.
 
 `prisma/seed.ts` was re-based off `monthsBack(monthsAgo, day, now?)`, extracted
 so its December-rollover arithmetic is unit-testable outside `main()`. All
@@ -146,8 +147,12 @@ tasks in the same slice rather than one.
 
 - **`DeleteTransactionDialog.tsx:52`'s `['Summary']` invalidation has no test
   in this slice.** Works by construction (same key-prefix match Task 8
-  verified for create/update), but unexercised. The owner ruled it out of
-  scope here; a slice that next touches delete behavior should close it.
+  verified for create/update), but unexercised. The dashboard itself has no
+  delete affordance — `RecentTransactionsPanel` renders read-only rows, and
+  `DeleteTransactionDialog` is only reachable from `/transactions` — so this
+  is lower risk than an untested invalidation on the dashboard's own path
+  would be. The owner ruled it out of scope here; a slice that next touches
+  delete behavior should close it.
 - **The `/style-guide` primitive comparison** is still unanswered, now open
   across five slices with no visual regression yet reported against it. This
   slice added no new primitive, so nothing new is owed against it.
