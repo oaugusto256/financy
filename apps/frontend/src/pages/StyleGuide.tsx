@@ -14,6 +14,7 @@ import { ColorPicker } from '@/components/ui/ColorPicker';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
+import { Logo } from '@/components/ui/Logo';
 import { StatCard } from '@/components/ui/StatCard';
 import { Dialog } from '@/components/ui/Dialog';
 import { PanelError } from '@/components/ui/PanelError';
@@ -56,6 +57,11 @@ export function StyleGuide() {
       title="Style Guide"
       subtitle="Todos os primitivos, em todos os estados"
     >
+      <Section title="Logo">
+        <Logo />
+        <Logo className="h-5" />
+      </Section>
+
       <Section title="Button">
         <Button>Primário</Button>
         <Button icon={Plus}>Com ícone</Button>
