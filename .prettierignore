@@ -8,7 +8,7 @@ package-lock.json
 # Written by graphql-codegen's schema-ast plugin. Formatting it here would make
 # format:check and codegen:check contradict each other: each would undo what
 # the other just wrote.
-apps/backend/schema.graphql
+backend/schema.graphql
 
 # Prose is wrapped by hand at 80 columns. Prettier reflows markdown paragraphs,
 # which would rewrite every spec and plan the moment one line changes.

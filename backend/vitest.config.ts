@@ -10,7 +10,7 @@ export default defineConfig({
     globalSetup: ['./tests/setup/global-setup.ts'],
     // src/shared/env.ts parses process.env at module load, so importing
     // anything that touches it needs a valid environment. Declaring it here
-    // rather than reading apps/backend/.env keeps the suite runnable on a
+    // rather than reading backend/.env keeps the suite runnable on a
     // fresh clone, where that file does not exist yet.
     env: {
       DATABASE_URL: 'file:./test.db',

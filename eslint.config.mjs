@@ -33,14 +33,14 @@ export default [
   },
 
   {
-    files: ['apps/backend/**/*.ts'],
+    files: ['backend/**/*.ts'],
     languageOptions: {
       globals: globals.node,
     },
   },
 
   {
-    files: ['apps/frontend/**/*.{ts,tsx}'],
+    files: ['frontend/**/*.{ts,tsx}'],
     languageOptions: {
       globals: globals.browser,
     },

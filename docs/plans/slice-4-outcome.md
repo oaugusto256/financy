@@ -44,7 +44,7 @@ empty state's "Criar primeira transação".
   style!".
 - `npm run codegen:check -w @financy/backend` — exit 0, no diff.
 - `npm run codegen:check -w @financy/frontend` — exit 0, no diff.
-- `git diff package.json apps/backend/package.json apps/frontend/package.json`
+- `git diff package.json backend/package.json frontend/package.json`
   — empty. No task in this slice installed anything.
 
 Run per workspace, per `slice-3-outcome.md`'s note: a single `npm test` run of

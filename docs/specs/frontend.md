@@ -41,7 +41,7 @@ Six pages and two dialogs.
 | Profile | `/profile` | Private |
 
 The root route is the same path serving two different screens depending on
-authentication, as the requirements specify.
+authentication, as the design specifies.
 
 **Dialogs:** the transaction form and the category form. Each handles both
 creation and editing — same fields, same validation, different title and
@@ -67,8 +67,8 @@ Chosen:
 | Server state | TanStack Query | Caching, invalidation and request states without hand-rolling them |
 | GraphQL transport | `graphql-request` | A thin fetch wrapper; TanStack Query does the caching |
 | Typed operations | graphql-codegen | Generates typed hooks from the backend schema, so a schema change breaks the build rather than production |
-| Styling | Tailwind CSS | Design tokens map directly onto a theme config |
-| Components | shadcn/ui | Accessible primitives (dialog, select, checkbox) that are copied into the project and restyled to the design, not fought against |
+| Styling | Tailwind CSS 4 | Design tokens map directly onto the CSS-first theme in `src/index.css`; there is no `tailwind.config.ts` |
+| Components | Hand-written, on Radix where behavior is hard | Every primitive in `components/ui` is written and styled here rather than pulled from a component library. Radix supplies only what is genuinely difficult to get right — `@radix-ui/react-dialog` for focus trapping and `@radix-ui/react-toast` for the live region. `Select` and `Checkbox` are native elements: keyboard and screen-reader behavior for free, nothing to fight |
 | Forms | React Hook Form | Uncontrolled inputs, so typing in a form does not re-render the page |
 | Validation | zod | The same schemas as the backend, so client and server agree on what is valid |
 | Dates | `date-fns` | Formatting and month boundaries without pulling in a large library |
@@ -148,6 +148,13 @@ Built and reviewed against the Style Guide before any page uses them.
 | `Card` | white surface with rounded corners, used by every panel |
 | `StatCard` | icon, uppercase label, large value |
 | `Avatar` | circle with initials derived from the user's name |
+| `Logo` | the brand wordmark, drawn as SVG with `role="img"` so it reads as "Financy" |
+| `SegmentedControl` | a labelled radio group drawn as one control — the Entrada/Saída switch in the transaction dialog |
+| `ColorPicker` | the seven category color families as selectable swatches |
+| `IconPicker` | the sixteen `CategoryIcon` names as a selectable grid |
+| `Skeleton` | the loading placeholder, `role="status"` with `aria-busy` so a screen reader announces the wait |
+| `PanelError` | the error state for a panel that was already on screen: message, `role="alert"`, and a "Tentar novamente" retry |
+| `Toast` / `useToast` | transient success and error feedback, on a Radix live region, dismissible |
 
 The label error state colors the label itself, not only the helper text — that
 is how the Style Guide draws it, and it makes the failing field findable without
@@ -391,8 +398,7 @@ message on failure.
 ## 11. Structure
 
 ```
-apps/frontend/
-├── public/
+frontend/
 ├── src/
 │   ├── components/
 │   │   ├── ui/              design system primitives
@@ -403,16 +409,20 @@ apps/frontend/
 │   │   ├── transactions/    page, table, filters, dialog
 │   │   ├── categories/      page, grid, dialog
 │   │   └── profile/
+│   ├── pages/               screens that belong to no feature — StyleGuide
 │   ├── graphql/
 │   │   ├── operations/      .graphql documents
 │   │   └── generated/       codegen output, committed
 │   ├── lib/                 client, formatters, category tokens
+│   ├── test/                render helper, MSW handlers, vitest setup
+│   ├── index.css            the theme — every color literal lives here
 │   ├── routes.tsx
+│   ├── App.tsx
 │   └── main.tsx
+├── index.html
 ├── .env.example
 ├── codegen.ts
-├── tailwind.config.ts
-└── vite.config.ts
+└── vite.config.ts           Vite and vitest configuration in one file
 ```
 
 Organized by feature, not by file type, matching the backend. A feature folder

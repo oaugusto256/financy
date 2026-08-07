@@ -14,7 +14,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: true,
     // src/lib/env.ts parses import.meta.env at module load, which Vite fills
-    // from apps/frontend/.env — a gitignored file. Declaring the value here
+    // from frontend/.env — a gitignored file. Declaring the value here
     // keeps the suite green on a fresh clone, where that file does not exist.
     //
     // TZ is pinned here (in addition to the npm scripts) so it holds
