@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "npm test && npm run typecheck && npm run lint && npm run format:check && npm run codegen:check -w @financy/backend && npm run codegen:check -w @financy/frontend",
+    "postinstall": "npm run db:generate -w @financy/backend",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
