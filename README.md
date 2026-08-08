@@ -99,7 +99,7 @@ npm run verify                      # the whole gate, in order — what CI runs
 single concern:
 
 ```bash
-npm test                            # 600 tests: 276 backend, 324 frontend
+npm test                            # 632 tests: 304 backend, 328 frontend
 npm run typecheck                   # tsc --noEmit, strict, no `any` outside generated/
 npm run lint
 npm run format:check
