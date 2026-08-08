@@ -1,6 +1,11 @@
 import { ClientError, GraphQLClient } from 'graphql-request';
 import { env } from './env';
+import type { ErrorCode } from './graphql-errors';
 import { notifyUnauthenticated } from './unauthenticated';
+
+// Typed against ErrorCode so a typo here — unlike the bare string literal
+// this replaced — fails typecheck instead of silently never matching.
+const UNAUTHENTICATED: ErrorCode = 'UNAUTHENTICATED';
 
 export const graphqlClient = new GraphQLClient(env.VITE_BACKEND_URL, {
   // Detected in one place, so every operation added by a later slice is
@@ -12,7 +17,7 @@ export const graphqlClient = new GraphQLClient(env.VITE_BACKEND_URL, {
         ? (response as ClientError).response?.errors
         : response.errors;
 
-    if (errors?.some((error) => error.extensions?.code === 'UNAUTHENTICATED')) {
+    if (errors?.some((error) => error.extensions?.code === UNAUTHENTICATED)) {
       notifyUnauthenticated();
     }
   },

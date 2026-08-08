@@ -36,6 +36,18 @@ describe('errorCodeOf', () => {
     // failure into a blank screen.
     expect(errorCodeOf(undefined)).toBeNull();
   });
+
+  it('passes through a code outside the known union unchanged', () => {
+    // errorCodeOf's ErrorCode return type is a compile-time label, not a
+    // runtime filter: the union is hand-kept in sync with the backend, not
+    // derived from it, so a code the backend renamed or never had still
+    // comes through as-is rather than being coerced to null. Pinned so a
+    // future "helpful" runtime validation doesn't silently start dropping
+    // codes this reader has always passed on.
+    expect(errorCodeOf(clientError({ code: 'SOME_FUTURE_CODE' }))).toBe(
+      'SOME_FUTURE_CODE',
+    );
+  });
 });
 
 describe('fieldErrorsOf', () => {
