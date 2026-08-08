@@ -7,10 +7,34 @@ export const ErrorCode = {
   BAD_USER_INPUT: 'BAD_USER_INPUT',
   EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  // Raised by the rate limiters in `shared/rate-limit.ts`, which answer before
+  // Apollo is reached and so build the response themselves. It is listed here
+  // because this object is the wire contract the frontend switches on, not
+  // because anything below constructs a GraphQLError with it.
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
 } as const;
 
+export type DeliberateErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+/**
+ * What the client is told when the server raised an error it did not intend.
+ * Portuguese, like every other message here: it is rendered to the user.
+ */
+export const INTERNAL_ERROR_MESSAGE = 'Erro interno do servidor';
+
+const DELIBERATE_CODES: ReadonlySet<string> = new Set(Object.values(ErrorCode));
+
+/**
+ * True for the codes above — the ones this server raises on purpose, whose
+ * message was written for the person reading it. Anything else reaching the
+ * client is an accident and must not describe our internals.
+ */
+export function isDeliberateErrorCode(code: unknown): boolean {
+  return typeof code === 'string' && DELIBERATE_CODES.has(code);
+}
+
 function graphqlError(
-  code: (typeof ErrorCode)[keyof typeof ErrorCode],
+  code: DeliberateErrorCode,
   message: string,
   extensions: Record<string, unknown> = {},
 ): GraphQLError {

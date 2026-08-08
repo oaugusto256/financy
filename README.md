@@ -9,8 +9,11 @@ Portuguese; the code, comments and documentation are in English.
 
 ## Running it locally
 
-Requires **Node 20 or newer**. Nothing else — the database is SQLite, so there
-is no Docker, no service to start and no credentials to obtain.
+Requires **Node 20.19 or newer**, or 22.12 and newer on the 22 line — `.nvmrc`
+pins the version CI uses. Vite 8 sets that floor, and the backend's dev script
+uses `--env-file-if-exists`, which arrived in 20.19. Nothing else — the database
+is SQLite, so there is no Docker, no service to start and no credentials to
+obtain.
 
 ```bash
 # 1. Install every workspace from the repository root
@@ -89,13 +92,25 @@ is deferred; both specs document what implementing it would require.
 ## Verifying it
 
 ```bash
-npm test                            # 600 tests: 276 backend, 324 frontend
+npm run verify                      # the whole gate, in order — what CI runs
+```
+
+`verify` chains the six checks below. Run one on its own while iterating on a
+single concern:
+
+```bash
+npm test                            # 632 tests: 304 backend, 328 frontend
 npm run typecheck                   # tsc --noEmit, strict, no `any` outside generated/
 npm run lint
 npm run format:check
 npm run codegen:check -w backend    # the committed SDL matches the served schema
 npm run codegen:check -w frontend   # the generated hooks match the operations
 ```
+
+A pre-commit hook (`simple-git-hooks` + `lint-staged`) runs `prettier --check`
+and `eslint --max-warnings 0` on staged files, and `.github/workflows/ci.yml`
+runs the full `verify` script on every pull request into `main` and on every
+push to `main`.
 
 The test suites need no `.env` and no running server: each workspace's vitest
 config declares its own environment, and the backend applies migrations to a

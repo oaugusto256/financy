@@ -455,6 +455,31 @@ secret, and session rotation is scope nobody asked for.
 
 Passwords are hashed with argon2id. The hash never leaves the auth service.
 
+### Rate limiting
+
+Two limiters sit ahead of Apollo on `/graphql`, both answering **429** with
+`TOO_MANY_REQUESTS` and nothing else:
+
+1. **Per IP, over the whole endpoint** — `RATE_LIMIT_MAX` requests per
+   `RATE_LIMIT_WINDOW_MS`. Mounted after `cors`, so a preflight is not counted,
+   and before `express.json`, so a flood is turned away unparsed.
+2. **Per submitted e-mail, over `signIn` and `signUp` only** —
+   `AUTH_RATE_LIMIT_MAX` attempts per `AUTH_RATE_LIMIT_WINDOW_MS`. The address
+   is read out of the parsed request: the document is parsed with graphql-js
+   rather than pattern-matched, because it can be written into the query text
+   instead of the variables and a limiter reading only `variables.input.email`
+   would be bypassed by moving it. A body that is absent, malformed or
+   unparseable yields no address, skips this limiter and is left to Apollo.
+
+The second exists because the first does not stop credential stuffing: a botnet
+spraying one guess per address never hits a per-IP limit, and every attempt
+against one account must count against one budget wherever it came from.
+
+Neither limiter touches the database, so a rejected request answers identically
+whether or not the address has an account, and the 429 costs no argon2 hash.
+Both stores are in process memory, which is what a single-process deployment
+needs; a shared store is the change to make when that stops being true.
+
 ### Ownership
 
 This is the central security rule of the system. Every rule below is a
@@ -487,6 +512,7 @@ parse a message:
 | `BAD_USER_INPUT` | Input failed validation |
 | `EMAIL_ALREADY_EXISTS` | Sign-up with an email already registered |
 | `INVALID_CREDENTIALS` | Sign-in failed |
+| `TOO_MANY_REQUESTS` | A rate limit was exceeded — see section 6 |
 
 A duplicate category name has no code of its own. `@@unique([userId, name])` is
 reachable from `createCategory` and `updateCategory`, and both answer
@@ -498,8 +524,16 @@ already provides, and the message belongs on the field either way.
 password. Distinguishing them would turn the login endpoint into an oracle for
 which emails have accounts.
 
-In production, unexpected errors are logged server-side and returned as a generic
-message with no stack trace.
+Every error is logged server-side with the operation name, the caller's `userId`
+and the error itself — in every environment, since production is the one where
+the log is the only record. Only the six codes above and the protocol codes
+graphql-js raises before execution (`GRAPHQL_VALIDATION_FAILED` and its
+siblings, whose messages describe the caller's own request) are returned as
+written. Anything else is replaced with `INTERNAL_SERVER_ERROR` and the fixed
+message "Erro interno do servidor", carrying no path, no location and no stack
+trace. Masking is not conditional on the environment either: an error that is
+safe to show in development is safe to show anywhere, and one that is not
+should never have been formatted twice.
 
 ### Validation rules
 
@@ -539,6 +573,11 @@ JWT_SECRET=
 PORT=4000
 CORS_ORIGIN=http://localhost:5173
 NODE_ENV=development
+# Optional; the values below are the defaults. See section 6.
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX=300
+AUTH_RATE_LIMIT_WINDOW_MS=900000
+AUTH_RATE_LIMIT_MAX=10
 # Password for the seed user (prisma/seed.ts). Development-only; do not set in
 # any deployed environment.
 SEED_PASSWORD=trocar-esta-senha
@@ -548,6 +587,13 @@ Environment variables are validated with zod at startup. If `JWT_SECRET` is
 missing or empty, the process exits immediately with a clear message. A server
 that boots with an empty signing secret issues tokens anyone can forge, and it
 fails silently — so it must fail loudly instead.
+
+`NODE_ENV` is required for the same reason and has no default. It is the only
+input to the server's error posture: introspection is served unless it is
+`production`, and a stack trace is attached to an error response only when it is
+`development`. Both are passed to Apollo explicitly, because Apollo otherwise
+reads `process.env.NODE_ENV` itself and would hand a deploy that omitted the
+variable the most permissive of the three settings.
 
 Any variable added later must be added to `.env.example` in the same change.
 

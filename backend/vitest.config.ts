@@ -14,7 +14,7 @@ export default defineConfig({
     // fresh clone, where that file does not exist yet.
     env: {
       DATABASE_URL: 'file:./test.db',
-      JWT_SECRET: 'test-secret',
+      JWT_SECRET: 'test-secret-that-is-long-enough-32',
       PORT: '4000',
       CORS_ORIGIN: 'http://localhost:5173',
       NODE_ENV: 'test',

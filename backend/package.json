@@ -41,6 +41,7 @@
     "cors": "^2.8.6",
     "dataloader": "^2.2.3",
     "express": "^4.22.2",
+    "express-rate-limit": "^8.6.2",
     "graphql": "^16.14.2",
     "graphql-scalars": "^1.25.0",
     "jose": "^6.2.8",

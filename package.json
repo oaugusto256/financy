@@ -6,7 +6,7 @@
     "frontend"
   ],
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c blue,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
@@ -17,7 +17,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "verify": "npm test && npm run typecheck && npm run lint && npm run format:check && npm run codegen:check -w @financy/backend && npm run codegen:check -w @financy/frontend",
+    "postinstall": "npm run db:generate -w @financy/backend",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -27,7 +30,16 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.8.0",
+    "lint-staged": "^17.3.0",
     "prettier": "^3.9.6",
+    "simple-git-hooks": "^2.13.1",
     "typescript-eslint": "^8.65.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,css,md}": "prettier --check",
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "eslint --max-warnings 0"
   }
 }

@@ -32,14 +32,28 @@ export async function signUp(input: unknown): Promise<AuthResult> {
   return { token: await signToken(user.id), user };
 }
 
+// Generated once at module load, not per request, so the unknown-email
+// branch below has a real argon2id encoding to verify against without
+// paying a fresh hash on every sign-in attempt.
+const DUMMY_PASSWORD_HASH = await hashPassword('dummy-password-for-timing');
+
 export async function signIn(input: unknown): Promise<AuthResult> {
   const { email, password } = parseInput(signInSchema, input);
 
   const user = await prisma.user.findUnique({ where: { email } });
-  // The unknown-email branch still verifies nothing and returns the same error
-  // as a wrong password. Distinguishing them turns this into a way to discover
-  // which addresses have accounts.
-  if (!user) throw invalidCredentials();
+  // The unknown-email branch throws the same error as a wrong password, so
+  // the two are indistinguishable by response *content*. They used to be
+  // distinguishable by response *time*: this branch returned before argon2
+  // ran, while the wrong-password branch below always runs it, and argon2 is
+  // slow by design. Verifying against a dummy hash here equalises that cost
+  // so both branches take about the same time. It does not close enumeration
+  // altogether - signUp still answers EMAIL_ALREADY_EXISTS on a taken
+  // address by design (backend.md §7) - it only closes the timing channel
+  // that was unintentional here.
+  if (!user) {
+    await verifyPassword(DUMMY_PASSWORD_HASH, password);
+    throw invalidCredentials();
+  }
 
   const matches = await verifyPassword(user.passwordHash, password);
   if (!matches) throw invalidCredentials();

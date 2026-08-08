@@ -1,4 +1,5 @@
 import { DateTimeISOResolver } from 'graphql-scalars';
+import { isDatabaseReachable } from './shared/database-health.js';
 import type { Resolvers } from './graphql/generated/resolvers.js';
 import { authTypeDefs } from './modules/auth/schema.js';
 import { authResolvers } from './modules/auth/resolvers.js';
@@ -37,7 +38,17 @@ export const resolvers: Resolvers = {
   DateTime: DateTimeISOResolver,
 
   Query: {
-    health: () => 'ok',
+    // Shares the REST route's probe rather than answering unconditionally,
+    // so the two health surfaces cannot disagree about what "healthy" means.
+    // An unreachable database throws a plain (unexpected) error, which
+    // `formatError` in app.ts masks like any other internal failure — the
+    // point is that a caller sees an error instead of `data: { health: 'ok'
+    // }`, not that the message names the cause.
+    health: async () => {
+      const healthy = await isDatabaseReachable();
+      if (!healthy) throw new Error('Database unreachable');
+      return 'ok';
+    },
     ...(authResolvers.Query ?? {}),
     ...(categoryResolvers.Query ?? {}),
     ...(transactionResolvers.Query ?? {}),
