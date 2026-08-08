@@ -9,8 +9,11 @@ Portuguese; the code, comments and documentation are in English.
 
 ## Running it locally
 
-Requires **Node 20 or newer**. Nothing else — the database is SQLite, so there
-is no Docker, no service to start and no credentials to obtain.
+Requires **Node 20.19 or newer**, or 22.12 and newer on the 22 line — `.nvmrc`
+pins the version CI uses. Vite 8 sets that floor, and the backend's dev script
+uses `--env-file-if-exists`, which arrived in 20.19. Nothing else — the database
+is SQLite, so there is no Docker, no service to start and no credentials to
+obtain.
 
 ```bash
 # 1. Install every workspace from the repository root
