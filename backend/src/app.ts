@@ -5,6 +5,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import type { GraphQLFormattedError } from 'graphql';
 import { env } from './shared/env.js';
+import { isDatabaseReachable } from './shared/database-health.js';
 import {
   INTERNAL_ERROR_MESSAGE,
   isDeliberateErrorCode,
@@ -156,7 +157,12 @@ export async function createApp(options: CreateAppOptions = {}): Promise<{
     expressMiddleware(apollo, { context: createContext }),
   );
 
-  app.get('/health', (_req, res) => {
+  app.get('/health', async (_req, res) => {
+    const healthy = await isDatabaseReachable();
+    if (!healthy) {
+      res.status(503).json({ status: 'error' });
+      return;
+    }
     res.json({ status: 'ok' });
   });
 
