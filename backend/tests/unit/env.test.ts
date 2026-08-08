@@ -17,7 +17,22 @@ describe('parseEnv', () => {
       PORT: 4000,
       CORS_ORIGIN: 'http://localhost:5173',
       NODE_ENV: 'development',
+      RATE_LIMIT_WINDOW_MS: 60_000,
+      RATE_LIMIT_MAX: 300,
+      AUTH_RATE_LIMIT_WINDOW_MS: 900_000,
+      AUTH_RATE_LIMIT_MAX: 10,
     });
+  });
+
+  it('coerces the rate limits and rejects a non-positive one', () => {
+    const parsed = parseEnv({ ...valid, AUTH_RATE_LIMIT_MAX: '3' });
+    expect(parsed.AUTH_RATE_LIMIT_MAX).toBe(3);
+
+    // Zero would not mean "no limit", it would reject every sign-in. A typo
+    // that turns the limiter into an outage must not boot.
+    expect(() => parseEnv({ ...valid, AUTH_RATE_LIMIT_MAX: '0' })).toThrow(
+      /AUTH_RATE_LIMIT_MAX/,
+    );
   });
 
   it('coerces PORT to a number', () => {

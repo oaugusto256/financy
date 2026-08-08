@@ -12,6 +12,18 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production'], {
     error: 'NODE_ENV must be development, test or production',
   }),
+  // Rate limiting. The defaults are the deployed posture, not a placeholder:
+  // 300 requests a minute is well above what one person browsing the app
+  // produces, and ten sign-in attempts per address per fifteen minutes is well
+  // above what one person forgetting their password produces.
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(900_000),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
 });
 
 export type Env = z.infer<typeof envSchema>;

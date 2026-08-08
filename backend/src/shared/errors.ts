@@ -7,6 +7,11 @@ export const ErrorCode = {
   BAD_USER_INPUT: 'BAD_USER_INPUT',
   EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  // Raised by the rate limiters in `shared/rate-limit.ts`, which answer before
+  // Apollo is reached and so build the response themselves. It is listed here
+  // because this object is the wire contract the frontend switches on, not
+  // because anything below constructs a GraphQLError with it.
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
 } as const;
 
 export type DeliberateErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

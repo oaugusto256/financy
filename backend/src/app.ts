@@ -9,6 +9,10 @@ import {
   INTERNAL_ERROR_MESSAGE,
   isDeliberateErrorCode,
 } from './shared/errors.js';
+import {
+  createRateLimiters,
+  type RateLimitConfig,
+} from './shared/rate-limit.js';
 import { resolvers, typeDefs } from './schema.js';
 import { createContext, type GraphQLContext } from './context.js';
 
@@ -90,10 +94,21 @@ const errorLogging: ApolloServerPlugin<GraphQLContext> = {
   },
 };
 
+export interface CreateAppOptions {
+  /**
+   * Overrides the rate limits taken from the environment. Only the rate-limit
+   * suite passes this: it needs a limit small enough to exhaust in a few
+   * requests, while every other suite runs against the real configured limits
+   * so that a default low enough to trip an ordinary session is a failing test
+   * rather than a production incident.
+   */
+  rateLimit?: Partial<RateLimitConfig>;
+}
+
 // A factory rather than a module that starts listening on import: tests need
 // the app without a bound port, and two test files binding the same port fail
 // in ways that look like application bugs.
-export async function createApp(): Promise<{
+export async function createApp(options: CreateAppOptions = {}): Promise<{
   app: Express;
   apollo: ApolloServer<GraphQLContext>;
 }> {
@@ -114,6 +129,14 @@ export async function createApp(): Promise<{
 
   const app = express();
 
+  const { perIp, perEmail } = createRateLimiters({
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    max: env.RATE_LIMIT_MAX,
+    authWindowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+    authMax: env.AUTH_RATE_LIMIT_MAX,
+    ...options.rateLimit,
+  });
+
   app.use(
     '/graphql',
     // An array, not the bare string. Given a string, cors echoes it back on
@@ -122,7 +145,14 @@ export async function createApp(): Promise<{
     // not match. Both are safe in a browser, but only the second lets a test
     // tell an allowed origin from a rejected one.
     cors({ origin: [env.CORS_ORIGIN], credentials: true }),
+    // After cors, so a preflight the browser sends on the user's behalf is
+    // answered by cors and never spends anyone's budget. Before express.json,
+    // so a flood is turned away without parsing a body.
+    perIp,
     express.json(),
+    // After express.json, because the address it keys on is in the parsed
+    // body, and before Apollo, because the point is that argon2 never runs.
+    perEmail,
     expressMiddleware(apollo, { context: createContext }),
   );
 
