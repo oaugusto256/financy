@@ -1,7 +1,8 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../src/shared/prisma.js';
 import { verifyToken } from '../../src/shared/jwt.js';
 import { verifyPassword } from '../../src/shared/password.js';
+import * as passwordModule from '../../src/shared/password.js';
 import {
   getUser,
   signIn,
@@ -139,6 +140,22 @@ describe('signIn', () => {
     expect((unknownEmail as Error).message).toBe(
       (wrongPassword as Error).message,
     );
+  });
+
+  it('performs a password verification even for an unknown email', async () => {
+    // Row 7: the unknown-email branch used to return before argon2 ran at
+    // all, which is what produced the 24x timing gap. Asserting the work
+    // happens - rather than how long it takes - avoids a flaky wall-clock
+    // assertion while still pinning the fix.
+    const spy = vi.spyOn(passwordModule, 'verifyPassword');
+
+    await signIn({
+      email: 'ninguem@exemplo.com',
+      password: WRONG_PASSWORD,
+    }).catch(() => undefined);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
   });
 });
 
